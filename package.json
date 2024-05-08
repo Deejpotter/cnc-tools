@@ -21,7 +21,7 @@
     "react-bootstrap": "^2.9.2",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3",
-    "sass": "^1.69.5",
+    "sass": "^1.69.7",
     "stock-cutting": "^1.2.0"
   },
   "devDependencies": {
