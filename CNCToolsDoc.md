@@ -1,8 +1,8 @@
-# Maker Store Tools Doc
+# CNC Tools Doc
 
 ## Contents
 
-- [Maker Store Tools Doc](#maker-store-tools-doc)
+- [CNC Tools Doc](#cnc-tools-doc)
   - [Contents](#contents)
   - [1. Project Overview](#1-project-overview)
     - [1.1 Overview](#11-overview)
@@ -46,7 +46,7 @@
 
 ### 1.1 Overview
 
-I designed the Maker Store Tools app to enhance the efficiency of our team at the Maker Store. It's primarily aimed at simplifying daily operations for our sales and customer service staff. Initially focused on internal use, I'm considering including features for customers in the future.
+I designed the CNC Tools app help calculate CNC stuff. It's primarily aimed at simplifying daily operations for sales and technical assistance teams. The app includes various mini-apps that cater to specific functionalities, such as CNC calibration, box shipping calculations, and extrusion guides.
 
 ### 1.2 Development Approach
 
@@ -54,13 +54,11 @@ I chose Flask and Next.js for this project due to their unique benefits that ali
 
 #### 1.2.1 Flask
 
-I selected Flask for its simplicity and security, making it ideal for our app's backend. As a lightweight Python framework, it aligns well with my need to utilize Python's AI-focused packages and simplifies connecting to databases and APIs.
+I selected Flask for the AI chatbot backend due to its simplicity and flexibility in handling API requests. Flask is a lightweight framework that allows for quick setup and easy integration with other technologies.
 
 #### 1.2.2 Next.js
 
-I chose Next.js partially because of being react based so it provides improved developer experience and single page app benefits, but also because it is a static site generator so static code is output which is great for SEO and load speeds.
-
-By integrating Flask's backend capabilities with Next.js' frontend efficiency, we can create an app that's robust, user-friendly, and optimized for performance and search engine visibility.
+I chose Next.js for the main app because of its versatility and performance benefits. Next.js is a popular choice for web applications not only because it is built on top of React, but also because it is a static site generator so static code is output which is great for SEO and load speeds.
 
 ---
 

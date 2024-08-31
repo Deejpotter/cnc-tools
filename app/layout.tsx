@@ -11,8 +11,8 @@ const nunito = Nunito({ subsets: ["latin"] });
 
 // The metadata object is built-in to Next.js and is used to provide metadata to the page.
 export const metadata: Metadata = {
-	title: "Maker Store Calculations",
-	description: "Calculation tool for Maker Store stuff.",
+	title: "CNC Calculations",
+	description: "Calculation tool for CNC stuff.",
 };
 
 // The RootLayout component is the root component that is used to wrap the pages.
