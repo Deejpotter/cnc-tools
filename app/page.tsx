@@ -3,6 +3,7 @@ import LayoutContainer from "../components/LayoutContainer";
 import TileSection from "../components/TileSection";
 import { TileProps } from "../components/Tile";
 
+
 export default function Home() {
   // Defining tile data using the TileProps interface for TypeScript type checking
   const tilesData: TileProps[] = [
@@ -63,7 +64,7 @@ export default function Home() {
     <>
       {/* Hero Section: Full-width section to welcome users */}
       <section className="hero-section text-center bg-dark text-white py-5 ">
-        <h1>Welcome to Maker Store</h1>
+        <h1>Welcome to CNC</h1>
         <p>
           Explore our tools and calculators designed to assist you with your
           maker projects.

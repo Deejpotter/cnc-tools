@@ -23,7 +23,7 @@ const Navbar = () => {
 			<div className="container-fluid">
 				{/* Next.js Link for client-side routing. The navbar brand is wrapped inside the Link. */}
 				<Link href="/">
-					<span className="navbar-brand">Maker Store Calculations</span>
+					<span className="navbar-brand">CNC Calculations</span>
 				</Link>
 
 				{/* Button to toggle the navbar on mobile devices. */}
