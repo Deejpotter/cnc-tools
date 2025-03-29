@@ -5,6 +5,7 @@ import ItemAddForm from "@/components/ItemAddForm";
 import ItemSelectAndCalculate from "@/components/ItemSelectAndCalculate";
 import LayoutContainer from "@/components/LayoutContainer";
 import { findBestBox } from "@/utils/BoxCalculations";
+import InvoiceUploader from "@/components/InvoiceUploader";
 
 /**
  * Box Shipping Calculator Page Component
@@ -15,8 +16,9 @@ import { findBestBox } from "@/utils/BoxCalculations";
  */
 const BoxShippingCalculatorPage: React.FC = () => {
 	// State for storing all available items and calculation results
-	const [items, setItems] = useState<ShippingItem[]>([]);
-	const [packingResult, setPackingResult] = useState<any>(null);
+	const [items, setItems] = useState<ShippingItem[]>([]); // State for available items
+	const [packingResult, setPackingResult] = useState<any>(null); // State for packing results
+	const [importError, setImportError] = useState<string | null>(null); // State for import error messages
 
 	/**
 	 * Handler for adding new items to the available items list
@@ -27,6 +29,15 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			...prevItems,
 			{ ...item, id: crypto.randomUUID() },
 		]);
+	};
+
+	/**
+	 * Handler for importing items from a Maker Store invoice
+	 * Uses the InvoiceUploader component to extract item information
+	 */
+	const handleInvoiceItems = (newItems: ShippingItem[]) => {
+		setItems((prev) => [...prev, ...newItems]);
+		setImportError(null);
 	};
 
 	/**
@@ -42,6 +53,15 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		<LayoutContainer>
 			<div className="container mx-auto p-4">
 				<h1 className="text-2xl font-bold mb-4">Box Shipping Calculator</h1>
+
+				<div className="mb-6">
+					<h2 className="text-xl mb-2">Import from Maker Store Invoice</h2>
+					<InvoiceUploader
+						onItemsFound={handleInvoiceItems}
+						onError={setImportError}
+					/>
+					{importError && <p className="mt-2 text-red-600">{importError}</p>}
+				</div>
 
 				{/* Item selection and calculation section */}
 				<ItemSelectAndCalculate

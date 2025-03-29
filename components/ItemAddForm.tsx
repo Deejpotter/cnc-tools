@@ -30,6 +30,7 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 			width: Number(width),
 			height: Number(height),
 			weight: Number(weight),
+			quantity: 1,
 		};
 
 		// Add item and reset form

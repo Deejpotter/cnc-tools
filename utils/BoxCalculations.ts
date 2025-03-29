@@ -16,7 +16,7 @@ export const standardBoxes: ShippingBox[] = [
 		length: 296,
 		width: 296,
 		height: 8,
-		maxWeight: 1000, // 1kg max weight
+		maxWeight: 1000, 
 	},
 	{
 		id: "medium",
