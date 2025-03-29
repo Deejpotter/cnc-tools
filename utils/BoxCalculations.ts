@@ -11,28 +11,60 @@ import type ShippingBox from "@/interfaces/ShippingBox";
  */
 export const standardBoxes: ShippingBox[] = [
 	{
+		id: "padded satchel",
+		name: "Padded Satchel",
+		length: 150,
+		width: 80,
+		height: 20,
+		maxWeight: 300, // 300g max weight
+	},
+	{
+		id: "small satchel",
+		name: "Small Satchel",
+		length: 240,
+		width: 150,
+		height: 100,
+		maxWeight: 5000, // 5kg max weight
+	},
+	{
 		id: "small",
 		name: "Small Box",
-		length: 296,
-		width: 296,
-		height: 8,
-		maxWeight: 1000, 
+		length: 210,
+		width: 170,
+		height: 120,
+		maxWeight: 25000, // 25kg max weight
 	},
 	{
 		id: "medium",
 		name: "Medium Box",
-		length: 396,
-		width: 396,
-		height: 16,
-		maxWeight: 2000, // 2kg max weight
+		length: 300,
+		width: 300,
+		height: 200,
+		maxWeight: 25000, // 25kg max weight
 	},
 	{
 		id: "large",
 		name: "Large Box",
-		length: 496,
-		width: 496,
-		height: 24,
-		maxWeight: 3000, // 3kg max weight
+		length: 510,
+		width: 120,
+		height: 120,
+		maxWeight: 25000, // 25kg max weight
+	},
+	{
+		id: "extra large",
+		name: "Extra Large Box",
+		length: 1170,
+		width: 120,
+		height: 120,
+		maxWeight: 25000, // 25kg max weight
+	},
+	{
+		id: "xxl",
+		name: "XXL Box",
+		length: 1570,
+		width: 120,
+		height: 120,
+		maxWeight: 25000, // 25kg max weight
 	},
 ];
 
@@ -63,6 +95,10 @@ export function findBestBox(items: ShippingItem[]) {
 		);
 		packer.addBin(bin);
 
+		// Log the item details for debugging.
+		console.log("Packing items into box:", box.name);
+		console.log("Items to pack:", items);
+
 		// Add each item to the packer
 		items.forEach((item) => {
 			packer.addItem(
@@ -72,6 +108,10 @@ export function findBestBox(items: ShippingItem[]) {
 
 		// Attempt to pack all items
 		packer.pack();
+
+		// Log the packing results for debugging.
+		console.log("Packing result:", packer.bins);
+		console.log("Unfit items:", packer.unfitItems);
 
 		// If all items fit (no unfitItems), we've found our box
 		if (packer.unfitItems.length === 0) {

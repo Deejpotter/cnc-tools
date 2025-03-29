@@ -1,14 +1,22 @@
 "use client";
 import React, { useState, useMemo } from "react";
 import ShippingItem from "@/interfaces/ShippingItem";
-import { Search, Plus, Minus, X, Filter, SortDesc } from "lucide-react";
+import { Search, Plus, Minus, X, Edit, Trash2 } from "lucide-react";
+import ItemEditModal from "./ItemEditModal";
+import {
+	updateItemInDatabase,
+	deleteItemFromDatabase,
+} from "@/app/actions/databaseActions";
 
 interface ItemSelectAndCalculateProps {
-	items: ShippingItem[];
-	onCalculateBox: (selectedItems: ShippingItem[]) => void;
+	availableItems: ShippingItem[];
+	selectedItems: ShippingItem[];
+	onSelectedItemsChange: (items: ShippingItem[]) => void;
+	onCalculateBox: (items: ShippingItem[]) => void;
+	onItemsChange: () => void;
 }
 
-type SortOption = "name" | "weight" | "dimensions";
+type SortOption = "name" | "weight" | "dimensions" | "sku";
 type FilterOption = "all" | "light" | "heavy";
 
 /**
@@ -16,19 +24,24 @@ type FilterOption = "all" | "light" | "heavy";
  * Handles item selection, removal, search, sorting, and filtering functionality
  */
 export default function ItemSelectAndCalculate({
-	items,
+	availableItems,
+	selectedItems,
+	onSelectedItemsChange,
 	onCalculateBox,
+	onItemsChange,
 }: ItemSelectAndCalculateProps) {
 	// State management
 	const [searchTerm, setSearchTerm] = useState("");
-	const [selectedItems, setSelectedItems] = useState<
-		(ShippingItem & { quantity: number })[]
-	>([]);
 	const [sortBy, setSortBy] = useState<SortOption>("name");
 	const [filterBy, setFilterBy] = useState<FilterOption>("all");
 
+	// New state for edit modal
+	const [editItem, setEditItem] = useState<ShippingItem | null>(null);
+	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+	const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
 	/**
-	 * Calculate total weight of selected items
+	 * Calculate total weight of selected items including quantities
 	 */
 	const totalWeight = useMemo(() => {
 		return selectedItems.reduce(
@@ -38,10 +51,10 @@ export default function ItemSelectAndCalculate({
 	}, [selectedItems]);
 
 	/**
-	 * Filter and sort items based on current criteria
+	 * Filter and sort available items based on current criteria
 	 */
 	const processedItems = useMemo(() => {
-		let filtered = items.filter((item) => {
+		let filtered = availableItems.filter((item) => {
 			const matchesSearch =
 				item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				item.sku?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -62,74 +75,136 @@ export default function ItemSelectAndCalculate({
 					return a.weight - b.weight;
 				case "dimensions":
 					return a.length * a.width * a.height - b.length * b.width * b.height;
+				case "sku":
+					return (a.sku || "").localeCompare(b.sku || "");
 				default:
 					return a.name.localeCompare(b.name);
 			}
 		});
-	}, [items, searchTerm, sortBy, filterBy]);
+	}, [availableItems, searchTerm, sortBy, filterBy]);
 
 	/**
-	 * Add an item to the selected items list
+	 * Add an item to the selected items list or increment its quantity
 	 */
 	const handleSelectItem = (item: ShippingItem) => {
-		setSelectedItems((prev) => {
-			const existing = prev.find((i) => i.id === item.id);
-			if (existing) {
-				return prev.map((i) =>
+		const existingItem = selectedItems.find((i) => i.id === item.id);
+		if (existingItem) {
+			onSelectedItemsChange(
+				selectedItems.map((i) =>
 					i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-				);
-			}
-			return [...prev, { ...item, quantity: 1 }];
-		});
+				)
+			);
+		} else {
+			onSelectedItemsChange([...selectedItems, { ...item, quantity: 1 }]);
+		}
 	};
 
 	/**
-	 * Update item quantity
+	 * Update quantity of a selected item
 	 */
 	const updateQuantity = (itemId: string, delta: number) => {
-		setSelectedItems((prev) =>
-			prev.map((item) => {
-				if (item.id === itemId) {
-					const newQuantity = Math.max(1, item.quantity + delta);
-					return { ...item, quantity: newQuantity };
-				}
-				return item;
-			})
-		);
+		const updatedItems = selectedItems.map((item) => {
+			if (item.id === itemId) {
+				const newQuantity = Math.max(1, item.quantity + delta);
+				return { ...item, quantity: newQuantity };
+			}
+			return item;
+		});
+		onSelectedItemsChange(updatedItems);
 	};
 
 	/**
 	 * Remove an item from the selected items list
 	 */
 	const handleRemoveItem = (itemId: string) => {
-		setSelectedItems((prev) => prev.filter((item) => item.id !== itemId));
+		onSelectedItemsChange(selectedItems.filter((item) => item.id !== itemId));
+	};
+
+	/**
+	 * Handle item edit request
+	 * Opens the edit modal with the selected item
+	 */
+	const handleEditItem = (item: ShippingItem) => {
+		setEditItem(item);
+		setIsEditModalOpen(true);
+	};
+
+	/**
+	 * Handle item update submission
+	 * Updates the item in the database and refreshes the list
+	 */
+	const handleUpdateItem = async (updatedItem: ShippingItem) => {
+		try {
+			await updateItemInDatabase(updatedItem);
+			onItemsChange(); // Refresh the items list
+
+			// Update the item in selectedItems if it exists there
+			if (selectedItems.some((item) => item.id === updatedItem.id)) {
+				onSelectedItemsChange(
+					selectedItems.map((item) =>
+						item.id === updatedItem.id
+							? { ...updatedItem, quantity: item.quantity }
+							: item
+					)
+				);
+			}
+		} catch (error) {
+			console.error("Failed to update item:", error);
+			throw error;
+		}
+	};
+
+	/**
+	 * Handle item deletion
+	 * Shows confirmation dialog and performs soft delete
+	 */
+	const handleDeleteItem = async (itemId: string) => {
+		if (!window.confirm("Are you sure you want to delete this item?")) {
+			return;
+		}
+
+		try {
+			setIsDeleting(itemId);
+			await deleteItemFromDatabase(itemId);
+			onItemsChange(); // Refresh the items list
+
+			// Remove the item from selectedItems if it exists there
+			if (selectedItems.some((item) => item.id === itemId)) {
+				onSelectedItemsChange(
+					selectedItems.filter((item) => item.id !== itemId)
+				);
+			}
+		} catch (error) {
+			console.error("Failed to delete item:", error);
+			alert("Failed to delete item. Please try again.");
+		} finally {
+			setIsDeleting(null);
+		}
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="">
 			{/* Search and filters section */}
-			<div className="flex flex-col md:flex-row gap-4">
-				<div className="flex-1 relative">
-					<Search
-						className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-						size={20}
-					/>
+			<div className="mb-1">
+				<div className="">
+					<Search className="" size={25} />
 					<input
 						type="text"
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 						placeholder="Search by name or SKU"
-						className="w-full pl-10 p-2 border rounded"
+						className="border rounded mb-1 w-75 p-2"
 					/>
 				</div>
 
-				<div className="flex gap-2">
+				<div className="">
 					<select
 						value={sortBy}
 						onChange={(e) => setSortBy(e.target.value as SortOption)}
 						className="p-2 border rounded"
 					>
 						<option value="name">Sort by Name</option>
+						<option value="sku">Sort by SKU</option>
 						<option value="weight">Sort by Weight</option>
 						<option value="dimensions">Sort by Size</option>
 					</select>
@@ -146,71 +221,118 @@ export default function ItemSelectAndCalculate({
 				</div>
 			</div>
 
-			{/* Available items list */}
+			{/* Available and selected items grid */}
 			<div className="grid md:grid-cols-2 gap-4">
+				{/* Available items list */}
 				<div className="border rounded-lg p-4">
 					<h3 className="font-bold mb-4">Available Items</h3>
 					<div className="max-h-96 overflow-y-auto">
-						{processedItems.map((item) => (
-							<div
-								key={item.id}
-								className="flex justify-between items-center p-2 hover:bg-gray-50 border-b"
-							>
-								<div className="flex-1">
-									<div className="font-medium">{item.name}</div>
-									<div className="text-sm text-gray-500">
-										{item.length}x{item.width}x{item.height}mm • {item.weight}g
+						{processedItems.length === 0 ? (
+							<p className="text-gray-500 text-center py-4">
+								No items match your search
+							</p>
+						) : (
+							processedItems.map((item) => (
+								<div
+									key={item.id}
+									className="flex justify-between items-center p-2 hover:bg-gray-50 border-b"
+								>
+									<div className="flex-1">
+										<div className="font-medium">{item.name}</div>
+										<div className="text-sm text-gray-500">
+											{item.sku && (
+												<span className="mr-2">SKU: {item.sku}</span>
+											)}
+											{item.length}x{item.width}x{item.height}mm • {item.weight}
+											g
+										</div>
+									</div>
+									<div className="flex items-center gap-2">
+										<button
+											onClick={() => handleEditItem(item)}
+											className="p-2 text-blue-500 hover:bg-blue-50 rounded"
+											title="Edit item"
+										>
+											<Edit size={16} />
+										</button>
+										<button
+											onClick={() => handleDeleteItem(item.id)}
+											className="p-2 text-red-500 hover:bg-red-50 rounded"
+											title="Delete item"
+											disabled={isDeleting === item.id}
+										>
+											<Trash2 size={16} />
+										</button>
+										<button
+											onClick={() => handleSelectItem(item)}
+											className="p-2 text-green-500 hover:bg-green-50 rounded"
+											title="Add item"
+										>
+											<Plus size={16} />
+										</button>
 									</div>
 								</div>
-								<button
-									onClick={() => handleSelectItem(item)}
-									className="ml-2 p-2 text-blue-500 hover:bg-blue-50 rounded"
-								>
-									<Plus size={20} />
-								</button>
-							</div>
-						))}
+							))
+						)}
 					</div>
 				</div>
 
 				{/* Selected items list */}
 				<div className="border rounded-lg p-4">
-					<h3 className="font-bold mb-4">Selected Items</h3>
+					<h3 className="mb-3">Selected Items</h3>
 					<div className="max-h-96 overflow-y-auto">
-						{selectedItems.map((item) => (
-							<div
-								key={item.id}
-								className="flex justify-between items-center p-2 hover:bg-gray-50 border-b"
-							>
-								<div className="flex-1">
-									<div className="font-medium">{item.name}</div>
-									<div className="text-sm text-gray-500">
-										{item.length}x{item.width}x{item.height}mm • {item.weight}g
+						{selectedItems.length === 0 ? (
+							<p className="text-center py-4">No items selected</p>
+						) : (
+							selectedItems.map((item) => (
+								<div
+									key={item.id}
+									className="flex justify-between items-center p-2 hover:bg-gray-50 border-b"
+								>
+									<div className="flex-1">
+										<div className="">{item.name}</div>
+										<div className="">
+											{item.sku && (
+												<span className="mr-2">SKU: {item.sku}</span>
+											)}
+										</div>
+										<div className="">
+											{item.length}x{item.width}x{item.height}mm
+										</div>
+										<div className="">
+											Weight: {item.weight}g • Quantity: {item.quantity}
+										</div>
+										<div className="">
+											Total: {item.weight * item.quantity}g
+										</div>
+									</div>
+									<div className="flex items-center gap-2">
+										<button
+											onClick={() => updateQuantity(item.id, -1)}
+											className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+											title="Decrease quantity"
+										>
+											<Minus size={16} />
+										</button>
+										<span className="w-8 text-center">{item.quantity}</span>
+										<button
+											onClick={() => updateQuantity(item.id, 1)}
+											className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+											title="Increase quantity"
+										>
+											<Plus size={16} />
+										</button>
+										<button
+											onClick={() => handleRemoveItem(item.id)}
+											className="p-1 text-red-500 hover:bg-red-50 rounded"
+											title="Remove item"
+										>
+											<X size={16} />
+										</button>
 									</div>
 								</div>
-								<div className="flex items-center gap-2">
-									<button
-										onClick={() => updateQuantity(item.id, -1)}
-										className="p-1 text-gray-500 hover:bg-gray-100 rounded"
-									>
-										<Minus size={16} />
-									</button>
-									<span className="w-8 text-center">{item.quantity}</span>
-									<button
-										onClick={() => updateQuantity(item.id, 1)}
-										className="p-1 text-gray-500 hover:bg-gray-100 rounded"
-									>
-										<Plus size={16} />
-									</button>
-									<button
-										onClick={() => handleRemoveItem(item.id)}
-										className="p-1 text-red-500 hover:bg-red-50 rounded"
-									>
-										<X size={16} />
-									</button>
-								</div>
-							</div>
-						))}
+							))
+						)}
 					</div>
 
 					{/* Total weight and calculate button */}
@@ -229,6 +351,17 @@ export default function ItemSelectAndCalculate({
 					</div>
 				</div>
 			</div>
+
+			{/* Edit Modal */}
+			<ItemEditModal
+				item={editItem}
+				isOpen={isEditModalOpen}
+				onClose={() => {
+					setIsEditModalOpen(false);
+					setEditItem(null);
+				}}
+				onSave={handleUpdateItem}
+			/>
 		</div>
 	);
 }

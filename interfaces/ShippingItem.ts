@@ -1,10 +1,16 @@
-export default interface ShippingItem {
+interface ShippingItem {
+	/**
+	 * MongoDB ObjectId as string
+	 * @example "507f1f77bcf86cd799439011"
+	 */
 	id: string;
 	name: string;
-	sku?: string; // Optional SKU for imported items
-	length: number; // in millimeters
-	width: number; // in millimeters
-	height: number; // in millimeters
-	weight: number; // in grams
-	quantity: number; // Default to 1 if not specified
+	sku: string;
+	length: number;
+	width: number;
+	height: number;
+	weight: number;
+	quantity: number;
 }
+
+export default ShippingItem;
