@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { processInvoice } from "@/app/actions/processInvoice";
-import type ShippingItem from "@/interfaces/ShippingItem";
+import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 
 interface InvoiceUploaderProps {
 	onItemsFound: (items: ShippingItem[]) => void;
