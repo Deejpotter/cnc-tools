@@ -1,8 +1,17 @@
+/**
+ * Box Calculations
+ * Updated: 30/03/25
+ * Author: Deej Potter
+ * Description: Helper functions for calculating the best box size for shipping items.
+ * Uses binpackingjs library for 3D bin packing algorithm.
+ * https://github.com/olragon/binpackingjs
+ */
+
 const BinPacking3D = require("binpackingjs").BP3D;
 const { Item, Bin, Packer } = BinPacking3D;
 
-import type ShippingItem from "@/interfaces/ShippingItem";
-import type ShippingBox from "@/interfaces/ShippingBox";
+import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import type ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
 
 /**
  * Standard box sizes available for shipping
@@ -11,15 +20,15 @@ import type ShippingBox from "@/interfaces/ShippingBox";
  */
 export const standardBoxes: ShippingBox[] = [
 	{
-		id: "padded satchel",
+		_id: "padded satchel",
 		name: "Padded Satchel",
-		length: 150,
+		length: 100,
 		width: 80,
 		height: 20,
 		maxWeight: 300, // 300g max weight
 	},
 	{
-		id: "small satchel",
+		_id: "small satchel",
 		name: "Small Satchel",
 		length: 240,
 		width: 150,
@@ -27,7 +36,7 @@ export const standardBoxes: ShippingBox[] = [
 		maxWeight: 5000, // 5kg max weight
 	},
 	{
-		id: "small",
+		_id: "small",
 		name: "Small Box",
 		length: 210,
 		width: 170,
@@ -35,7 +44,7 @@ export const standardBoxes: ShippingBox[] = [
 		maxWeight: 25000, // 25kg max weight
 	},
 	{
-		id: "medium",
+		_id: "medium",
 		name: "Medium Box",
 		length: 300,
 		width: 300,
@@ -43,7 +52,7 @@ export const standardBoxes: ShippingBox[] = [
 		maxWeight: 25000, // 25kg max weight
 	},
 	{
-		id: "large",
+		_id: "large",
 		name: "Large Box",
 		length: 510,
 		width: 120,
@@ -51,7 +60,7 @@ export const standardBoxes: ShippingBox[] = [
 		maxWeight: 25000, // 25kg max weight
 	},
 	{
-		id: "extra large",
+		_id: "extra large",
 		name: "Extra Large Box",
 		length: 1170,
 		width: 120,
@@ -59,7 +68,7 @@ export const standardBoxes: ShippingBox[] = [
 		maxWeight: 25000, // 25kg max weight
 	},
 	{
-		id: "xxl",
+		_id: "xxl",
 		name: "XXL Box",
 		length: 1570,
 		width: 120,
@@ -102,7 +111,11 @@ export function findBestBox(items: ShippingItem[]) {
 		// Add each item to the packer
 		items.forEach((item) => {
 			packer.addItem(
-				new Item(item.id, item.length, item.width, item.height, item.weight)
+				new Item(item._id, item.length, item.width, item.height, item.weight, {
+					quantity: item.quantity,
+					name: item.name,
+					sku: item.sku,
+				})
 			);
 		});
 

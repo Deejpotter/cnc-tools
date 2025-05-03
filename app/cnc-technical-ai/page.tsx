@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import ChatInterface from "@/components/ChatInterface";
+import ChatInterface from "./ChatInterface";
 
 const CncTechnicalAI = () => {
 	const [showConversations, setShowConversations] = useState(false);
