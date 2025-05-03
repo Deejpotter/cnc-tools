@@ -167,7 +167,7 @@ Each mini-app within the project targets a specific functionality:
 
 ### 5.1. Hosting
 
-- Hosted on Heroku and Netlify.
+- Hosted on Netlify.
 
 ### 5.2. Security, Performance, and Scalability
 
