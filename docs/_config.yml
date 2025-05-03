@@ -1,6 +1,6 @@
 title: CNC Tools Documentation
 description: Documentation for the CNC Tools Next.js application
-theme: just-the-docs
+remote_theme: just-the-docs/just-the-docs
 
 url: https://deejpotter.github.io/cnc-tools
 
