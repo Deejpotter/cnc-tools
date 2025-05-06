@@ -4,6 +4,7 @@ import "./globals.scss";
 
 import { ItemProvider } from "../contexts/ItemContext";
 import Navbar from "../components/navbar/Navbar";
+import Footer from "../components/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 // Uses next/font to load the Nunito Sans font from Google Fonts.
@@ -33,7 +34,9 @@ export default function RootLayout({
 					<body className={nunito.className}>
 						{/* Render the Navbar component then render the children components. */}
 						<Navbar />
-						{children}
+						<main>{children}</main>
+						{/* Add Footer component at the bottom of the page */}
+						<Footer />
 					</body>
 				</ItemProvider>
 			</AuthProvider>

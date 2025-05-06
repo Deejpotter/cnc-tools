@@ -1,4 +1,31 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# CNC Tools
+
+A comprehensive collection of mini-applications designed to assist with CNC machining, 3D printing, and related tasks. This Next.js-powered application serves as a central hub for various specialized tools used in professional and hobby settings.
+
+## Features
+
+This application contains several mini-apps:
+
+- **CNC Calibration Tool** - Calibrate your 3D printer or CNC machine with tools for:
+  - Steps per millimeter calculation
+  - Flow compensation
+  - Startup G-code generator
+
+- **Box Shipping Calculator** - Optimize box shipping configurations and costs
+
+- **CNC Technical AI** - AI chatbot for assisting with CNC-related technical queries
+
+- **Extrusion Resources**
+  - 20-Series Extrusions guide and calculator
+  - 40-Series Extrusions guide and calculator
+
+- **Enclosure Calculator** - Calculate dimensions and specifications for enclosures made from 20-Series and 40-Series extrusions. 
+Features:
+  - **Box Dimensions** - Calculate box dimensions based on volume and weight
+  - **Material Selection** - Choose materials for the enclosure
+  - **Assembly Instructions** - Generate assembly instructions for the enclosure
+
+- **Price Difference Tool** - Compare prices and calculate differences
 
 ## Getting Started
 
@@ -16,21 +43,36 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Technology Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+This project is built with:
+- [Next.js](https://nextjs.org/) - React framework with server actions for backend functionality
+- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
+- Custom Bootstrap implementation for responsive design
+- MongoDB - Database for storing application data
+
+## Deployment
+
+The application is deployed on Netlify for production use.
+
+## Project Structure
+
+The project follows a Next.js App Router structure:
+- `app/` - Main application pages and mini-apps
+- `app/actions/` - Server actions for backend functionality
+- `components/` - Reusable UI components
+- `interfaces/` - TypeScript interfaces
+- `contexts/` - React context providers
+- `utils/` - Utility functions
+- `styles/` - CSS and SCSS files
+- `public/` - Static assets
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about Next.js, check out the following resources:
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Learn Next.js](https://nextjs.org/learn)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+See the [LICENSE](LICENSE) file for details.
