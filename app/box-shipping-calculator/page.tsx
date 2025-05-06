@@ -4,13 +4,14 @@
  * Author: Deej Potter
  * Description: This component provides a user interface for calculating the best box size for shipping items.
  * It includes features for importing items from a Maker Store invoice, selecting items, and manually adding new items.
- * The component uses server actions to interact with a MongoDB database for item management.
+ * Uses localStorage for data persistence instead of MongoDB to work without database connection.
  */
 
 "use client";
 
 import React, { useState, useEffect } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
 import { DatabaseResponse } from "@/app/actions/mongodb/types";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
@@ -22,7 +23,18 @@ import {
 	addItemToDatabase,
 	updateItemInDatabase,
 	deleteItemFromDatabase,
-} from "@/app/actions/mongodb/actions";
+	initializeWithSampleItems,
+} from "./localStorageDB";
+
+/**
+ * Interface for the box packing calculation result
+ */
+interface PackingResult {
+	success: boolean;
+	box: ShippingBox | null;
+	packedItems: ShippingItem[];
+	unfitItems: ShippingItem[];
+}
 
 /**
  * Box Shipping Calculator Page Component
@@ -37,21 +49,26 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	// ---------------
 	const [items, setItems] = useState<ShippingItem[]>([]);
 	const [selectedItems, setSelectedItems] = useState<ShippingItem[]>([]);
-	const [packingResult, setPackingResult] = useState<any>(null);
+	const [packingResult, setPackingResult] = useState<PackingResult | null>(
+		null
+	);
 	const [importError, setImportError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isCalculating, setIsCalculating] = useState(false);
+	const [calculationError, setCalculationError] = useState<string | null>(null);
 
 	/**
-	 * Effect hook to load initial items from the database when the component mounts
-	 * Uses the getAvailableItems server action to fetch data
+	 * Effect hook to load initial items from localStorage when the component mounts
+	 * Also initializes with sample items if storage is empty
 	 */
 	useEffect(() => {
+		// Initialize sample data
+		initializeWithSampleItems();
 		loadItems();
 	}, []);
 
 	/**
-	 * Handles loading/reloading items from the database
-	 * Used when items are updated, deleted, or added
+	 * Handles loading/reloading items from localStorage
 	 * Shows loading state during fetch and handles errors
 	 */
 	const loadItems = async () => {
@@ -73,8 +90,8 @@ const BoxShippingCalculatorPage: React.FC = () => {
 
 	/**
 	 * Handler for adding new items to the available items list
-	 * Uses the addItemToDatabase server action
-	 * @param item New item to be added to the database
+	 * Uses localStorage implementation
+	 * @param item New item to be added
 	 */
 	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
 		try {
@@ -97,6 +114,16 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * @param newItems Array of items extracted from invoice
 	 */
 	const handleInvoiceItems = (newItems: ShippingItem[]) => {
+		// Add each new item to localStorage
+		newItems.forEach(async (item) => {
+			try {
+				await addItemToDatabase(item);
+			} catch (error) {
+				console.error("Error adding imported item:", error);
+			}
+		});
+
+		// Update the UI with the new items
 		setItems((prev) => [...prev, ...newItems]);
 		setImportError(null);
 	};
@@ -104,11 +131,60 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	/**
 	 * Handler for calculating the optimal box size
 	 * Takes the currently selected items and finds the best box fit
+	 * Sets loading state during calculation and handles errors
+	 *
 	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
 	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
-		const result = findBestBox(itemsToCalculate);
-		setPackingResult(result);
+		try {
+			// Reset previous results and errors
+			setCalculationError(null);
+			setIsCalculating(true);
+
+			// Validate items before calculation
+			if (!itemsToCalculate.length) {
+				setCalculationError("No items selected for calculation");
+				return;
+			}
+
+			// Check for invalid item dimensions
+			const invalidItems = itemsToCalculate.filter(
+				(item) => !item.length || !item.width || !item.height || !item.weight
+			);
+
+			if (invalidItems.length > 0) {
+				setCalculationError("Some items have invalid dimensions or weight");
+				console.error("Invalid items:", invalidItems);
+				return;
+			}
+
+			// Perform the calculation
+			const result = findBestBox(itemsToCalculate);
+			setPackingResult(result);
+
+			// Log the result for debugging
+			console.log("Box calculation result:", result);
+		} catch (error) {
+			console.error("Error calculating box:", error);
+			setCalculationError(
+				error instanceof Error
+					? `Calculation error: ${error.message}`
+					: "An unknown error occurred during calculation"
+			);
+			// Reset packing result when there's an error
+			setPackingResult(null);
+		} finally {
+			setIsCalculating(false);
+		}
+	};
+
+	/**
+	 * Reset the calculation results and errors
+	 * Used when the user wants to start a new calculation
+	 */
+	const resetCalculation = () => {
+		setPackingResult(null);
+		setCalculationError(null);
 	};
 
 	// Render loading state while fetching initial data
