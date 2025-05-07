@@ -4,10 +4,10 @@
  * Author: Deej Potter
  * Description: Provides a user interface for selecting items, calculating box sizes, and managing item data.
  * Used on the Box Shipping Calculator page.
- * This component allows users to search, filter, and sort items, as well as add, edit, and delete items.
+ * This component allows users to search, filter, and sort items, as well as add, edit, and delete items from the database.
  *
  * Note: This component handles client-side operations for item management.
- * Item data is stored in localStorage instead of MongoDB.
+ * Database operations are handled through server actions to maintain proper separation of concerns.
  */
 
 "use client";
@@ -16,7 +16,12 @@ import React, { useState, useMemo } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2 } from "lucide-react";
 import ItemEditModal from "./ItemEditModal";
-import { updateItemInDatabase, deleteItemFromDatabase } from "./localStorageDB";
+import {
+	getAvailableItems,
+	addItemToDatabase,
+	updateItemInDatabase,
+	deleteItemFromDatabase,
+} from "@/app/actions/mongodb/actions";
 
 /**
  * Props interface for ItemSelectAndCalculate component
