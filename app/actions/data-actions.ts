@@ -17,9 +17,9 @@ import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
  * @returns DatabaseResponse containing ShippingItem array
  */
 export async function getAvailableItems(): Promise<
-  DatabaseResponse<ShippingItem[]>
+	DatabaseResponse<ShippingItem[]>
 > {
-  return DataService.shippingItems.getAvailable();
+	return DataService.shippingItems.getAvailable();
 }
 
 /**
@@ -28,9 +28,9 @@ export async function getAvailableItems(): Promise<
  * @returns DatabaseResponse containing created item
  */
 export async function addItemToDatabase(
-  item: Omit<ShippingItem, "_id">
+	item: Omit<ShippingItem, "_id">
 ): Promise<DatabaseResponse<ShippingItem>> {
-  return DataService.shippingItems.add(item);
+	return DataService.shippingItems.add(item);
 }
 
 /**
@@ -39,9 +39,9 @@ export async function addItemToDatabase(
  * @returns DatabaseResponse containing updated item
  */
 export async function updateItemInDatabase(
-  item: ShippingItem
+	item: ShippingItem
 ): Promise<DatabaseResponse<ShippingItem>> {
-  return DataService.shippingItems.update(item);
+	return DataService.shippingItems.update(item);
 }
 
 /**
@@ -50,27 +50,36 @@ export async function updateItemInDatabase(
  * @returns DatabaseResponse containing deleted item
  */
 export async function deleteItemFromDatabase(
-  id: string
+	id: string
 ): Promise<DatabaseResponse<ShippingItem>> {
-  return DataService.shippingItems.delete(id);
-}
-
-/**
- * Initialize the database with sample items if needed
- * @param sampleItems Array of sample items to initialize with
- */
-export async function initializeWithSampleItems(
-  sampleItems: ShippingItem[]
-): Promise<void> {
-  return DataService.shippingItems.initializeWithSamples(sampleItems);
+	return DataService.shippingItems.delete(id);
 }
 
 /**
  * Force sync with remote database
  * Useful for ensuring all local changes are synced to the server
  */
-export async function syncWithRemoteDatabase(): Promise<void> {
-  return DataService.sync();
+export async function syncWithRemoteDatabase(): Promise<
+	DatabaseResponse<void>
+> {
+	try {
+		await DataService.sync();
+		console.log("Sync with remote database successful.");
+		return {
+			success: true,
+			status: 200,
+			message: "Sync successful",
+		};
+	} catch (error) {
+		console.error("Sync with remote database failed:", error);
+		return {
+			success: false,
+			status: 500,
+			error: "Sync failed",
+			message:
+				error instanceof Error ? error.message : "Unknown error occurred",
+		};
+	}
 }
 
 /**
@@ -80,10 +89,10 @@ export async function syncWithRemoteDatabase(): Promise<void> {
  * @returns DatabaseResponse containing user data
  */
 export async function getUserData<T>(
-  collection: string,
-  userId: string
+	collection: string,
+	userId: string
 ): Promise<DatabaseResponse<T[]>> {
-  return DataService.userData.getAll<T>(collection, userId);
+	return DataService.userData.getAll<T>(collection, userId);
 }
 
 /**
@@ -94,11 +103,11 @@ export async function getUserData<T>(
  * @returns DatabaseResponse containing created document
  */
 export async function addUserData<T>(
-  collection: string,
-  userId: string,
-  data: Omit<T, "_id">
+	collection: string,
+	userId: string,
+	data: Omit<T, "_id">
 ): Promise<DatabaseResponse<T>> {
-  return DataService.userData.add<T>(collection, userId, data);
+	return DataService.userData.add<T>(collection, userId, data);
 }
 
 /**
@@ -110,12 +119,12 @@ export async function addUserData<T>(
  * @returns DatabaseResponse containing updated document
  */
 export async function updateUserData<T>(
-  collection: string,
-  userId: string,
-  id: string,
-  update: Partial<T>
+	collection: string,
+	userId: string,
+	id: string,
+	update: Partial<T>
 ): Promise<DatabaseResponse<T>> {
-  return DataService.userData.update<T>(collection, userId, id, update);
+	return DataService.userData.update<T>(collection, userId, id, update);
 }
 
 /**
@@ -126,9 +135,9 @@ export async function updateUserData<T>(
  * @returns DatabaseResponse containing deleted document
  */
 export async function deleteUserData<T>(
-  collection: string,
-  userId: string,
-  id: string
+	collection: string,
+	userId: string,
+	id: string
 ): Promise<DatabaseResponse<T>> {
-  return DataService.userData.delete<T>(collection, userId, id);
+	return DataService.userData.delete<T>(collection, userId, id);
 }

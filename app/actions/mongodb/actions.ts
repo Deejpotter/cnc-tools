@@ -22,12 +22,28 @@ import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 function serializeDocument<T extends MongoDocument>(doc: T): T {
 	if (!doc) return doc;
 
+	// Ensure _id is converted to string only if it's an ObjectId
+	const idString = typeof doc._id === "string" ? doc._id : doc._id?.toString();
+
+	// Ensure date fields are converted to ISOString only if they are Date objects
+	const createdAtString =
+		doc.createdAt instanceof Date ? doc.createdAt.toISOString() : doc.createdAt;
+	const updatedAtString =
+		doc.updatedAt instanceof Date ? doc.updatedAt.toISOString() : doc.updatedAt;
+	const deletedAtString =
+		doc.deletedAt instanceof Date
+			? doc.deletedAt.toISOString()
+			: doc.deletedAt === undefined
+			? undefined
+			: null;
+
 	return {
 		...doc,
-		_id: doc._id.toString(),
-		createdAt: doc.createdAt?.toISOString(),
-		updatedAt: doc.updatedAt?.toISOString(),
-		deletedAt: doc.deletedAt?.toISOString() || null,
+		_id: idString,
+		createdAt: createdAtString,
+		updatedAt: updatedAtString,
+		deletedAt:
+			deletedAtString === undefined ? undefined : deletedAtString || null, // Handle undefined and null explicitly
 	} as T;
 }
 

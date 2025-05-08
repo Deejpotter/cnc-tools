@@ -7,6 +7,7 @@ import {
 	addItemToDatabase,
 	updateItemInDatabase,
 	deleteItemFromDatabase,
+	syncWithRemoteDatabase,
 } from "./data-actions";
 import DataService from "@/utils/data/DataService";
 
@@ -17,7 +18,6 @@ jest.mock("@/utils/data/DataService", () => ({
 		add: jest.fn(),
 		update: jest.fn(),
 		delete: jest.fn(),
-		initializeWithSamples: jest.fn(),
 	},
 	sync: jest.fn(),
 	userData: {
@@ -167,6 +167,54 @@ describe("Data Actions", () => {
 			expect(DataService.shippingItems.delete).toHaveBeenCalledWith(itemId);
 			expect(result).toEqual(mockResponse);
 			expect(result.data.deletedAt).toBeTruthy();
+		});
+	});
+
+	describe("syncWithRemoteDatabase", () => {
+		it("should log success when sync is successful", async () => {
+			// Arrange
+			const consoleLogSpy = jest
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+			(DataService.sync as jest.Mock).mockResolvedValueOnce(undefined);
+
+			// Act
+			const result = await syncWithRemoteDatabase();
+
+			// Assert
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				"Sync with remote database successful."
+			);
+			expect(result.success).toBe(true);
+			expect(result.message).toBe("Sync successful");
+
+			// Cleanup
+			consoleLogSpy.mockRestore();
+		});
+
+		it("should log error and return failure when sync fails", async () => {
+			// Arrange
+			const consoleErrorSpy = jest
+				.spyOn(console, "error")
+				.mockImplementation(() => {});
+			const errorMessage = "Network error";
+			(DataService.sync as jest.Mock).mockRejectedValueOnce(
+				new Error(errorMessage)
+			);
+
+			// Act
+			const result = await syncWithRemoteDatabase();
+
+			// Assert
+			expect(consoleErrorSpy).toHaveBeenCalledWith(
+				"Sync with remote database failed:",
+				expect.any(Error)
+			);
+			expect(result.success).toBe(false);
+			expect(result.message).toBe(errorMessage);
+
+			// Cleanup
+			consoleErrorSpy.mockRestore();
 		});
 	});
 });
