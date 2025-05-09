@@ -129,7 +129,19 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 		packer.addBin(currentBin);
 
 		// Log the item details for debugging.
-		console.log(`[BoxCalc] Attempting to pack into: ${currentBox.name} (Packer Bin dims: W ${currentBin.width}, H ${currentBin.height}, D ${currentBin.length}, MaxW ${currentBin.maxWeight})`);
+		console.log(
+			`[BoxCalc] Attempting to pack into: ${currentBox.name} (Packer Bin dims: W ${currentBin.width}, H ${currentBin.height}, D ${currentBin.length}, MaxW ${currentBin.maxWeight})`
+		);
+		console.log(
+			`[BoxCalc] currentBin raw object after new Bin():`,
+			JSON.stringify(currentBin)
+		);
+		console.log(
+			`[BoxCalc] Checking currentBin.depth directly: ${currentBin.depth}`
+		);
+		console.log(
+			`[BoxCalc] Checking currentBin.length directly: ${currentBin.length}`
+		);
 		// console.log("[BoxCalc] Items to pack (original structure):", JSON.parse(JSON.stringify(itemsToPack)));
 
 		// Add each item to the packer. Each item is duplicated by its quantity.
@@ -145,9 +157,9 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 				// - weight: item.weight
 				const packerItem = new Item(
 					`${item._id}_${i}`, // Unique ID for each instance of an item
-					item.width,       // Corresponds to binpackingjs Item's 'width'
-					item.height,      // Corresponds to binpackingjs Item's 'height'
-					item.length,      // Corresponds to binpackingjs Item's 'depth'
+					item.width, // Corresponds to binpackingjs Item's 'width'
+					item.height, // Corresponds to binpackingjs Item's 'height'
+					item.length, // Corresponds to binpackingjs Item's 'depth'
 					item.weight,
 					{
 						// Store original item details in metadata for reconstruction
@@ -161,7 +173,9 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 					}
 				);
 				packer.addItem(packerItem);
-				console.log(`[BoxCalc] Added to packer: ${packerItem.name} (Packer Item dims: W ${packerItem.width}, H ${packerItem.height}, D ${packerItem.depth}, Wt ${packerItem.weight})`);
+				console.log(
+					`[BoxCalc] Added to packer: ${packerItem.name} (Packer Item dims: W ${packerItem.width}, H ${packerItem.height}, D ${packerItem.depth}, Wt ${packerItem.weight})`
+				);
 			}
 		});
 
@@ -171,9 +185,33 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 		// Log the packing results for debugging.
 		console.log(`[BoxCalc] Packing result for box: ${currentBox.name}`);
 		if (packer.unfitItems.length > 0) {
-			console.warn(`[BoxCalc] Unfit items for ${currentBox.name}:`, JSON.parse(JSON.stringify(packer.unfitItems.map(item => ({name: item.name, w:item.width, h:item.height, d:item.depth})))));
+			console.warn(
+				`[BoxCalc] Unfit items for ${currentBox.name}:`,
+				JSON.parse(
+					JSON.stringify(
+						packer.unfitItems.map((item) => ({
+							name: item.name,
+							w: item.width,
+							h: item.height,
+							d: item.depth,
+						}))
+					)
+				)
+			);
 		} else {
-			console.log(`[BoxCalc] All items fit in ${currentBox.name}. Packed bin items:`, JSON.parse(JSON.stringify(currentBin.items.map(item => ({name: item.name, w:item.width, h:item.height, d:item.depth})))));
+			console.log(
+				`[BoxCalc] All items fit in ${currentBox.name}. Packed bin items:`,
+				JSON.parse(
+					JSON.stringify(
+						currentBin.items.map((item) => ({
+							name: item.name,
+							w: item.width,
+							h: item.height,
+							d: item.depth,
+						}))
+					)
+				)
+			);
 		}
 
 		// If all items fit (no unfitItems), this box is a potential candidate.
