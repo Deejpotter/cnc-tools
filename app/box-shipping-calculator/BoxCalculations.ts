@@ -384,24 +384,25 @@ export function packItemsIntoMultipleBoxes(
 		};
 	}
 
-	// First try to fit all items into a single box (most efficient if possible)
-	const singleBoxResult = findBestBox([...itemsToPack]);
-	if (singleBoxResult.success) {
-		return {
-			success: true,
-			shipments: [
-				{
-					box: singleBoxResult.box!,
-					packedItems: singleBoxResult.packedItems,
-				},
-			],
-			unfitItems: [],
-		};
+	// First, check if all items are identical (same dimensions)
+	// This is a common case for extrusions and we can optimize for it
+	const allItemsIdentical = itemsToPack.every((item) => {
+		return (
+			item.length === itemsToPack[0].length &&
+			item.width === itemsToPack[0].width &&
+			item.height === itemsToPack[0].height
+		);
+	});
+
+	// If all items are identical, we can use a more efficient packing algorithm
+	if (allItemsIdentical) {
+		console.log("[BoxCalc-Advanced] All items are identical - using optimized packing");
+		return packIdenticalItems(itemsToPack);
 	}
 
-	// If single box packing fails, use our advanced multi-box approach
+	// If single box packing fails, use our advanced multi-box approach for mixed items
 	console.log(
-		"[BoxCalc-Advanced] Starting advanced multi-box packing algorithm"
+		"[BoxCalc-Advanced] Items are mixed - using general packing algorithm"
 	);
 
 	// Create a deep copy of the items to avoid modifying the original list
@@ -453,9 +454,7 @@ export function packItemsIntoMultipleBoxes(
 			}
 
 			// Check if there's space in the cross-section for another item
-			if (
-				arrangement.currentCrossSectionItems < arrangement.maxCrossSectionItems
-			) {
+			if (arrangement.currentCrossSectionItems < arrangement.maxCrossSectionItems) {
 				// Item fits in this box - add it
 				arrangement.packedItems.push(currentItem);
 				arrangement.currentCrossSectionItems++;
@@ -465,7 +464,7 @@ export function packItemsIntoMultipleBoxes(
 					`[BoxCalc-Advanced] Added item ${
 						currentItem.name || currentItem._id
 					} to existing box ${arrangement.box.name}. ` +
-						`Used ${arrangement.currentCrossSectionItems}/${arrangement.maxCrossSectionItems} cross-section spots.`
+					`Used ${arrangement.currentCrossSectionItems}/${arrangement.maxCrossSectionItems} cross-section spots.`
 				);
 				break;
 			}
@@ -474,9 +473,9 @@ export function packItemsIntoMultipleBoxes(
 		// If the item couldn't fit in any existing box, create a new one
 		if (!itemPacked) {
 			// Find the best box for this item by checking which box can fit the most of this item type
-			let bestBoxArrangement: {
-				box: ShippingBox;
-				maxItems: number;
+			let bestBoxArrangement: { 
+				box: ShippingBox; 
+				maxItems: number; 
 				orientation: string;
 			} | null = null;
 
@@ -495,15 +494,27 @@ export function packItemsIntoMultipleBoxes(
 				}
 
 				// If this box fits more items or is the first valid box, select it
-				if (
-					!bestBoxArrangement ||
-					crossSectionResult.maxItems > bestBoxArrangement.maxItems
-				) {
+				if (!bestBoxArrangement || crossSectionResult.maxItems > bestBoxArrangement.maxItems) {
 					bestBoxArrangement = {
 						box,
 						maxItems: crossSectionResult.maxItems,
-						orientation: crossSectionResult.bestOrientation,
+						orientation: crossSectionResult.bestOrientation
 					};
+				} else if (crossSectionResult.maxItems === bestBoxArrangement.maxItems) {
+					// If both boxes can fit the same number of items, choose the one with smaller volume
+					const currentBoxVolume = box.length * box.width * box.height;
+					const bestBoxVolume = 
+						bestBoxArrangement.box.length * 
+						bestBoxArrangement.box.width * 
+						bestBoxArrangement.box.height;
+					
+					if (currentBoxVolume < bestBoxVolume) {
+						bestBoxArrangement = {
+							box,
+							maxItems: crossSectionResult.maxItems,
+							orientation: crossSectionResult.bestOrientation
+						};
+					}
 				}
 			}
 
@@ -514,41 +525,33 @@ export function packItemsIntoMultipleBoxes(
 					packedItems: [currentItem],
 					maxCrossSectionItems: bestBoxArrangement.maxItems,
 					currentCrossSectionItems: 1,
-					remainingWeight:
-						bestBoxArrangement.box.maxWeight - currentItem.weight,
+					remainingWeight: bestBoxArrangement.box.maxWeight - currentItem.weight
 				};
 
 				boxArrangements.push(newArrangement);
 				itemPacked = true;
 				console.log(
-					`[BoxCalc-Advanced] Created new box ${
-						bestBoxArrangement.box.name
-					} for item ${currentItem.name || currentItem._id}. ` +
-						`This box can fit ${bestBoxArrangement.maxItems} items in a ${bestBoxArrangement.orientation} arrangement.`
+					`[BoxCalc-Advanced] Created new box ${bestBoxArrangement.box.name} for item ${currentItem.name || currentItem._id}. ` +
+					`This box can fit ${bestBoxArrangement.maxItems} items in a ${bestBoxArrangement.orientation} arrangement.`
 				);
 			} else {
 				// Item can't fit in any available box
 				unpackableItems.push(currentItem);
-				console.log(
-					`[BoxCalc-Advanced] Item ${
-						currentItem.name || currentItem._id
-					} cannot fit in any available box`
-				);
+				console.log(`[BoxCalc-Advanced] Item ${currentItem.name || currentItem._id} cannot fit in any available box`);
 			}
 		}
 	}
 
 	// Consolidate items with the same ID back into items with quantities
-	const consolidatedShipments = boxArrangements.map((arrangement) => {
+	const consolidatedShipments = boxArrangements.map(arrangement => {
 		const consolidatedItems: { [key: string]: ShippingItem } = {};
 
-		arrangement.packedItems.forEach((item) => {
+		arrangement.packedItems.forEach(item => {
 			const itemId = item._id?.toString() || item.name;
 			if (!itemId) return;
 
 			if (consolidatedItems[itemId]) {
-				consolidatedItems[itemId].quantity =
-					(consolidatedItems[itemId].quantity || 1) + 1;
+				consolidatedItems[itemId].quantity = (consolidatedItems[itemId].quantity || 1) + 1;
 			} else {
 				consolidatedItems[itemId] = { ...item };
 			}
@@ -556,19 +559,18 @@ export function packItemsIntoMultipleBoxes(
 
 		return {
 			box: arrangement.box,
-			packedItems: Object.values(consolidatedItems),
+			packedItems: Object.values(consolidatedItems)
 		};
 	});
 
 	// Consolidate unpacked items too
 	const consolidatedUnfitItems: { [key: string]: ShippingItem } = {};
-	unpackableItems.forEach((item) => {
+	unpackableItems.forEach(item => {
 		const itemId = item._id?.toString() || item.name;
 		if (!itemId) return;
 
 		if (consolidatedUnfitItems[itemId]) {
-			consolidatedUnfitItems[itemId].quantity =
-				(consolidatedUnfitItems[itemId].quantity || 1) + 1;
+			consolidatedUnfitItems[itemId].quantity = (consolidatedUnfitItems[itemId].quantity || 1) + 1;
 		} else {
 			consolidatedUnfitItems[itemId] = { ...item };
 		}
@@ -577,6 +579,98 @@ export function packItemsIntoMultipleBoxes(
 	return {
 		success: unpackableItems.length === 0,
 		shipments: consolidatedShipments,
-		unfitItems: Object.values(consolidatedUnfitItems),
+		unfitItems: Object.values(consolidatedUnfitItems)
+	};
+}
+
+/**
+ * Special optimized packing for identical items (like 20 extrusions of the same size)
+ * This function efficiently distributes items into boxes based on cross-section fit
+ * 
+ * @param itemsToPack - Array of identical items to pack
+ * @returns A MultiBoxPackingResult with the optimal packing solution
+ */
+function packIdenticalItems(itemsToPack: ShippingItem[]): MultiBoxPackingResult {
+	console.log("[BoxCalc-Advanced] Using optimized identical items packing algorithm");
+
+	// Calculate the total quantity of all identical items
+	let totalQuantity = 0;
+	itemsToPack.forEach(item => {
+		totalQuantity += item.quantity || 1;
+	});
+
+	// Reference item (they're all the same)
+	const referenceItem = { ...itemsToPack[0], quantity: 1 };
+	
+	// Find the best box type for this item
+	let bestBox: ShippingBox | null = null;
+	let maxItemsPerBox = 0;
+	
+	// Find the box that can fit the most items in its cross-section
+	for (const box of standardBoxes) {
+		const crossSectionResult = calculateCrossSectionFit(referenceItem, box);
+		
+		// Skip boxes where item doesn't fit
+		if (crossSectionResult.maxItems === 0) continue;
+		
+		// Calculate how many of these items can fit by weight
+		const maxItemsByWeight = Math.floor(box.maxWeight / referenceItem.weight);
+		
+		// The actual capacity is the smaller of space capacity and weight capacity
+		const effectiveCapacity = Math.min(crossSectionResult.maxItems, maxItemsByWeight);
+		
+		// If this box can fit more items or is the first valid option, select it
+		if (effectiveCapacity > maxItemsPerBox || !bestBox) {
+			bestBox = box;
+			maxItemsPerBox = effectiveCapacity;
+		} else if (effectiveCapacity === maxItemsPerBox) {
+			// If capacity is the same, prefer smaller volume box
+			const currentVolume = box.length * box.width * box.height;
+			const bestVolume = bestBox.length * bestBox.width * bestBox.height;
+			
+			if (currentVolume < bestVolume) {
+				bestBox = box;
+				maxItemsPerBox = effectiveCapacity;
+			}
+		}
+	}
+	
+	// If no suitable box was found
+	if (!bestBox || maxItemsPerBox === 0) {
+		return {
+			success: false,
+			shipments: [],
+			unfitItems: itemsToPack
+		};
+	}
+	
+	console.log(`[BoxCalc-Advanced] Selected ${bestBox.name} which can fit ${maxItemsPerBox} items per box`);
+	
+	// Calculate how many boxes we need
+	const boxCount = Math.ceil(totalQuantity / maxItemsPerBox);
+	
+	// Create the shipments
+	const shipments = [];
+	let remainingQuantity = totalQuantity;
+	
+	for (let i = 0; i < boxCount; i++) {
+		// How many items in this box
+		const itemsInThisBox = Math.min(maxItemsPerBox, remainingQuantity);
+		remainingQuantity -= itemsInThisBox;
+		
+		// Create a shipment
+		shipments.push({
+			box: bestBox,
+			packedItems: [{
+				...referenceItem,
+				quantity: itemsInThisBox
+			}]
+		});
+	}
+	
+	return {
+		success: true,
+		shipments,
+		unfitItems: []
 	};
 }
