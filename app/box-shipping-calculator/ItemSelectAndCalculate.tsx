@@ -1,6 +1,6 @@
 /**
  * Item select and calculate interface component
- * Updated: 30/03/25
+ * Updated: 07/05/25
  * Author: Deej Potter
  * Description: Provides a user interface for selecting items, calculating box sizes, and managing item data.
  * Used on the Box Shipping Calculator page.
@@ -17,11 +17,9 @@ import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2 } from "lucide-react";
 import ItemEditModal from "./ItemEditModal";
 import {
-	getAvailableItems,
-	addItemToDatabase,
 	updateItemInDatabase,
 	deleteItemFromDatabase,
-} from "@/app/actions/mongodb/actions";
+} from "@/app/actions/data-actions";
 
 /**
  * Props interface for ItemSelectAndCalculate component
@@ -285,7 +283,7 @@ export default function ItemSelectAndCalculate({
 					>
 						{processedItems.map((item) => (
 							<div
-								key={item.sku}
+								key={item._id}
 								className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
 							>
 								<div className="flex-grow-1">
@@ -347,7 +345,7 @@ export default function ItemSelectAndCalculate({
 					>
 						{selectedItems.map((item) => (
 							<div
-								key={item.sku}
+								key={item._id}
 								className="list-group-item d-flex justify-content-between align-items-center"
 							>
 								<div className="flex-grow-1">

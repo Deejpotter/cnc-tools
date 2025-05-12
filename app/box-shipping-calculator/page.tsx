@@ -1,28 +1,35 @@
 /**
  * Box Shipping Calculator Page Component
- * Updated: 30/03/25
+ * Updated: 07/05/25
  * Author: Deej Potter
  * Description: This component provides a user interface for calculating the best box size for shipping items.
  * It includes features for importing items from a Maker Store invoice, selecting items, and manually adding new items.
- * The component uses server actions to interact with a MongoDB database for item management.
+ * The component uses the unified data access layer for data operations.
  */
 
 "use client";
 
 import React, { useState, useEffect } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
-import { DatabaseResponse } from "@/app/actions/mongodb/types";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import LayoutContainer from "@/components/LayoutContainer";
-import { findBestBox } from "@/app/box-shipping-calculator/BoxCalculations";
+import {
+	findBestBox,
+	packItemsIntoMultipleBoxes,
+	MultiBoxPackingResult,
+} from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
+import ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
 import {
 	getAvailableItems,
 	addItemToDatabase,
 	updateItemInDatabase,
 	deleteItemFromDatabase,
-} from "@/app/actions/mongodb/actions";
+	// initializeWithSampleItems, // Removed
+	syncWithRemoteDatabase,
+} from "@/app/actions/data-actions";
+// import { SAMPLE_ITEMS } from "./sampleItems"; // Removed
 
 /**
  * Box Shipping Calculator Page Component
@@ -37,16 +44,19 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	// ---------------
 	const [items, setItems] = useState<ShippingItem[]>([]);
 	const [selectedItems, setSelectedItems] = useState<ShippingItem[]>([]);
-	const [packingResult, setPackingResult] = useState<any>(null);
+	const [packingResult, setPackingResult] =
+		useState<MultiBoxPackingResult | null>(null);
 	const [importError, setImportError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isSyncing, setIsSyncing] = useState(false);
 
 	/**
-	 * Effect hook to load initial items from the database when the component mounts
-	 * Uses the getAvailableItems server action to fetch data
+	 * Effect hook to load initial items and initialize sample data if needed
 	 */
 	useEffect(() => {
+		// Load items from the database when the component mounts
 		loadItems();
+		// });
 	}, []);
 
 	/**
@@ -55,17 +65,19 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * Shows loading state during fetch and handles errors
 	 */
 	const loadItems = async () => {
+		setIsLoading(true);
 		try {
-			setIsLoading(true);
 			const response = await getAvailableItems();
 			if (response.success && response.data) {
 				setItems(response.data);
 			} else {
 				setImportError(response.error || "Failed to load items");
+				setItems([]); // Clear items on error
 			}
 		} catch (error) {
 			console.error("Failed to load items:", error);
-			setImportError("Failed to load available items");
+			setImportError("Error loading items from database.");
+			setItems([]); // Clear items on error
 		} finally {
 			setIsLoading(false);
 		}
@@ -73,7 +85,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 
 	/**
 	 * Handler for adding new items to the available items list
-	 * Uses the addItemToDatabase server action
 	 * @param item New item to be added to the database
 	 */
 	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
@@ -93,22 +104,105 @@ const BoxShippingCalculatorPage: React.FC = () => {
 
 	/**
 	 * Handler for importing items from a Maker Store invoice
-	 * Updates the items list with new items from the invoice
-	 * @param newItems Array of items extracted from invoice
+	 * @param newItems Array of ShippingItem objects from processInvoice, already checked against/added to DB
 	 */
-	const handleInvoiceItems = (newItems: ShippingItem[]) => {
-		setItems((prev) => [...prev, ...newItems]);
-		setImportError(null);
+	const handleInvoiceItems = async (newItems: ShippingItem[]) => {
+		// The `newItems` are already processed by `processInvoice` and `getItemDimensions`.
+		// This means they are either existing items from the DB (with updated quantities from the invoice)
+		// or new items that have been estimated and added to the DB.
+		try {
+			// First, refresh the displayed list of available items from the database.
+			await loadItems();
+
+			// Now, add/update these invoice items in the selectedItems state.
+			setSelectedItems((prevSelectedItems) => {
+				const updatedSelectedItems = [...prevSelectedItems]; // Create a mutable copy
+
+				newItems.forEach((invoiceItem) => {
+					// Ensure invoiceItem._id is valid, as it's crucial for matching.
+					if (!invoiceItem._id) {
+						console.warn(
+							"Invoice item missing _id, cannot add to selection:",
+							invoiceItem
+						);
+						return; // Skip this item if it doesn't have an _id
+					}
+					const existingItemIndex = updatedSelectedItems.findIndex(
+						(selItem) => selItem._id === invoiceItem._id
+					);
+
+					if (existingItemIndex > -1) {
+						// Item already exists in selectedItems, so update its quantity
+						const currentItem = updatedSelectedItems[existingItemIndex];
+						updatedSelectedItems[existingItemIndex] = {
+							...currentItem,
+							// Ensure quantities are numbers before adding
+							quantity:
+								(Number(currentItem.quantity) || 0) +
+								(Number(invoiceItem.quantity) || 0),
+						};
+					} else {
+						// Item is not in selectedItems, add it.
+						// The invoiceItem should already have the correct quantity from the invoice processing.
+						updatedSelectedItems.push({
+							...invoiceItem,
+							quantity: Number(invoiceItem.quantity) || 1,
+						});
+					}
+				});
+
+				return updatedSelectedItems;
+			});
+
+			if (newItems.length > 0) {
+				setImportError(null); // Clear any previous import errors
+				// Optionally, provide a success message to the user here.
+			} else {
+				setImportError(
+					"No items were processed from the invoice. The invoice might be empty or items lacked SKUs."
+				);
+			}
+		} catch (error) {
+			console.error(
+				"An error occurred while refreshing items and updating selection after invoice processing:",
+				error
+			);
+			setImportError(
+				error instanceof Error
+					? error.message
+					: "Failed to update item list and selection after invoice processing."
+			);
+		}
 	};
 
 	/**
 	 * Handler for calculating the optimal box size
-	 * Takes the currently selected items and finds the best box fit
 	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
 	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
-		const result = findBestBox(itemsToCalculate);
+		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
 		setPackingResult(result);
+	};
+
+	/**
+	 * Handler for manually triggering a sync with the remote database
+	 */
+	const handleSync = async () => {
+		try {
+			setIsSyncing(true);
+			const response = await syncWithRemoteDatabase();
+			if (response.success) {
+				await loadItems(); // Reload items after successful sync
+				setImportError(null);
+			} else {
+				setImportError(response.message || "Sync failed");
+			}
+		} catch (error) {
+			console.error("Failed to sync with remote database:", error);
+			setImportError("Failed to sync with remote database");
+		} finally {
+			setIsSyncing(false);
+		}
 	};
 
 	// Render loading state while fetching initial data
@@ -130,7 +224,27 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	return (
 		<LayoutContainer>
 			<div className="container pb-5">
-				<h1 className="mb-4">Box Shipping Calculator</h1>
+				<div className="d-flex justify-content-between align-items-center mb-4">
+					<h1>Box Shipping Calculator</h1>
+					<button
+						className="btn btn-outline-primary"
+						onClick={handleSync}
+						disabled={isSyncing}
+					>
+						{isSyncing ? (
+							<>
+								<span
+									className="spinner-border spinner-border-sm me-2"
+									role="status"
+									aria-hidden="true"
+								></span>
+								Syncing...
+							</>
+						) : (
+							"Sync Data"
+						)}
+					</button>
+				</div>
 
 				<div className="row">
 					{/* Invoice Import Section */}
@@ -173,28 +287,78 @@ const BoxShippingCalculatorPage: React.FC = () => {
 							<div className="card h-100 shadow bg-light">
 								<div className="card-body">
 									<h2 className="card-title mb-3">Calculation Results</h2>
-									{packingResult.success ? (
+									{packingResult.success &&
+									packingResult.shipments.length > 0 ? (
 										<>
-											<p className="text-success mb-3">Found suitable box!</p>
-											<div className="mb-2">
-												<p>
-													<strong>Box:</strong> {packingResult.box.name}
-												</p>
-												<p>
-													<strong>Dimensions:</strong>{" "}
-													{packingResult.box.length} x {packingResult.box.width}{" "}
-													x {packingResult.box.height} mm
-												</p>
-												<p>
-													<strong>Max Weight:</strong>{" "}
-													{packingResult.box.maxWeight}g
-												</p>
-											</div>
+											<p className="text-success mb-3">
+												Successfully packed items into{" "}
+												{packingResult.shipments.length} box(es)!
+											</p>
+											{packingResult.shipments.map((shipment, index) => (
+												<div key={index} className="mb-4 p-3 border rounded">
+													<h4>Shipment {index + 1}</h4>
+													<p>
+														<strong>Box:</strong> {shipment.box.name}
+													</p>
+													<p>
+														<strong>Dimensions:</strong> {shipment.box.length} x{" "}
+														{shipment.box.width} x {shipment.box.height} mm
+													</p>
+													<p>
+														<strong>Max Weight:</strong>{" "}
+														{shipment.box.maxWeight}g
+													</p>
+													<h5>Packed Items ({shipment.packedItems.length}):</h5>
+													<ul>
+														{shipment.packedItems.map((item) => (
+															<li
+																key={
+																	item._id ? item._id.toString() : Math.random()
+																}
+															>
+																{item.name} (Qty: {item.quantity})
+															</li>
+														))}
+													</ul>
+												</div>
+											))}
+											{packingResult.unfitItems.length > 0 && (
+												<div className="mt-3 text-warning">
+													<h5>Unfit Items:</h5>
+													<ul>
+														{packingResult.unfitItems.map((item) => (
+															<li
+																key={
+																	item._id ? item._id.toString() : Math.random()
+																}
+															>
+																{item.name} (Qty: {item.quantity})
+															</li>
+														))}
+													</ul>
+												</div>
+											)}
 										</>
 									) : (
 										<p className="text-danger">
-											Could not find a suitable box for all items. Consider
-											splitting into multiple shipments.
+											Could not find a suitable box configuration for all items.
+											{packingResult.unfitItems.length > 0 && (
+												<>
+													<br />
+													The following items could not be packed:
+													<ul>
+														{packingResult.unfitItems.map((item) => (
+															<li
+																key={
+																	item._id ? item._id.toString() : Math.random()
+																}
+															>
+																{item.name} (Qty: {item.quantity})
+															</li>
+														))}
+													</ul>
+												</>
+											)}
 										</p>
 									)}
 								</div>

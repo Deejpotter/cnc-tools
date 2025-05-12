@@ -130,10 +130,99 @@ Each mini-app in the `/app` directory should follow this structure:
 2. **Shared state**: Use context providers in `/contexts` folder
 3. **Data fetching**: Use server actions in `/app/actions` for data operations
 
+## Testing
+
+### Test File Structure
+
+#### File Naming and Location
+
+1. **Unit Tests**: Place unit tests next to the file they're testing with a `.test.ts` or `.test.tsx` suffix
+   - Example: `BoxCalculations.ts` → `BoxCalculations.test.ts`
+
+2. **Integration Tests**: Create a `__tests__` folder within the feature directory
+   - Example: `app/box-shipping-calculator/__tests__/integration.test.ts`
+
+3. **E2E Tests**: Store in a top-level `e2e` directory (if implemented later)
+
+### Testing Approaches
+
+#### Server Actions & API Testing
+
+- Mock external dependencies (databases, third-party services)
+- Test both success and error cases
+- Verify that returned data matches expected format
+
+#### Component Testing
+
+- Focus on component behavior rather than implementation details
+- Test user interactions (clicks, form submissions)
+- Verify that components render correctly with different props
+- Test accessibility where applicable
+
+#### Utility Functions Testing
+
+- Test edge cases thoroughly
+- Use table-driven tests for functions with many input/output combinations
+- Test error handling
+
+### Test Structure
+
+Use the following structure for your tests:
+
+```typescript
+// Import dependencies
+import { functionToTest } from './path-to-function';
+
+// Describe block for the component/function
+describe('FunctionName or ComponentName', () => {
+  // Setup that runs before each test
+  beforeEach(() => {
+    // Setup code
+  });
+
+  // Individual test cases
+  it('should do something specific', () => {
+    // Arrange
+    const input = 'test';
+    
+    // Act
+    const result = functionToTest(input);
+    
+    // Assert
+    expect(result).toBe('expected output');
+  });
+});
+```
+
+### Mocking
+
+- Use Jest's mocking capabilities for external dependencies
+- Create mock data factories for commonly used test data
+- Define mocks in a separate file if they're reused across tests
+
+### Coverage Goals
+
+- Aim for at least 80% code coverage for critical business logic
+- Focus on meaningful tests rather than hitting coverage numbers
+- Always test edge cases and error handling
+
+### Running Tests
+
+Use these npm scripts to run tests:
+
+1. `npm test`: Run all tests once
+2. `npm run test:watch`: Run tests in watch mode (rerun on file changes)
+3. `npm run test:coverage`: Run tests with coverage report
+
+### Continuous Integration
+
+- Tests will run automatically on pull requests
+- Failed tests should block merges to main branches
+
 ## Best practices
 
 1. **TypeScript**: Use proper typing for all components and functions
 2. **Error handling**: Include proper error handling for asynchronous operations
 3. **Accessibility**: Follow accessibility best practices in UI components
 4. **Performance**: Optimize components using React best practices (memoization, etc.)
-5. **Testing**: Include tests for critical functionality
+5. **Testing**: Write tests following the testing conventions outlined above

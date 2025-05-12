@@ -1,22 +1,60 @@
 /**
  * Box Calculations
- * Updated: 30/03/25
+ * Updated: May 13, 2025
  * Author: Deej Potter
  * Description: Helper functions for calculating the best box size for shipping items.
- * Uses binpackingjs library for 3D bin packing algorithm.
- * https://github.com/olragon/binpackingjs
+ * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
  */
-
-const BinPacking3D = require("binpackingjs").BP3D;
-const { Item, Bin, Packer } = BinPacking3D;
 
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import type ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
 
+// Define the interface for multi-box packing results
+export interface MultiBoxPackingResult {
+	success: boolean;
+	shipments: Array<{
+		box: ShippingBox;
+		packedItems: ShippingItem[];
+	}>;
+	unfitItems: ShippingItem[];
+}
+
+/**
+ * 3D position to represent points in space
+ */
+interface Point3D {
+	x: number;
+	y: number;
+	z: number;
+}
+
+/**
+ * Represents a packed item in 3D space
+ */
+interface PackedItem {
+	item: ShippingItem; // The original item
+	position: Point3D;  // Position of the item within the box (bottom-left-back corner)
+	rotation: number;   // Rotation index (0-5) representing one of the six possible orientations
+	dimensions: {       // Dimensions after rotation
+		width: number;
+		height: number;
+		depth: number;
+	};
+}
+
+/**
+ * Represents a box with packed items and remaining space
+ */
+interface PackingBox {
+	box: ShippingBox;            // The box being used
+	packedItems: PackedItem[];   // Items packed in the box with their positions
+	extremePoints: Point3D[];    // Possible positions for placing new items (extreme points)
+	remainingWeight: number;     // Remaining weight capacity
+}
+
 /**
  * Standard box sizes available for shipping
  * These dimensions are in millimeters and weights in grams
- * Sizes are based on common shipping box dimensions
  */
 export const standardBoxes: ShippingBox[] = [
 	{
@@ -25,7 +63,7 @@ export const standardBoxes: ShippingBox[] = [
 		length: 100,
 		width: 80,
 		height: 20,
-		maxWeight: 300, // 300g max weight
+		maxWeight: 300,
 	},
 	{
 		_id: "small satchel",
@@ -33,115 +71,490 @@ export const standardBoxes: ShippingBox[] = [
 		length: 240,
 		width: 150,
 		height: 100,
-		maxWeight: 5000, // 5kg max weight
+		maxWeight: 5000,
 	},
 	{
 		_id: "small",
 		name: "Small Box",
-		length: 210,
-		width: 170,
-		height: 120,
-		maxWeight: 25000, // 25kg max weight
+		length: 190,
+		width: 150,
+		height: 100,
+		maxWeight: 25000,
 	},
 	{
 		_id: "medium",
 		name: "Medium Box",
-		length: 300,
-		width: 300,
-		height: 200,
-		maxWeight: 25000, // 25kg max weight
+		length: 290,
+		width: 290,
+		height: 190,
+		maxWeight: 25000,
 	},
 	{
 		_id: "large",
 		name: "Large Box",
-		length: 510,
-		width: 120,
-		height: 120,
-		maxWeight: 25000, // 25kg max weight
+		length: 500,
+		width: 100,
+		height: 100,
+		maxWeight: 25000,
 	},
 	{
 		_id: "extra large",
 		name: "Extra Large Box",
-		length: 1170,
-		width: 120,
-		height: 120,
-		maxWeight: 25000, // 25kg max weight
+		length: 1150,
+		width: 100,
+		height: 100,
+		maxWeight: 25000,
 	},
 	{
 		_id: "xxl",
 		name: "XXL Box",
 		length: 1570,
-		width: 120,
-		height: 120,
-		maxWeight: 25000, // 25kg max weight
+		width: 100,
+		height: 100,
+		maxWeight: 25000,
 	},
 ];
 
 /**
- * Calculates the best box size for a given set of items using 3D bin packing algorithm
- * This function tries to fit items into increasingly larger boxes until finding one that works
- *
- * @param items - Array of ShippingItems to pack
- * @returns Object containing:
- *  - success: boolean indicating if all items fit
- *  - box: the ShippingBox that fits the items (or null if no fit)
- *  - packedItems: array of successfully packed items
- *  - unfitItems: array of items that couldn't be packed
+ * Get all possible orientations of an item
+ * Returns an array of [width, height, depth] for each of the 6 possible orientations
+ * 
+ * @param item - The item to get orientations for
+ * @returns Array of possible orientations
  */
-export function findBestBox(items: ShippingItem[]) {
-	// Create a new packer instance for our calculation
-	const packer = new Packer();
+function getItemOrientations(item: ShippingItem): Array<{
+	width: number;
+	height: number;
+	depth: number;
+}> {
+	return [
+		{ width: item.width, height: item.height, depth: item.length },   // Standard orientation
+		{ width: item.length, height: item.height, depth: item.width },   // Rotate 90° horizontally
+		{ width: item.width, height: item.length, depth: item.height },   // Rotate 90° vertically
+		{ width: item.height, height: item.width, depth: item.length },   // Flip width and height
+		{ width: item.length, height: item.width, depth: item.height },   // Flip and rotate 90° horizontally
+		{ width: item.height, height: item.length, depth: item.width }    // Flip and rotate 90° vertically
+	];
+}
 
-	// Try each standard box size from smallest to largest
-	for (const box of standardBoxes) {
-		// Create a bin (box) with our dimensions
-		const bin = new Bin(
-			box.name,
-			box.length,
-			box.width,
-			box.height,
-			box.maxWeight
-		);
-		packer.addBin(bin);
+/**
+ * Check if an item in a specific orientation fits at position in the box
+ * without overlapping with already packed items
+ * 
+ * @param box - The packing box to check
+ * @param position - Position to check
+ * @param orientation - Orientation of the item
+ * @param items - Already packed items to check for overlap
+ * @returns Boolean indicating if the item fits
+ */
+function itemFitsAtPosition(
+	box: ShippingBox,
+	position: Point3D,
+	orientation: { width: number; height: number; depth: number },
+	packedItems: PackedItem[]
+): boolean {
+	// Check if the item fits within the box boundaries
+	if (
+		position.x + orientation.width > box.width ||
+		position.y + orientation.height > box.height ||
+		position.z + orientation.depth > box.length
+	) {
+		return false;
+	}
+	
+	// Check for overlap with existing items
+	for (const packedItem of packedItems) {
+		// Check for overlap in all three dimensions
+		if (
+			position.x < packedItem.position.x + packedItem.dimensions.width &&
+			position.x + orientation.width > packedItem.position.x &&
+			position.y < packedItem.position.y + packedItem.dimensions.height &&
+			position.y + orientation.height > packedItem.position.y &&
+			position.z < packedItem.position.z + packedItem.dimensions.depth &&
+			position.z + orientation.depth > packedItem.position.z
+		) {
+			return false; // Overlap detected
+		}
+	}
+	
+	return true; // No overlap, item fits
+}
 
-		// Log the item details for debugging.
-		console.log("Packing items into box:", box.name);
-		console.log("Items to pack:", items);
+/**
+ * Generate new extreme points after adding an item
+ * Extreme points are positions where new items could be placed
+ * 
+ * @param packingBox - The box with current extreme points
+ * @param newItem - The newly added item
+ * @returns Array of new extreme points
+ */
+function generateExtremePoints(
+	packingBox: PackingBox,
+	newItem: PackedItem
+): Point3D[] {
+	const { position, dimensions } = newItem;
+	const newPoints: Point3D[] = [];
+	
+	// Top face extreme point
+	newPoints.push({
+		x: position.x,
+		y: position.y + dimensions.height,
+		z: position.z
+	});
+	
+	// Right face extreme point
+	newPoints.push({
+		x: position.x + dimensions.width,
+		y: position.y,
+		z: position.z
+	});
+	
+	// Front face extreme point
+	newPoints.push({
+		x: position.x,
+		y: position.y,
+		z: position.z + dimensions.depth
+	});
+	
+	// Add existing extreme points that aren't blocked by the new item
+	const existingPoints = [...packingBox.extremePoints];
+	for (const point of existingPoints) {
+		// Check if this extreme point is blocked by the new item
+		if (
+			point.x >= position.x && point.x < position.x + dimensions.width &&
+			point.y >= position.y && point.y < position.y + dimensions.height &&
+			point.z >= position.z && point.z < position.z + dimensions.depth
+		) {
+			// Point is inside the new item, so it's blocked
+			continue;
+		}
+		
+		// Not blocked, keep this extreme point
+		newPoints.push(point);
+	}
+	
+	// Filter duplicate points and sort by position
+	return filterAndSortPoints(newPoints);
+}
 
-		// Add each item to the packer
-		items.forEach((item) => {
-			packer.addItem(
-				new Item(item._id, item.length, item.width, item.height, item.weight, {
-					quantity: item.quantity,
-					name: item.name,
-					sku: item.sku,
-				})
-			);
-		});
+/**
+ * Filter duplicate extreme points and sort them for optimal packing
+ * 
+ * @param points - Array of extreme points
+ * @returns Filtered and sorted array of points
+ */
+function filterAndSortPoints(points: Point3D[]): Point3D[] {
+	// Remove duplicates by using a Map with string keys
+	const uniquePoints = new Map<string, Point3D>();
+	
+	for (const point of points) {
+		const key = `${point.x},${point.y},${point.z}`;
+		uniquePoints.set(key, point);
+	}
+	
+	// Convert back to array and sort
+	// Sort by y (height) first, then x, then z - this prioritizes packing from bottom up
+	return Array.from(uniquePoints.values()).sort((a, b) => {
+		if (a.y !== b.y) return a.y - b.y; // Sort by height first (lower is better)
+		if (a.x !== b.x) return a.x - b.x; // Then by width
+		return a.z - b.z;                  // Then by depth
+	});
+}
 
-		// Attempt to pack all items
-		packer.pack();
+/**
+ * Try to pack an item into a specific box
+ * 
+ * @param item - The item to pack
+ * @param packingBox - The box to pack into
+ * @returns Whether the item was successfully packed
+ */
+function packItemIntoBox(item: ShippingItem, packingBox: PackingBox): boolean {
+	// Check if the item exceeds the remaining weight capacity
+	if (item.weight > packingBox.remainingWeight) {
+		return false;
+	}
+	
+	// Get all possible orientations of the item
+	const orientations = getItemOrientations(item);
+	
+	// Try each extreme point and orientation
+	for (const point of packingBox.extremePoints) {
+		for (let rotationIndex = 0; rotationIndex < orientations.length; rotationIndex++) {
+			const orientation = orientations[rotationIndex];
+			
+			// Check if item fits at this point with this orientation
+			if (itemFitsAtPosition(packingBox.box, point, orientation, packingBox.packedItems)) {
+				// It fits! Add it to the box
+				const packedItem: PackedItem = {
+					item,
+					position: point,
+					rotation: rotationIndex,
+					dimensions: orientation
+				};
+				
+				// Update the box
+				packingBox.packedItems.push(packedItem);
+				packingBox.remainingWeight -= item.weight;
+				packingBox.extremePoints = generateExtremePoints(packingBox, packedItem);
+				
+				return true;
+			}
+		}
+	}
+	
+	// If we get here, the item doesn't fit in any orientation or position
+	return false;
+}
 
-		// Log the packing results for debugging.
-		console.log("Packing result:", packer.bins);
-		console.log("Unfit items:", packer.unfitItems);
+/**
+ * Create a new packing box from a ShippingBox
+ * 
+ * @param box - The shipping box to use
+ * @returns A new packing box structure
+ */
+function createPackingBox(box: ShippingBox): PackingBox {
+	return {
+		box,
+		packedItems: [],
+		// Start with a single extreme point at the origin (bottom-left-back corner)
+		extremePoints: [{ x: 0, y: 0, z: 0 }],
+		remainingWeight: box.maxWeight
+	};
+}
 
-		// If all items fit (no unfitItems), we've found our box
-		if (packer.unfitItems.length === 0) {
+/**
+ * Calculates the best box size for a single set of items.
+ * This is a simplified version for checking if items fit in a single box.
+ * 
+ * @param itemsToPack - Array of ShippingItems to pack.
+ * @returns Results of the packing attempt
+ */
+export function findBestBox(itemsToPack: ShippingItem[]): {
+	success: boolean;
+	box: ShippingBox | null;
+	packedItems: ShippingItem[];
+	unfitItems: ShippingItem[];
+} {
+	// Handle empty input gracefully
+	if (itemsToPack.length === 0) {
+		return {
+			success: true,
+			box: standardBoxes[0],
+			packedItems: [],
+			unfitItems: [],
+		};
+	}
+	
+	// Expand items by quantity
+	const expandedItems: ShippingItem[] = [];
+	for (const item of itemsToPack) {
+		const quantity = item.quantity || 1;
+		for (let i = 0; i < quantity; i++) {
+			expandedItems.push({...item, quantity: 1});
+		}
+	}
+	
+	// Sort boxes by volume, smallest first
+	const sortedBoxes = [...standardBoxes].sort((a, b) => {
+		return (a.length * a.width * a.height) - (b.length * b.width * b.height);
+	});
+	
+	// Try to fit all items in each box, starting from the smallest
+	for (const box of sortedBoxes) {
+		const packingBox = createPackingBox(box);
+		let allFit = true;
+		
+		// Try to pack each item
+		for (const item of expandedItems) {
+			if (!packItemIntoBox(item, packingBox)) {
+				allFit = false;
+				break;
+			}
+		}
+		
+		if (allFit) {
+			// Group packed items back by their original properties
+			const groupedItems = groupPackedItemsByOriginal(packingBox.packedItems, itemsToPack);
+			
 			return {
 				success: true,
-				box: box,
-				packedItems: bin.items,
+				box,
+				packedItems: groupedItems,
 				unfitItems: [],
 			};
 		}
 	}
-
-	// If we get here, no box could fit all items
+	
+	// If no box fits all items, return failure
 	return {
 		success: false,
 		box: null,
 		packedItems: [],
-		unfitItems: items,
+		unfitItems: itemsToPack,
+	};
+}
+
+/**
+ * Group packed items back to their original form with proper quantities
+ * 
+ * @param packedItems - Array of individually packed items
+ * @param originalItems - Original items with quantities
+ * @returns Grouped items with proper quantities
+ */
+function groupPackedItemsByOriginal(
+	packedItems: PackedItem[],
+	originalItems: ShippingItem[]
+): ShippingItem[] {
+	const itemCounts: { [key: string]: number } = {};
+	
+	// Count packed items
+	for (const packedItem of packedItems) {
+		const key = `${packedItem.item._id || packedItem.item.name}-${packedItem.item.length}-${packedItem.item.width}-${packedItem.item.height}`;
+		itemCounts[key] = (itemCounts[key] || 0) + 1;
+	}
+	
+	// Recreate the original items with updated quantities
+	const result: ShippingItem[] = [];
+	for (const item of originalItems) {
+		const key = `${item._id || item.name}-${item.length}-${item.width}-${item.height}`;
+		const count = itemCounts[key];
+		
+		if (count) {
+			result.push({
+				...item,
+				quantity: count
+			});
+			
+			// Remove this count so we don't double count
+			delete itemCounts[key];
+		}
+	}
+	
+	return result;
+}
+
+/**
+ * Pack items into multiple boxes using the Extreme Point-based 3D bin packing algorithm
+ * 
+ * @param itemsToPack - Array of ShippingItems to pack into one or more boxes
+ * @returns A MultiBoxPackingResult object with packing arrangement
+ */
+export function packItemsIntoMultipleBoxes(
+	itemsToPack: ShippingItem[]
+): MultiBoxPackingResult {
+	// Handle empty input case
+	if (itemsToPack.length === 0) {
+		return {
+			success: true,
+			shipments: [],
+			unfitItems: [],
+		};
+	}
+	
+	console.log("[BoxCalc] Starting Extreme Point-based packing algorithm");
+	
+	// First try to fit all items into a single box as a quick check
+	try {
+		const singleBoxResult = findBestBox([...itemsToPack]);
+		
+		if (singleBoxResult.success && singleBoxResult.box) {
+			return {
+				success: true,
+				shipments: [
+					{
+						box: singleBoxResult.box,
+						packedItems: singleBoxResult.packedItems,
+					},
+				],
+				unfitItems: [],
+			};
+		}
+	} catch (error) {
+		console.error("[BoxCalc] Error in single box check:", error);
+		// Continue to multi-box approach
+	}
+	
+	// Expand items by quantity for individual packing
+	const expandedItems: ShippingItem[] = [];
+	for (const item of itemsToPack) {
+		const quantity = item.quantity || 1;
+		for (let i = 0; i < quantity; i++) {
+			expandedItems.push({...item, quantity: 1});
+		}
+	}
+	
+	// Sort items by volume (largest first)
+	expandedItems.sort((a, b) => {
+		const volA = a.length * a.width * a.height;
+		const volB = b.length * b.width * b.height;
+		return volB - volA;
+	});
+	
+	console.log(`[BoxCalc] Processing ${expandedItems.length} individual items`);
+	
+	// Create array of boxes and unfittable items
+	const boxes: PackingBox[] = [];
+	const unfitItems: ShippingItem[] = [];
+	
+	// Sort standardBoxes by volume (smallest first)
+	const boxesBySize = [...standardBoxes].sort((a, b) => {
+		return (a.length * a.width * a.height) - (b.length * b.width * b.height);
+	});
+	
+	// Process each item
+	for (const item of expandedItems) {
+		let packed = false;
+		
+		// First try to pack into an existing box
+		for (const box of boxes) {
+			if (packItemIntoBox(item, box)) {
+				packed = true;
+				break;
+			}
+		}
+		
+		// If not packed in existing box, try to create a new box
+		if (!packed) {
+			for (const boxTemplate of boxesBySize) {
+				const newBox = createPackingBox(boxTemplate);
+				
+				if (packItemIntoBox(item, newBox)) {
+					boxes.push(newBox);
+					packed = true;
+					break;
+				}
+			}
+		}
+		
+		// If still not packed, mark as unfittable
+		if (!packed) {
+			unfitItems.push(item);
+		}
+	}
+	
+	// Format output
+	const shipments = boxes.map(box => {
+		// Group packed items back by their original properties
+		const groupedItems = groupPackedItemsByOriginal(box.packedItems, itemsToPack);
+		
+		return {
+			box: box.box,
+			packedItems: groupedItems
+		};
+	});
+	
+	// Group unfittable items
+	const groupedUnfitItems = unfitItems.length > 0 ? 
+		groupPackedItemsByOriginal(unfitItems.map(item => ({
+			item,
+			position: {x: 0, y: 0, z: 0},
+			rotation: 0,
+			dimensions: {width: item.width, height: item.height, depth: item.length}
+		})), itemsToPack) : [];
+	
+	return {
+		success: unfitItems.length === 0,
+		shipments,
+		unfitItems: groupedUnfitItems
 	};
 }
