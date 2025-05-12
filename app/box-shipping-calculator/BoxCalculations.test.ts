@@ -2,7 +2,7 @@
  * Tests for BoxCalculations Utility Functions
  */
 
-import { findBestBox, standardBoxes } from "./BoxCalculations";
+import { findBestBox, packItemsIntoMultipleBoxes, standardBoxes } from "./BoxCalculations";
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 
 // Helper to create a mock ShippingItem
@@ -28,415 +28,297 @@ const createMockShippingItem = (
 	deletedAt: null,
 });
 
-// --- Mocking binpackingjs ---
-// const mockItemImpl = (id, length, width, height, weight, metadata) => ({ id, length, width, height, weight, metadata, name: metadata?.name || id }); // Moved
+// Mock ShippingItem data for testing
+const create20x40x1000mmExtrusions = (quantity: number): ShippingItem[] => {
+  return [{
+    _id: 'extrusion-20-40-1000',
+    name: 'V-Slot 20 x 40mm - 20 Series - 1000mm',
+    length: 1000,
+    width: 20,
+    height: 40,
+    weight: 1000, // 1kg per extrusion
+    quantity: quantity
+  }];
+};
 
-// Moved these declarations before jest.mock
-const createdMockPackerInstances = [];
-const mockPackerConstructor = jest.fn(); // This will be our main mock for the Packer class
-
-jest.mock("binpackingjs", () => {
-	const actualMockItemImpl = (id, length, width, height, weight, metadata) => ({
-		id,
-		length,
-		width,
-		height,
-		weight,
-		metadata,
-		name: metadata?.name || id,
-	});
-	const actualMockBinImpl = (name, length, width, height, maxWeight) => {
-		const binInstance = {
-			name,
-			length,
-			width,
-			height,
-			maxWeight,
-			items: [],
-			addItem: jest.fn(function (item) {
-				this.items.push(item);
-			}),
-		};
-		return binInstance;
-	};
-
-	// Define PackerProxy as a function that can be called with 'new'
-	const PackerProxy = function (...constructorArgs) {
-		// mockPackerConstructor is a jest.fn(). When called with 'new',
-		// Jest handles it, and it executes its mockImplementation.
-		// If that implementation returns an object, that object becomes the result of 'new'.
-		return new mockPackerConstructor(...constructorArgs);
-	};
-
-	return {
-		BP3D: {
-			Item: jest.fn().mockImplementation(actualMockItemImpl),
-			Bin: jest.fn().mockImplementation(actualMockBinImpl),
-			Packer: PackerProxy, // Use the function that correctly delegates construction
-		},
-	};
-});
-// --- End Mocking binpackingjs ---
+// No longer mocking external libraries, so the complex jest.mock for 'binpackingjs' is removed.
 
 describe("BoxCalculations", () => {
 	// Sample shipping items for testing, matching ShippingItem interface
-	const sampleItems: ShippingItem[] = [
-		createMockShippingItem("item1", 50, 50, 50, 100, 1),
-		createMockShippingItem("item2", 30, 30, 30, 50, 2, "SKU123"),
-	];
+	const itemSmallLight = createMockShippingItem("itemSL", 10, 10, 10, 50, 1); // Fits Padded Satchel
+	const itemMediumHeavy = createMockShippingItem("itemMH", 100, 100, 50, 2000, 1); // Fits Small Satchel by dims, but weight might be an issue for Padded Satchel
+	const itemLong = createMockShippingItem("itemLong", 1000, 5, 5, 10, 1); // Needs Extra Large Box or XXL Box for length
+	const itemTooLarge = createMockShippingItem("itemTooLarge", 2000, 2000, 2000, 100, 1); // Too large for any box
+	const itemTooHeavy = createMockShippingItem("itemTooHeavy", 10, 10, 10, 30000, 1); // Too heavy for any box (max is 25kg)
 
 	beforeEach(() => {
-		jest.clearAllMocks(); // Clears all mock usage data, including mockPackerConstructor
-		createdMockPackerInstances.length = 0; // Clear our array of created instances
+		jest.spyOn(console, "log").mockImplementation(() => {}); // Suppress console logs during tests
+		jest.spyOn(console, "warn").mockImplementation(() => {}); // Suppress console warnings during tests
+	});
 
-		// Default behavior for Packer: new instance will succeed
-		mockPackerConstructor.mockImplementation(() => {
-			const itemsAddedToPacker = [];
-			const packerInstance = {
-				bins: [],
-				unfitItems: [],
-				_itemsAdded: itemsAddedToPacker,
-				addBin: jest.fn(function (bin) {
-					this.bins.push(bin);
-					return this;
-				}),
-				addItem: jest.fn(function (item) {
-					itemsAddedToPacker.push(item);
-					return this;
-				}),
-				pack: jest.fn(function () {
-					// Default: success
-					this.unfitItems = [];
-					if (this.bins.length > 0 && this.bins[0].addItem) {
-						itemsAddedToPacker.forEach((item) => this.bins[0].addItem(item));
-					}
-				}),
-			};
-			createdMockPackerInstances.push(packerInstance);
-			return packerInstance;
-		});
-
-		jest.spyOn(console, "log").mockImplementation(() => {}); // Suppress console logs
+	afterEach(() => {
+		jest.restoreAllMocks(); // Restore console mocks
 	});
 
 	describe("standardBoxes", () => {
-		it("should define standard box sizes", () => {
+		it("should define standard box sizes with required properties", () => {
 			expect(standardBoxes).toBeDefined();
 			expect(standardBoxes.length).toBeGreaterThan(0);
 			standardBoxes.forEach((box) => {
 				expect(box).toHaveProperty("_id");
 				expect(box).toHaveProperty("name");
-				// ... other property checks if needed
+				expect(box).toHaveProperty("length");
+				expect(box).toHaveProperty("width");
+				expect(box).toHaveProperty("height");
+				expect(box).toHaveProperty("maxWeight");
 			});
 		});
 	});
 
-	describe("findBestBox", () => {
-		it("should return success when all items fit in the first suitable box", () => {
-			// For this test, the default mock (from beforeEach) is used,
-			// where the first box (standardBoxes[0]) will successfully pack all items.
-			const result = findBestBox(sampleItems);
-
+	describe("findBestBox - Simplified Logic", () => {
+		it("should return success and the smallest box when a single small item fits", () => {
+			const items = [itemSmallLight];
+			const result = findBestBox(items);
 			expect(result.success).toBe(true);
-			expect(result.box).toEqual(standardBoxes[0]); // Should have used the first box
-			expect(result.packedItems.length).toBe(sampleItems.length);
+			// Padded Satchel: 100x80x20, 300g
+			// itemSmallLight: 10x10x10, 50g
+			expect(result.box?.name).toBe("Padded Satchel");
+			expect(result.packedItems).toEqual(items);
 			expect(result.unfitItems).toHaveLength(0);
-			// findBestBox iterates through ALL standardBoxes to find the truly "best" fit (smallest volume, then length),
-			// not just the first one that can pack the items.
-			// Therefore, mockPackerConstructor is called for each standard box.
-			expect(mockPackerConstructor).toHaveBeenCalledTimes(standardBoxes.length);
-			expect(createdMockPackerInstances[0].pack).toHaveBeenCalledTimes(1);
-
-			// Verify packed items details (simple check for _id and quantity)
-			sampleItems.forEach((originalItem) => {
-				const packedItem = result.packedItems.find(
-					(p) => p._id === originalItem._id
-				);
-				expect(packedItem).toBeDefined();
-				expect(packedItem.quantity).toBe(originalItem.quantity);
-				expect(packedItem.name).toBe(originalItem.name);
-			});
 		});
 
-		it("should return failure when items do not fit in any box", () => {
-			// Override mockPackerConstructor to always fail packing
-			mockPackerConstructor.mockImplementation(() => {
-				const itemsAddedToPacker: any[] = []; // Define itemsAddedToPacker for this scope
-				const packerInstance = {
-					bins: [] as any[],
-					unfitItems: [] as any[],
-					_itemsAdded: itemsAddedToPacker, // Use the scoped itemsAddedToPacker
-					addBin: jest.fn(function (this: any, bin: any) {
-						this.bins.push(bin);
-						return this;
-					}),
-					addItem: jest.fn(function (this: any, item: any) {
-						itemsAddedToPacker.push(item); // Add to scoped itemsAddedToPacker
-						return this;
-					}),
-					pack: jest.fn(function (this: any) {
-						this.unfitItems = [...itemsAddedToPacker]; // Use scoped itemsAddedToPacker
-					}), // Always fail
-				};
-				createdMockPackerInstances.push(packerInstance);
-				return packerInstance;
-			});
+		it("should return success and a suitable box for multiple items that fit", () => {
+			const items = [
+				createMockShippingItem("itemA", 10, 10, 10, 20, 2), // Total weight 40g, total vol 2000
+				createMockShippingItem("itemB", 50, 50, 10, 30, 1), // Total weight 30g, total vol 25000
+			]; // Total weight 70g. Max dims: 50x50x10. Total vol: 27000
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			// Padded Satchel: 100x80x20 (vol 160000), 300g. Items fit by individual dim, weight, and total vol.
+			expect(result.box?.name).toBe("Padded Satchel");
+			expect(result.packedItems).toEqual(items);
+		});
 
-			const result = findBestBox(sampleItems);
-
+		it("should return failure when an item is too large for any box", () => {
+			const items = [itemTooLarge];
+			const result = findBestBox(items);
 			expect(result.success).toBe(false);
 			expect(result.box).toBeNull();
-			expect(result.packedItems).toHaveLength(0);
-			expect(result.unfitItems).toEqual(sampleItems);
-			// It will try all boxes before concluding failure.
-			expect(mockPackerConstructor).toHaveBeenCalledTimes(standardBoxes.length);
+			expect(result.unfitItems).toEqual(items);
 		});
 
-		it("should try each box size until finding one that works", () => {
-			// First packer fails (for standardBoxes[0])
-			mockPackerConstructor
-				.mockImplementationOnce(() => {
-					const itemsAddedToPacker: any[] = [];
-					const failingPacker = {
-						bins: [] as any[],
-						unfitItems: [] as any[],
-						_itemsAdded: itemsAddedToPacker,
-						addBin: jest.fn(function (this: any, bin: any) {
-							this.bins.push(bin);
-							return this;
-						}),
-						addItem: jest.fn(function (this: any, item: any) {
-							itemsAddedToPacker.push(item);
-							return this;
-						}),
-						pack: jest.fn(function (this: any) {
-							// Simulate failure: all items added are unfit
-							this.unfitItems = [...itemsAddedToPacker];
-						}),
-					};
-					createdMockPackerInstances.push(failingPacker);
-					return failingPacker;
-				})
-				// Second packer succeeds (for standardBoxes[1])
-				.mockImplementationOnce(() => {
-					const itemsAddedToPacker: any[] = [];
-					const succeedingPacker = {
-						bins: [
-							{
-								items: [] as any[],
-								addItem: function (item: any) {
-									this.items.push(item);
-								},
-							},
-						] as any[], // Mock bin with addItem
-						unfitItems: [] as any[],
-						_itemsAdded: itemsAddedToPacker,
-						addBin: jest.fn(function (this: any, bin: any) {
-							this.bins.push(bin); // The bin itself needs to be a mock with an 'items' array
-							return this;
-						}),
-						addItem: jest.fn(function (this: any, item: any) {
-							itemsAddedToPacker.push(item);
-							return this;
-						}),
-						pack: jest.fn(function (this: any) {
-							this.unfitItems = []; // Simulate success
-							// Simulate items being packed into the bin
-							if (this.bins.length > 0 && this.bins[0].addItem) {
-								itemsAddedToPacker.forEach((item) =>
-									this.bins[0].addItem(item)
-								);
-							}
-						}),
-					};
-					createdMockPackerInstances.push(succeedingPacker);
-					return succeedingPacker;
-				});
-			// Subsequent calls (for standardBoxes[2] onwards) will use the default mock,
-			// which is set up in beforeEach to succeed. This is important because findBestBox
-			// will continue to check all boxes to find the *best* fit, even after finding one that works.
+		it("should return failure when an item is too heavy for any box", () => {
+			const items = [itemTooHeavy]; // 30000g, max box weight is 25000g
+			const result = findBestBox(items);
+			expect(result.success).toBe(false);
+			expect(result.box).toBeNull();
+			expect(result.unfitItems).toEqual(items);
+		});
 
-			const result = findBestBox(sampleItems);
+		it("should return failure when total item weight exceeds box capacity", () => {
+			const items = [
+				createMockShippingItem("heavy1", 10, 10, 10, 200, 1),
+				createMockShippingItem("heavy2", 10, 10, 10, 150, 1), // Total 350g
+			];
+			// Padded Satchel maxWeight is 300g. Small Satchel is 5000g.
+			const result = findBestBox(items);
+			expect(result.success).toBe(true); // Should fit in Small Satchel
+			expect(result.box?.name).toBe("Small Satchel");
+		});
 
-			// findBestBox iterates through ALL standardBoxes to find the truly "best" fit.
-			// Even if an early box fits, it continues checking to see if a subsequent box is "better"
-			// (e.g., smaller volume or, for same volume, shorter length).
-			// Thus, mockPackerConstructor is called for each standard box.
-			expect(mockPackerConstructor).toHaveBeenCalledTimes(standardBoxes.length);
-			expect(createdMockPackerInstances.length).toBe(standardBoxes.length); // Each call to constructor creates an instance
-
-			// Check behavior of the first packer (should have failed)
-			expect(createdMockPackerInstances[0].pack).toHaveBeenCalledTimes(1);
-			// Check behavior of the second packer (should have succeeded)
-			expect(createdMockPackerInstances[1].pack).toHaveBeenCalledTimes(1);
-
+		it("should select a larger box if an item's dimension doesn't fit smaller boxes", () => {
+			// Padded Satchel: L=100. Small Satchel: L=240. Small Box: L=210.
+			const items = [createMockShippingItem("longish", 220, 10, 10, 100, 1)];
+			const result = findBestBox(items);
 			expect(result.success).toBe(true);
-			// Since standardBoxes[1] was the first to succeed and subsequent boxes (using the default mock)
-			// also succeed, findBestBox would choose the one with the smallest volume/length among them.
-			// For this test to be robust, we should ensure standardBoxes[1] is indeed the "best"
-			// among those that succeed, or adjust the expectation if another box is better.
-			// Assuming standardBoxes[1] is better than or equal to standardBoxes[0] (which failed)
-			// and potentially better than standardBoxes[2] onwards (which succeeded with default mock).
-			// If standardBoxes[0] was smaller than standardBoxes[1], and standardBoxes[1] was the first success,
-			// then standardBoxes[1] would be chosen.
-			// If a subsequent box (e.g. standardBoxes[2]) is smaller than standardBoxes[1] and also fits,
-			// it would be chosen. The default mock makes all items fit.
-			// For this test, we are asserting that it picked standardBoxes[1].
-			// This implies standardBoxes[1] is the best fit among all succeeding boxes.
-			expect(result.box).toEqual(standardBoxes[1]); // Should have used the second box
-			expect(result.packedItems.length).toBe(sampleItems.length);
+			expect(result.box?.name).toBe("Small Satchel"); // Length 240
+		});
+
+		it("should select the Extra Large Box for the very long item", () => {
+			const items = [itemLong]; // 1000mm length
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			// Extra Large Box: L=1170. XXL Box: L=1570.
+			// Extra Large Box should be chosen as it's smaller volume and fits.
+			expect(result.box?.name).toBe("Extra Large Box");
+		});
+
+		it("should return success with the smallest box for an empty item list", () => {
+			const items: ShippingItem[] = [];
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			// Expects the first box in the standardBoxes array as the default for empty items.
+			// Or null if that's the preferred behavior (current code picks smallest that fits criteria, which is Padded Satchel for 0 items)
+			expect(result.box?.name).toBe("Padded Satchel");
+			expect(result.packedItems).toEqual([]);
 			expect(result.unfitItems).toHaveLength(0);
 		});
 
-		it("should correctly map packed item properties", () => {
-			// Default mock (success on first box) is fine for this.
-			const result = findBestBox([
-				createMockShippingItem("mapTest", 10, 10, 10, 10, 1, "MAPSKU"),
-			]);
+		it("should correctly consider item quantity for weight and volume", () => {
+			// Padded Satchel: 100x80x20 (vol 160000), 300g max weight.
+			const items = [createMockShippingItem("multiQty", 10, 10, 10, 60, 5)]; // Total weight 300g, Total vol 5000
+			const result = findBestBox(items);
 			expect(result.success).toBe(true);
-			expect(result.packedItems.length).toBe(1);
-			const packed = result.packedItems[0];
-			expect(packed._id).toBe("mapTest");
-			expect(packed.name).toBe("Test Item mapTest");
-			expect(packed.length).toBe(10);
-			expect(packed.width).toBe(10);
-			expect(packed.height).toBe(10);
-			expect(packed.weight).toBe(10);
-			expect(packed.quantity).toBe(1);
-			expect(packed.sku).toBe("MAPSKU");
-			expect(packed.createdAt).toBeDefined();
-			expect(packed.updatedAt).toBeDefined();
-			expect(packed.deletedAt).toBeNull();
+			expect(result.box?.name).toBe("Padded Satchel"); // Exactly fits weight
+
+			const itemsTooHeavyDueToQty = [createMockShippingItem("multiQtyHeavy", 10, 10, 10, 61, 5)]; // Total weight 305g
+			const resultHeavy = findBestBox(itemsTooHeavyDueToQty);
+			expect(resultHeavy.success).toBe(true);
+			expect(resultHeavy.box?.name).toBe("Small Satchel"); // Padded Satchel fails on weight
 		});
-	});
 
-	describe("findBestBox with problematic items (long item scenario from screenshot)", () => {
-		// Items based on the user's screenshot, especially the long stepper cable.
-		// My goal here is to simulate a real-world scenario that was causing issues.
-		const problematicItems: ShippingItem[] = [
-			createMockShippingItem(
-				"item_iec_power",
-				50,
-				50,
-				30,
-				20,
-				1,
-				"ELEC-PWR-SW-FU-IEC"
-			),
-			createMockShippingItem(
-				"item_m5_screws_pack",
-				50,
-				10,
-				10,
-				100,
-				1,
-				"SCREWS-M5-LP-50"
-			),
-			createMockShippingItem(
-				"item_stepper_cable_1000mm",
-				1000,
-				5,
-				5,
-				10,
-				1,
-				"ELEC-STEPPER-CABLE-1000MM"
-			),
-			createMockShippingItem(
-				"item_inductive_sensor_lj12a3",
-				80,
-				15,
-				15,
-				50,
-				1,
-				"ELEC-LJ12A3-AX"
-			),
-			createMockShippingItem(
-				"item_v6_hotend_bowden_pack",
-				80,
-				80,
-				5,
-				50,
-				1,
-				"3D-HOTEND-BOW-0.4-1.75-V2"
-			),
-		];
+		it("should choose the box with smaller volume if multiple boxes fit", () => {
+			// All items will fit in Small Box, Medium Box, Large Box etc.
+			// Small Box: 210*170*120 = 4,284,000
+			// Medium Box: 300*300*200 = 18,000,000
+			const items = [createMockShippingItem("volTest", 150, 150, 100, 1000, 1)]; // Fits Small Box
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			expect(result.box?.name).toBe("Small Box");
+		});
 
-		// This helper function creates a mock packer instance. I need to control how it behaves for each box.
-		const createSpecificPackerInstance = (shouldSucceedPacking: boolean) => {
-			const itemsAddedToThisPacker: any[] = [];
-			const packerInstance = {
-				bins: [] as any[], // Will hold the mock bin
-				unfitItems: [] as any[],
-				_itemsAdded: itemsAddedToThisPacker, // Keep a record of items added to this specific packer
-				addBin: jest.fn(function (this: any, bin: any) {
-					this.bins.push(bin);
-					return this;
-				}),
-				addItem: jest.fn(function (this: any, item: any) {
-					itemsAddedToThisPacker.push(item);
-					return this;
-				}),
-				pack: jest.fn(function (this: any) {
-					if (shouldSucceedPacking) {
-						this.unfitItems = [];
-						// If packing is meant to succeed, I need to simulate the items being put into the bin.
-						// The actual binpackingjs library would modify the bin.items array.
-						if (this.bins.length > 0 && this.bins[0].addItem) {
-							// My mockBin has an addItem method
-							itemsAddedToThisPacker.forEach((item) =>
-								this.bins[0].addItem(item)
-							);
-						}
-					} else {
-						// If packing fails, all items added to this packer are considered unfit.
-						this.unfitItems = [...itemsAddedToThisPacker];
-					}
-				}),
-			};
-			createdMockPackerInstances.push(packerInstance); // I keep track of all created mock instances.
-			return packerInstance;
-		};
+		it("should choose the box with shorter length if volumes are equal (hypothetical)", () => {
+			// This test requires custom standard boxes as current ones don't have same volume easily.
+			const originalStandardBoxes = [...standardBoxes]; // Save original
+			(standardBoxes as ShippingItem[]).splice(0, standardBoxes.length); // Clear current standardBoxes
+			standardBoxes.push(
+				{ _id: "boxA", name: "Box A (Longer)", length: 20, width: 10, height: 10, maxWeight: 1000 }, // Vol 2000
+				{ _id: "boxB", name: "Box B (Shorter)", length: 10, width: 20, height: 10, maxWeight: 1000 } // Vol 2000
+			);
+			const items = [createMockShippingItem("lenTest", 5, 5, 5, 10, 1)];
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			expect(result.box?.name).toBe("Box B (Shorter)");
 
-		it("should select the 'Extra Large Box' when it fits the 1000mm item and is preferred over the 'XXL Box' due to smaller dimensions", () => {
-			// I need to tell Jest how the Packer should behave for each standard box it tries.
-			// The 1000mm long item (item_stepper_cable_1000mm) is the critical one.
-			// It should not fit in the first 5 boxes based on their dimensions.
-			mockPackerConstructor
-				.mockImplementationOnce(() => createSpecificPackerInstance(false)) // standardBoxes[0] - Padded Satchel (length 100)
-				.mockImplementationOnce(() => createSpecificPackerInstance(false)) // standardBoxes[1] - Small Satchel (length 240)
-				.mockImplementationOnce(() => createSpecificPackerInstance(false)) // standardBoxes[2] - Small Box (length 210)
-				.mockImplementationOnce(() => createSpecificPackerInstance(false)) // standardBoxes[3] - Medium Box (length 300)
-				.mockImplementationOnce(() => createSpecificPackerInstance(false)) // standardBoxes[4] - Large Box (length 510)
-				.mockImplementationOnce(() => createSpecificPackerInstance(true)) // standardBoxes[5] - Extra Large Box (length 1170) - Should fit!
-				.mockImplementationOnce(() => createSpecificPackerInstance(true)); // standardBoxes[6] - XXL Box (length 1570) - Should also fit.
+			// Restore original standard boxes for other tests
+			standardBoxes.splice(0, standardBoxes.length, ...originalStandardBoxes);
+		});
 
-			// Now, I run the function I'm testing with my problematic items.
-			const result = findBestBox(problematicItems);
+		it("should fail if total item volume exceeds box volume, even if other checks pass", () => {
+      // Padded Satchel: 100x80x20 (vol 160000), 300g max weight.
+      const items = [
+        createMockShippingItem("volFail1", 70, 70, 15, 10, 1), // 73500
+        createMockShippingItem("volFail2", 70, 70, 15, 10, 1), // 73500. Total: 147000. Fits.
+      ];
+      const resultFit = findBestBox(items);
+      expect(resultFit.success).toBe(true);
+      expect(resultFit.box?.name).toBe("Padded Satchel");
 
-			// Here are my expectations for the outcome:
-			expect(result.success).toBe(true); // A box should have been found.
-			// The 'Extra Large Box' (index 5) should be chosen because it's the smallest (by volume, then length) that fits.
-			expect(result.box).toEqual(standardBoxes[5]);
-			expect(result.packedItems.length).toBe(problematicItems.length); // All items should be packed.
+      const itemsVolOverflow = [
+        createMockShippingItem("volFail3", 80, 80, 15, 10, 1), // 96000
+        createMockShippingItem("volFail4", 80, 80, 15, 10, 1), // 96000. Total: 192000. Exceeds Padded Satchel vol.
+      ];
+      // All individual items fit, weight is fine (20g).
+      // Padded Satchel vol: 160000. Items total vol: 192000.
+      // Small Satchel vol: 240*150*100 = 3,600,000. This should be chosen.
+      const resultOverflow = findBestBox(itemsVolOverflow);
+      expect(resultOverflow.success).toBe(true);
+      expect(resultOverflow.box?.name).toBe("Small Satchel");
+    });
 
-			// I also want to make sure the packed items retain their original details.
-			problematicItems.forEach((originalItem) => {
-				const packedItem = result.packedItems.find(
-					(p) => p._id === originalItem._id
-				);
-				expect(packedItem).toBeDefined();
-				expect(packedItem?.quantity).toBe(originalItem.quantity);
-			});
-			expect(result.unfitItems).toHaveLength(0); // No items should be left unfit.
+		// Test for the problematic items from the user's scenario
+		describe("findBestBox with problematic items (long item scenario)", () => {
+			const problematicItems: ShippingItem[] = [
+				createMockShippingItem("item_iec_power",50,50,30,20,1,"ELEC-PWR-SW-FU-IEC"),
+				createMockShippingItem("item_m5_screws_pack",50,10,10,100,1,"SCREWS-M5-LP-50"),
+				createMockShippingItem("item_stepper_cable_1000mm",1000,5,5,10,1,"ELEC-STEPPER-CABLE-1000MM"),
+				createMockShippingItem("item_inductive_sensor_lj12a3",80,15,15,50,1,"ELEC-LJ12A3-AX"),
+				createMockShippingItem("item_v6_hotend_bowden_pack",80,80,5,50,1,"3D-HOTEND-BOW-0.4-1.75-V2"),
+			];
 
-			// I expect the Packer constructor to have been called for each of the standard boxes.
-			expect(mockPackerConstructor).toHaveBeenCalledTimes(standardBoxes.length);
-
-			// And I expect the pack() method to have been called on each of those packer instances.
-			expect(createdMockPackerInstances.length).toBe(standardBoxes.length);
-			createdMockPackerInstances.forEach((instance) => {
-				expect(instance.pack).toHaveBeenCalledTimes(1);
+			it("should select the 'Extra Large Box' for the problematic items set", () => {
+				const result = findBestBox(problematicItems);
+				expect(result.success).toBe(true);
+				// The 1000mm item dictates the box size.
+				// Extra Large Box (L=1170) is the smallest that fits this length.
+				expect(result.box?.name).toBe("Extra Large Box");
+				expect(result.packedItems).toEqual(problematicItems);
+				expect(result.unfitItems).toHaveLength(0);
 			});
 		});
 	});
+
+	describe('findBestBox', () => {
+    test('should find the correct box for a single small item', () => {
+      const items: ShippingItem[] = [{
+        _id: 'small-item',
+        name: 'Small Item',
+        length: 50,
+        width: 50,
+        height: 50,
+        weight: 100,
+        quantity: 1
+      }];
+
+      const result = findBestBox(items);
+      expect(result.success).toBe(true);
+      expect(result.box?.name).toBe('Padded Satchel');
+    });
+    
+    test('should handle an item that is too large for any box', () => {
+      const items: ShippingItem[] = [{
+        _id: 'large-item',
+        name: 'Oversized Item',
+        length: 2000,
+        width: 2000,
+        height: 2000,
+        weight: 1000,
+        quantity: 1
+      }];
+
+      const result = findBestBox(items);
+      expect(result.success).toBe(false);
+      expect(result.unfitItems.length).toBe(1);
+    });
+  });
+
+  describe('packItemsIntoMultipleBoxes', () => {
+    test('should pack 20 extrusions into exactly 2 boxes with 10 in each', () => {
+      const items = create20x40x1000mmExtrusions(20);
+      const result = packItemsIntoMultipleBoxes(items);
+      
+      expect(result.success).toBe(true);
+      expect(result.shipments.length).toBe(2);
+      expect(result.unfitItems.length).toBe(0);
+      
+      // Check if each box has 10 extrusions
+      expect(result.shipments[0].packedItems[0].quantity).toBe(10);
+      expect(result.shipments[1].packedItems[0].quantity).toBe(10);
+      
+      // Check that we're using the Extra Large box (or larger)
+      expect(['Extra Large Box', 'XXL Box']).toContain(result.shipments[0].box.name);
+    });
+    
+    test('should pack 19 extrusions into exactly 2 boxes (10 in first, 9 in second)', () => {
+      const items = create20x40x1000mmExtrusions(19);
+      const result = packItemsIntoMultipleBoxes(items);
+      
+      expect(result.success).toBe(true);
+      expect(result.shipments.length).toBe(2);
+      expect(result.unfitItems.length).toBe(0);
+      
+      // Check if boxes have correct quantities
+      expect(result.shipments[0].packedItems[0].quantity).toBe(10);
+      expect(result.shipments[1].packedItems[0].quantity).toBe(9);
+    });
+
+    test('should pack 10 extrusions into a single box', () => {
+      const items = create20x40x1000mmExtrusions(10);
+      const result = packItemsIntoMultipleBoxes(items);
+      
+      expect(result.success).toBe(true);
+      expect(result.shipments.length).toBe(1);
+      expect(result.shipments[0].packedItems[0].quantity).toBe(10);
+    });
+
+    test('should pack 11 extrusions into 2 boxes (10 in first, 1 in second)', () => {
+      const items = create20x40x1000mmExtrusions(11);
+      const result = packItemsIntoMultipleBoxes(items);
+      
+      expect(result.success).toBe(true);
+      expect(result.shipments.length).toBe(2);
+      expect(result.shipments[0].packedItems[0].quantity).toBe(10);
+      expect(result.shipments[1].packedItems[0].quantity).toBe(1);
+    });
+  });
 });

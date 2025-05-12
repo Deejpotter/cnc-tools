@@ -14,7 +14,11 @@ import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import LayoutContainer from "@/components/LayoutContainer";
-import { findBestBox } from "@/app/box-shipping-calculator/BoxCalculations";
+import {
+	findBestBox,
+	packItemsIntoMultipleBoxes,
+	MultiBoxPackingResult,
+} from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
 import ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
 import {
@@ -26,14 +30,6 @@ import {
 	syncWithRemoteDatabase,
 } from "@/app/actions/data-actions";
 // import { SAMPLE_ITEMS } from "./sampleItems"; // Removed
-
-// Define the type for packing result
-interface PackingResult {
-	success: boolean;
-	box: ShippingBox | null;
-	packedItems: ShippingItem[];
-	unfitItems: ShippingItem[];
-}
 
 /**
  * Box Shipping Calculator Page Component
@@ -48,9 +44,8 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	// ---------------
 	const [items, setItems] = useState<ShippingItem[]>([]);
 	const [selectedItems, setSelectedItems] = useState<ShippingItem[]>([]);
-	const [packingResult, setPackingResult] = useState<PackingResult | null>(
-		null
-	);
+	const [packingResult, setPackingResult] =
+		useState<MultiBoxPackingResult | null>(null);
 	const [importError, setImportError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSyncing, setIsSyncing] = useState(false);
@@ -59,8 +54,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * Effect hook to load initial items and initialize sample data if needed
 	 */
 	useEffect(() => {
-		// Initialize sample items and load available items
-		// initializeWithSampleItems(SAMPLE_ITEMS).then(() => { // Removed sample data initialization
+		// Load items from the database when the component mounts
 		loadItems();
 		// });
 	}, []);
@@ -186,7 +180,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
 	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
-		const result = findBestBox(itemsToCalculate);
+		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
 		setPackingResult(result);
 	};
 
@@ -293,28 +287,78 @@ const BoxShippingCalculatorPage: React.FC = () => {
 							<div className="card h-100 shadow bg-light">
 								<div className="card-body">
 									<h2 className="card-title mb-3">Calculation Results</h2>
-									{packingResult.success ? (
+									{packingResult.success &&
+									packingResult.shipments.length > 0 ? (
 										<>
-											<p className="text-success mb-3">Found suitable box!</p>
-											<div className="mb-2">
-												<p>
-													<strong>Box:</strong> {packingResult.box.name}
-												</p>
-												<p>
-													<strong>Dimensions:</strong>{" "}
-													{packingResult.box.length} x {packingResult.box.width}{" "}
-													x {packingResult.box.height} mm
-												</p>
-												<p>
-													<strong>Max Weight:</strong>{" "}
-													{packingResult.box.maxWeight}g
-												</p>
-											</div>
+											<p className="text-success mb-3">
+												Successfully packed items into{" "}
+												{packingResult.shipments.length} box(es)!
+											</p>
+											{packingResult.shipments.map((shipment, index) => (
+												<div key={index} className="mb-4 p-3 border rounded">
+													<h4>Shipment {index + 1}</h4>
+													<p>
+														<strong>Box:</strong> {shipment.box.name}
+													</p>
+													<p>
+														<strong>Dimensions:</strong> {shipment.box.length} x{" "}
+														{shipment.box.width} x {shipment.box.height} mm
+													</p>
+													<p>
+														<strong>Max Weight:</strong>{" "}
+														{shipment.box.maxWeight}g
+													</p>
+													<h5>Packed Items ({shipment.packedItems.length}):</h5>
+													<ul>
+														{shipment.packedItems.map((item) => (
+															<li
+																key={
+																	item._id ? item._id.toString() : Math.random()
+																}
+															>
+																{item.name} (Qty: {item.quantity})
+															</li>
+														))}
+													</ul>
+												</div>
+											))}
+											{packingResult.unfitItems.length > 0 && (
+												<div className="mt-3 text-warning">
+													<h5>Unfit Items:</h5>
+													<ul>
+														{packingResult.unfitItems.map((item) => (
+															<li
+																key={
+																	item._id ? item._id.toString() : Math.random()
+																}
+															>
+																{item.name} (Qty: {item.quantity})
+															</li>
+														))}
+													</ul>
+												</div>
+											)}
 										</>
 									) : (
 										<p className="text-danger">
-											Could not find a suitable box for all items. Consider
-											splitting into multiple shipments.
+											Could not find a suitable box configuration for all items.
+											{packingResult.unfitItems.length > 0 && (
+												<>
+													<br />
+													The following items could not be packed:
+													<ul>
+														{packingResult.unfitItems.map((item) => (
+															<li
+																key={
+																	item._id ? item._id.toString() : Math.random()
+																}
+															>
+																{item.name} (Qty: {item.quantity})
+															</li>
+														))}
+													</ul>
+												</>
+											)}
 										</p>
 									)}
 								</div>
