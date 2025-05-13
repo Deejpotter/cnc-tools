@@ -219,6 +219,32 @@ Use these npm scripts to run tests:
 - Tests will run automatically on pull requests
 - Failed tests should block merges to main branches
 
+## File Headers
+
+Every file should include a consistent header comment with the following format:
+
+```typescript
+/**
+ * [File Name]
+ * Updated: [Date in DD/MM/YYYY format]
+ * Author: [Author Name]
+ * Description: [Brief description of the file's purpose]
+ * [Optional additional details about implementation]
+ */
+```
+
+Example:
+
+```typescript
+/**
+ * BoxCalculations
+ * Updated: 13/05/2025
+ * Author: Deej Potter
+ * Description: Helper functions for calculating the best box size for shipping items.
+ * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
+ */
+```
+
 ## Best practices
 
 1. **TypeScript**: Use proper typing for all components and functions
@@ -226,3 +252,5 @@ Use these npm scripts to run tests:
 3. **Accessibility**: Follow accessibility best practices in UI components
 4. **Performance**: Optimize components using React best practices (memoization, etc.)
 5. **Testing**: Write tests following the testing conventions outlined above
+6. **File Headers**: Include consistent file headers in all files as specified above
+7. **Documentation**: Keep README files and inline documentation up to date

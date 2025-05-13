@@ -123,9 +123,9 @@ export const standardBoxes: ShippingBox[] = [
 	{
 		_id: "3m box",
 		name: "3m Box",
-		length: 3000,
-		width: 100,
-		height: 100,
+		length: 3050,
+		width: 150,
+		height: 150,
 		maxWeight: 25000,
 	},
 ];

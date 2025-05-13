@@ -1,3 +1,11 @@
+/**
+ * ItemAddForm
+ * Updated: 05/13/2025
+ * Author: Deej Potter
+ * Description: Form component for adding new items to the shipping calculator.
+ * Handles input validation and item creation with proper dimensioning.
+ */
+
 "use client";
 import React, { useState } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
@@ -5,11 +13,6 @@ import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 interface ItemAddFormProps {
 	onAddItem: (item: ShippingItem) => void;
 }
-
-/**
- * Form component for adding new items to the shipping calculator
- * Handles input validation and item creation
- */
 export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 	// State for form fields
 	const [name, setName] = useState("");

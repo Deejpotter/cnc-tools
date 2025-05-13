@@ -1,20 +1,16 @@
 /**
- * The shipping box interface represents a box that can be used to ship items.
- * It includes the box's dimensions in mm and its maximum weight capacity in grams.
- * @prop id - The unique identifier of the box.
- * @prop name - The name of the box.
- * @prop length - The length of the box in millimeters.
- * @prop width - The width of the box in millimeters.
- * @prop height - The height of the box in millimeters.
- * @prop maxWeight - The maximum weight the box can hold in grams.
- * @example {
- *  _id: "507f1f77bcf86cd799439011",
- * name: "Small Box",
- * length: 210,
- * width: 170,
- * height: 120,
- * maxWeight: 25000
- * }
+ * ShippingBox
+ * Updated: 05/13/2025
+ * Author: Deej Potter
+ * Description: Interface for shipping box dimensions and weight capacity.
+ * 
+ * Properties:
+ * - id: The unique identifier of the box
+ * - name: The name of the box
+ * - length: The length of the box in millimeters
+ * - width: The width of the box in millimeters
+ * - height: The height of the box in millimeters
+ * - maxWeight: The maximum weight the box can hold in grams
  */
 export default interface ShippingBox {
 	/**

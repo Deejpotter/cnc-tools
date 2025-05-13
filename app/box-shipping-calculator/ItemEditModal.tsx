@@ -1,3 +1,11 @@
+/**
+ * ItemEditModal
+ * Updated: 05/13/2025
+ * Author: Deej Potter
+ * Description: Modal component for editing existing shipping items.
+ * Provides form validation and error handling for item updates.
+ */
+
 import React, { useState } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 

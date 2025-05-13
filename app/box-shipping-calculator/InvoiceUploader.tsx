@@ -1,3 +1,11 @@
+/**
+ * InvoiceUploader
+ * Updated: 05/13/2025
+ * Author: Deej Potter
+ * Description: Component for uploading and processing invoice files.
+ * Extracts shipping items from invoices and passes them to the parent component.
+ */
+
 "use client";
 
 import React, { useRef, useState } from "react";

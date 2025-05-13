@@ -1,6 +1,6 @@
 /**
- * Shipping Item Interface
- * Updated: 30/03/25
+ * ShippingItem
+ * Updated: 05/13/2025
  * Author: Deej Potter
  * Description: Defines the structure of a shipping item in the database.
  * This interface extends the MongoDocument interface to include standard MongoDB fields.
