@@ -16,21 +16,15 @@ import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import BoxResultsDisplay from "./BoxResultsDisplay";
 import LayoutContainer from "@/components/LayoutContainer";
 import {
-	findBestBox,
 	packItemsIntoMultipleBoxes,
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
-import ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
 import {
 	getAvailableItems,
 	addItemToDatabase,
-	updateItemInDatabase,
-	deleteItemFromDatabase,
-	// initializeWithSampleItems, // Removed
 	syncWithRemoteDatabase,
 } from "@/app/actions/data-actions";
-// import { SAMPLE_ITEMS } from "./sampleItems"; // Removed
 
 /**
  * Box Shipping Calculator Page Component
