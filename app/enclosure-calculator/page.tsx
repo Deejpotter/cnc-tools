@@ -24,7 +24,6 @@ export default function EnclosureCalculator() {
 			[e.target.name]: e.target.checked,
 		});
 	};
-
 	/**
 	 * Calculate the required materials based on dimensions and door configuration
 	 * This function sets the results state with the calculated materials
@@ -35,7 +34,7 @@ export default function EnclosureCalculator() {
 		// const doors = calculateDoors(doorConfig); // Uncomment when logic is implemented
 
 		setResults({ extrusions }); // , doors: doors
-	}, [dimensions, doorConfig]);
+	}, [dimensions]); // Removed doorConfig as it's not used in the function
 
 	useEffect(() => {
 		calculateMaterials();
@@ -106,10 +105,12 @@ export default function EnclosureCalculator() {
 				{results.extrusions && (
 					<div>
 						<p>
-							2040 Extrusion Required: {results.extrusions.frame2040.toFixed(2)} meters
+							2040 Extrusion Required: {results.extrusions.frame2040.toFixed(2)}{" "}
+							meters
 						</p>
 						<p>
-							2020 Extrusion Required: {results.extrusions.vertical2020.toFixed(2)} meters
+							2020 Extrusion Required:{" "}
+							{results.extrusions.vertical2020.toFixed(2)} meters
 						</p>
 					</div>
 				)}
