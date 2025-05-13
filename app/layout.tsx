@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.scss";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { ItemProvider } from "../contexts/ItemContext";
 import Navbar from "../components/navbar/Navbar";

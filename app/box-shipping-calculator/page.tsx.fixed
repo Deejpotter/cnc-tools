@@ -1,0 +1,82 @@
+/**
+ * Box Shipping Calculator Page (with server components)
+ * Updated: 05/13/2025
+ * Author: Deej Potter
+ * Description: Server-rendered page with client-side interactivity
+ * Optimized for faster initial page load and better user experience
+ */
+
+import { Suspense } from "react";
+import BoxShippingCalculatorServer from "./page-server";
+import dynamic from "next/dynamic";
+
+// Loading component with display name
+function ClientComponentLoading() {
+	console.log("🔍 BoxShippingCalculatorClient loading fallback rendered");
+	return (
+		<div className="text-center py-3">
+			<div className="spinner-border text-primary" role="status">
+				<span className="visually-hidden">Loading client components...</span>
+			</div>
+			<p className="mt-2">Loading calculator interface...</p>
+		</div>
+	);
+}
+
+// Error fallback component with display name
+function ClientComponentError({ error }: { error: Error }) {
+	return (
+		<div id="client-error" className="container mt-3">
+			<div className="alert alert-danger my-4">
+				<h4>Failed to load application</h4>
+				<p>There was an error loading the client components.</p>
+				<pre className="small bg-light p-2">{error.message}</pre>
+				<button className="btn btn-primary" onClick={() => window.location.reload()}>
+					Reload Page
+				</button>
+			</div>
+		</div>
+	);
+}
+
+// Dynamically import the client component to avoid loading it during SSR
+const BoxShippingCalculatorClient = dynamic(
+	() => {
+		console.log("🔍 Dynamic import of BoxShippingCalculatorClient initiated");
+		return import("./components/BoxShippingCalculatorClient")
+			.then(mod => {
+				console.log("✅ BoxShippingCalculatorClient module loaded successfully");
+				return mod;
+			})
+			.catch(err => {
+				console.error("❌ Error loading BoxShippingCalculatorClient:", err);
+				// Return a component that displays the error
+				return () => <ClientComponentError error={err} />;
+			});
+	},
+	{
+		ssr: false,
+		loading: ClientComponentLoading
+	}
+);
+
+/**
+ * Box Shipping Calculator Page
+ * This is the entry point for the Box Shipping Calculator page
+ * It combines server-rendered content with client-side interactivity
+ */
+export default function BoxShippingCalculatorPage() {
+	return (
+		<>
+			{/* Server-rendered content */}
+			<BoxShippingCalculatorServer />
+
+			{/* Client-side enhancement with error boundary */}
+			<div id="client-components">
+				<Suspense fallback={<ClientComponentLoading />}>
+					<BoxShippingCalculatorClient />
+				</Suspense>
+			</div>
+		</>
+	);
+}
