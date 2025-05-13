@@ -1,3 +1,13 @@
 [build]
-  command = "npm run build"
-  publish = ".next"
+command = "npm run build"
+publish = ".next"
+
+# Configure Netlify build environment
+[build.environment]
+NODE_VERSION = "18"
+NPM_FLAGS = "--legacy-peer-deps"
+NEXT_TELEMETRY_DISABLED = "1"
+
+# Configure Next.js build cache
+[[plugins]]
+package = "@netlify/plugin-nextjs"

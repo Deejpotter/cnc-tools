@@ -319,8 +319,9 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 								</tr>
 							</thead>
 							<tbody>
+								{" "}
 								{shipment.packedItems.map((item: ShippingItem, idx: number) => (
-									<tr key={`${item._id}-${idx}`}>
+									<tr key={`${String(item._id)}-${idx}`}>
 										<td>
 											<small>{item.name}</small>
 											<div>
@@ -350,9 +351,10 @@ function UnfitItemsCard({ items }: { items: ShippingItem[] }) {
 
 	return (
 		<div className="card border-danger mt-3">
+			{" "}
 			<div className="card-header bg-danger text-white">
 				<AlertCircle size={18} className="me-2" />
-				Items That Don't Fit
+				Items That Don&apos;t Fit
 			</div>
 			<div className="card-body">
 				<div className="table-responsive">
@@ -366,8 +368,9 @@ function UnfitItemsCard({ items }: { items: ShippingItem[] }) {
 							</tr>
 						</thead>
 						<tbody>
+							{" "}
 							{items.map((item) => (
-								<tr key={item._id}>
+								<tr key={String(item._id)}>
 									<td>{item.name}</td>
 									<td>
 										{item.length}×{item.width}×{item.height}mm
