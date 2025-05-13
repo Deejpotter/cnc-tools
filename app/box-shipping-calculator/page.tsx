@@ -13,6 +13,7 @@ import React, { useState, useEffect } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
+import BoxResultsDisplay from "./BoxResultsDisplay";
 import LayoutContainer from "@/components/LayoutContainer";
 import {
 	findBestBox,
@@ -264,7 +265,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 							</div>
 						</div>
 					</div>
-
 					{/* Item Selection and Calculation Section */}
 					<div className="col-12 mb-4">
 						<div className="card h-100 shadow bg-light">
@@ -279,93 +279,18 @@ const BoxShippingCalculatorPage: React.FC = () => {
 								/>
 							</div>
 						</div>
-					</div>
-
-					{/* Calculation Results Display */}
+					</div>{" "}
+					{/* Box Results Display */}
 					{packingResult && (
 						<div className="col-12 mb-4">
 							<div className="card h-100 shadow bg-light">
 								<div className="card-body">
 									<h2 className="card-title mb-3">Calculation Results</h2>
-									{packingResult.success &&
-									packingResult.shipments.length > 0 ? (
-										<>
-											<p className="text-success mb-3">
-												Successfully packed items into{" "}
-												{packingResult.shipments.length} box(es)!
-											</p>
-											{packingResult.shipments.map((shipment, index) => (
-												<div key={index} className="mb-4 p-3 border rounded">
-													<h4>Shipment {index + 1}</h4>
-													<p>
-														<strong>Box:</strong> {shipment.box.name}
-													</p>
-													<p>
-														<strong>Dimensions:</strong> {shipment.box.length} x{" "}
-														{shipment.box.width} x {shipment.box.height} mm
-													</p>
-													<p>
-														<strong>Max Weight:</strong>{" "}
-														{shipment.box.maxWeight}g
-													</p>
-													<h5>Packed Items ({shipment.packedItems.length}):</h5>
-													<ul>
-														{shipment.packedItems.map((item) => (
-															<li
-																key={
-																	item._id ? item._id.toString() : Math.random()
-																}
-															>
-																{item.name} (Qty: {item.quantity})
-															</li>
-														))}
-													</ul>
-												</div>
-											))}
-											{packingResult.unfitItems.length > 0 && (
-												<div className="mt-3 text-warning">
-													<h5>Unfit Items:</h5>
-													<ul>
-														{packingResult.unfitItems.map((item) => (
-															<li
-																key={
-																	item._id ? item._id.toString() : Math.random()
-																}
-															>
-																{item.name} (Qty: {item.quantity})
-															</li>
-														))}
-													</ul>
-												</div>
-											)}
-										</>
-									) : (
-										<p className="text-danger">
-											Could not find a suitable box configuration for all items.
-											{packingResult.unfitItems.length > 0 && (
-												<>
-													<br />
-													The following items could not be packed:
-													<ul>
-														{packingResult.unfitItems.map((item) => (
-															<li
-																key={
-																	item._id ? item._id.toString() : Math.random()
-																}
-															>
-																{item.name} (Qty: {item.quantity})
-															</li>
-														))}
-													</ul>
-												</>
-											)}
-										</p>
-									)}
+									<BoxResultsDisplay packingResult={packingResult} />
 								</div>
 							</div>
 						</div>
 					)}
-
 					{/* Manual Item Addition Form */}
 					<div className="col-12 mb-4">
 						<div className="card h-100 shadow bg-light">

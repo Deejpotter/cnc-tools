@@ -117,14 +117,13 @@ export default function ItemSelectAndCalculate({
 	 * If the item already exists, its quantity is incremented
 	 * If it's a new item, it's added with quantity 1
 	 * @param item Item to add or increment
-	 */
-	const handleSelectItem = (item: ShippingItem) => {
-		const existingItem = selectedItems.find((i) => i._id === item._id);
+	 */	const handleSelectItem = (item: ShippingItem) => {
+		const existingItem = selectedItems.find((i) => String(i._id) === String(item._id));
 		if (existingItem) {
 			// If item exists, increment its quantity
 			onSelectedItemsChange(
 				selectedItems.map((i) =>
-					i._id === item._id ? { ...i, quantity: (i.quantity || 1) + 1 } : i
+					String(i._id) === String(item._id) ? { ...i, quantity: (i.quantity || 1) + 1 } : i
 				)
 			);
 		} else {
@@ -138,10 +137,9 @@ export default function ItemSelectAndCalculate({
 	 * Ensures quantity never goes below 1
 	 * @param itemId ID of the item to update
 	 * @param delta Amount to change quantity by (+1 or -1)
-	 */
-	const updateQuantity = (itemId: string, delta: number) => {
+	 */	const updateQuantity = (itemId: string, delta: number) => {
 		const updatedItems = selectedItems.map((item) => {
-			if (item._id === itemId) {
+			if (String(item._id) === itemId) {
 				const newQuantity = Math.max(1, (item.quantity || 1) + delta);
 				return { ...item, quantity: newQuantity };
 			}
@@ -153,9 +151,8 @@ export default function ItemSelectAndCalculate({
 	/**
 	 * Remove an item from the selected items list
 	 * @param itemId ID of the item to remove
-	 */
-	const handleRemoveItem = (itemId: string) => {
-		onSelectedItemsChange(selectedItems.filter((item) => item._id !== itemId));
+	 */	const handleRemoveItem = (itemId: string) => {
+		onSelectedItemsChange(selectedItems.filter((item) => String(item._id) !== itemId));
 	};
 
 	/**
@@ -171,17 +168,16 @@ export default function ItemSelectAndCalculate({
 	 * Handle item update submission
 	 * Updates the item in the database and refreshes the list
 	 * @param updatedItem Item with updated values
-	 */
-	const handleUpdateItem = async (updatedItem: ShippingItem) => {
+	 */	const handleUpdateItem = async (updatedItem: ShippingItem) => {
 		try {
 			await updateItemInDatabase(updatedItem);
 			onItemsChange(); // Refresh the items list
 
 			// Update the item in selectedItems if it exists there
-			if (selectedItems.some((item) => item._id === updatedItem._id)) {
+			if (selectedItems.some((item) => String(item._id) === String(updatedItem._id))) {
 				onSelectedItemsChange(
 					selectedItems.map((item) =>
-						item._id === updatedItem._id
+						String(item._id) === String(updatedItem._id)
 							? { ...updatedItem, quantity: item.quantity }
 							: item
 					)
@@ -198,8 +194,7 @@ export default function ItemSelectAndCalculate({
 	 * Confirms deletion with user before proceeding
 	 * Updates UI state and database through server action
 	 * @param itemId ID of the item to delete
-	 */
-	const handleDeleteItem = async (itemId: string) => {
+	 */	const handleDeleteItem = async (itemId: string) => {
 		if (!window.confirm("Are you sure you want to delete this item?")) {
 			return;
 		}
@@ -210,9 +205,9 @@ export default function ItemSelectAndCalculate({
 			onItemsChange();
 
 			// Remove item from selected items if it exists there
-			if (selectedItems.some((item) => item._id === itemId)) {
+			if (selectedItems.some((item) => String(item._id) === itemId)) {
 				onSelectedItemsChange(
-					selectedItems.filter((item) => item._id !== itemId)
+					selectedItems.filter((item) => String(item._id) !== itemId)
 				);
 			}
 		} catch (error) {
@@ -281,9 +276,8 @@ export default function ItemSelectAndCalculate({
 						className="list-group"
 						style={{ maxHeight: "400px", overflowY: "auto" }}
 					>
-						{processedItems.map((item) => (
-							<div
-								key={item._id}
+						{processedItems.map((item) => (							<div
+								key={String(item._id)}
 								className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
 							>
 								<div className="flex-grow-1">
@@ -310,16 +304,14 @@ export default function ItemSelectAndCalculate({
 										title="Edit item"
 									>
 										<Edit size={16} />
-									</button>
-
-									{/* Delete Item Button */}
+									</button>									{/* Delete Item Button */}
 									<button
 										className="btn btn-outline-danger btn-sm"
-										onClick={() => handleDeleteItem(item._id as string)}
-										disabled={isDeleting === item._id}
+										onClick={() => handleDeleteItem(String(item._id))}
+										disabled={isDeleting === String(item._id)}
 										title="Delete item"
 									>
-										{isDeleting === item._id ? (
+										{isDeleting === String(item._id) ? (
 											<span className="spinner-border spinner-border-sm" />
 										) : (
 											<Trash2 size={16} />
@@ -343,9 +335,8 @@ export default function ItemSelectAndCalculate({
 						className="list-group"
 						style={{ maxHeight: "400px", overflowY: "auto" }}
 					>
-						{selectedItems.map((item) => (
-							<div
-								key={item._id}
+						{selectedItems.map((item) => (							<div
+								key={String(item._id)}
 								className="list-group-item d-flex justify-content-between align-items-center"
 							>
 								<div className="flex-grow-1">
@@ -360,7 +351,7 @@ export default function ItemSelectAndCalculate({
 									<div className="btn-group me-2">
 										<button
 											className="btn btn-outline-secondary btn-sm"
-											onClick={() => updateQuantity(item._id as string, -1)}
+											onClick={() => updateQuantity(String(item._id), -1)}
 										>
 											<Minus size={16} />
 										</button>
@@ -369,7 +360,7 @@ export default function ItemSelectAndCalculate({
 										</span>
 										<button
 											className="btn btn-outline-secondary btn-sm"
-											onClick={() => updateQuantity(item._id as string, 1)}
+											onClick={() => updateQuantity(String(item._id), 1)}
 										>
 											<Plus size={16} />
 										</button>
@@ -377,7 +368,7 @@ export default function ItemSelectAndCalculate({
 									{/* Remove Item Button */}
 									<button
 										className="btn btn-outline-danger btn-sm"
-										onClick={() => handleRemoveItem(item._id as string)}
+										onClick={() => handleRemoveItem(String(item._id))}
 									>
 										<X size={16} />
 									</button>
