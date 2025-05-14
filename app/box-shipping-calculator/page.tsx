@@ -246,9 +246,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 					<div className="col-12 mb-4">
 						<div className="card h-100 shadow bg-light">
 							<div className="card-body">
-								<h2 className="card-title mb-3">
-									Import from Maker Store Invoice
-								</h2>
+								<h2 className="card-title mb-3">Import from Invoice</h2>
 								<InvoiceUploader
 									onItemsFound={handleInvoiceItems}
 									onError={setImportError}

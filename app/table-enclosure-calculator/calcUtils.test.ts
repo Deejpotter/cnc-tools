@@ -341,3 +341,84 @@ describe("Mounting Materials Calculations", () => {
 		expect(result.instructions).toContain("assembly guide");
 	});
 });
+
+/**
+ * Customer Quote Test Case
+ * This test verifies calculations for a real customer request:
+ * - 1200mm × 1200mm working area with 950mm total height (including 200mm half enclosure)
+ * - 200mm height enclosure around perimeter
+ * - Corflute panels
+ * - M8 caster wheels
+ */
+describe("Customer Quote - Table with Half Enclosure", () => {
+	it("calculates materials for 1200×1200 table with 200mm half enclosure", () => {
+		// Table dimensions (1200×1200 working area, 750mm table height)
+		const tableDimensions: Dimensions = {
+			length: 1200, // 1200mm working area
+			width: 1200, // 1200mm working area
+			height: 750, // Total height minus enclosure height (950-200)
+			isOutsideDimension: false, // These are inside dimensions (working area)
+		};
+
+		// Half enclosure dimensions (200mm height)
+		const enclosureDimensions: Dimensions = {
+			length: 1240, // Working area + 40mm for 2060 extrusions
+			width: 1240, // Working area + 40mm for 2060 extrusions
+			height: 200, // 200mm half enclosure
+			isOutsideDimension: false, // These are inside dimensions
+		};
+
+		// Calculate materials
+		const tableResult = calculateTableMaterials(tableDimensions);
+		const enclosureResult = calculateEnclosureMaterials(enclosureDimensions);
+		const mountingResult = calculateMountingMaterials();
+
+		// Panel configuration for half enclosure (no top or bottom)
+		const panelConfig = {
+			type: "corflute",
+			thickness: 5, // Standard corflute thickness
+			panelConfig: {
+				top: false,
+				bottom: false,
+				left: true,
+				right: true,
+				back: true,
+			},
+		};
+
+		const panelResult = calculatePanelMaterials(
+			enclosureDimensions,
+			panelConfig
+		);
+
+		// Test table calculations
+		expect(tableResult.extrusions.rail2060Length).toBe(1200);
+		expect(tableResult.extrusions.rail2060Width).toBe(1200);
+		expect(tableResult.extrusions.rail4040Legs).toBe(750);
+
+		// Verify table includes M8 caster wheel mounts
+		expect(tableResult.hardware.FOOT_BRACKETS).toBe(4);
+		expect(tableResult.hardware.FEET).toBe(4);
+
+		// Test enclosure calculations
+		expect(enclosureResult.extrusions.horizontal.length.size).toBe(1240);
+		expect(enclosureResult.extrusions.horizontal.width.size).toBe(1240);
+		expect(enclosureResult.extrusions.vertical2020.size).toBe(200);
+
+		// Test panel calculations for half enclosure
+		expect(panelResult.material.type).toBe("corflute");
+
+		// We expect 3 panels (left, right, back)
+		expect(panelResult.panels).toHaveLength(3);
+
+		// Verify panel dimensions (should be adjusted for 2020 extrusions)
+		// Panel dimensions = internal dimension + 12mm adjustment
+		const backPanel = panelResult.panels.find((p) => p.position === "Back");
+		expect(backPanel?.width).toBe(1240 + 12); // 1252mm
+		expect(backPanel?.height).toBe(200 + 12); // 212mm
+
+		// Test mounting hardware
+		expect(mountingResult.hardware.IOCNR_40).toBe(4);
+		expect(mountingResult.hardware.T_NUT_SLIDING).toBe(16);
+	});
+});

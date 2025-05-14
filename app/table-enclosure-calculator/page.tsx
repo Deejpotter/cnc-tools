@@ -50,6 +50,8 @@ export default function TableEnclosureCalculator() {
 	const searchParams = useSearchParams();
 	const printRef = useRef<HTMLDivElement>(null);
 
+	// Link to examples section for quick access to common quote configurations
+
 	// State for table dimensions
 	const [tableDimensions, setTableDimensions] = useState<Dimensions>({
 		length: 1000,
@@ -488,11 +490,33 @@ export default function TableEnclosureCalculator() {
 			// Keep default config if error
 		}
 	}, [searchParams]);
-
 	return (
 		<LayoutContainer>
 			<div className="table-enclosure-calculator">
 				<h1 className="mb-4">Table and Enclosure Calculator</h1>
+				{/* Quick Access to Common Quote Configurations */}
+				<div className="card mb-4">
+					<div className="card-header bg-info text-white">
+						<h2 className="h5 mb-0">Quick Examples</h2>
+					</div>
+					<div className="card-body">
+						<div className="row">
+							<div className="col-md-12">
+								<p>
+									Need a quick quote for one of these common configurations?
+								</p>
+								<div className="d-grid gap-2 d-md-flex">
+									<a
+										href="/table-enclosure-calculator/examples/half-enclosure-quote-example"
+										className="btn btn-outline-primary"
+									>
+										1200×1200 Table with 200mm Half Enclosure
+									</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 				{/* Configuration Options */}
 				<div className="card mb-4">
 					<div className="card-header">

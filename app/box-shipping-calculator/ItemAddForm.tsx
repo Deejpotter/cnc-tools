@@ -173,7 +173,7 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 
 					<div className="mb-3">
 						<label htmlFor="item-sku" className="form-label">
-							SKU: <span className="text-muted">(Optional)</span>
+							SKU:
 						</label>
 						<input
 							id="item-sku"
@@ -181,7 +181,7 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 							value={sku}
 							onChange={(e) => setSku(e.target.value)}
 							className="form-control"
-							placeholder="Enter SKU if available"
+							placeholder="Enter SKU"
 						/>
 					</div>
 

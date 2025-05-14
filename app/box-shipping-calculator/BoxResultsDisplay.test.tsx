@@ -56,11 +56,6 @@ const mockPackingResult: MultiBoxPackingResult = {
 		{
 			box: mockBox,
 			packedItems: mockItems,
-			remainingSpace: {
-				width: 10,
-				height: 30,
-				length: 40,
-			},
 		},
 	],
 	unfitItems: [],
@@ -111,7 +106,7 @@ describe("BoxResultsDisplay", () => {
 
 			expect(result.totalLength).toBe(100); // Max length
 			expect(result.totalWidth).toBe(80); // Max width
-			expect(result.totalHeight).toBe(50); // Sum of heights
+			expect(result.totalHeight).toBe(80); // Sum of heights
 			expect(result.totalVolume).toBe(280000); // Should match the volume calculation
 		});
 
@@ -141,9 +136,8 @@ describe("BoxResultsDisplay", () => {
 			expect(screen.getByText(/Box Dimensions:/)).toBeInTheDocument();
 			expect(screen.getByText(/200 × 150 × 100 mm/)).toBeInTheDocument();
 
-			// Check if the items dimensions are displayed
-			expect(screen.getByText(/Items Dimensions:/)).toBeInTheDocument();
-			expect(screen.getByText(/100 × 80 × 50 mm/)).toBeInTheDocument();
+			// Check if the items dimensions are displayed			expect(screen.getByText(/Items Dimensions:/)).toBeInTheDocument();
+			expect(screen.getByText(/100 × 80 × 80 mm/)).toBeInTheDocument();
 
 			// Check if total weight is displayed (500*2 + 1000*1 = 2000g)
 			expect(screen.getByText(/2000g \/ 5000g/)).toBeInTheDocument();

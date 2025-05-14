@@ -86,10 +86,10 @@ export function calculateBoxDimensions(items: ShippingItem[]): BoxDimensions {
 	let totalVolume = 0;
 	let maxLength = 0;
 	let maxWidth = 0;
-	let maxHeight = 0;
-	// Calculate total dimensions using a simple packing strategy
-	// For all dimensions (length, width, height), we take the maximum values
-	// This better represents the space occupied by items in each dimension
+	let maxHeight = 0; // Calculate total dimensions using a simple packing strategy
+	// For length and width, we take the maximum values
+	// For height, we sum the heights to simulate stacking
+	let totalHeight = 0;
 	items.forEach((item) => {
 		const quantity = item.quantity || 1;
 		const itemVolume = item.length * item.width * item.height * quantity;
@@ -98,8 +98,10 @@ export function calculateBoxDimensions(items: ShippingItem[]): BoxDimensions {
 		// Update maximum dimensions
 		maxLength = Math.max(maxLength, item.length);
 		maxWidth = Math.max(maxWidth, item.width);
-		maxHeight = Math.max(maxHeight, item.height);
+		totalHeight += item.height * quantity;
 	});
+
+	maxHeight = totalHeight; // Use the sum of heights
 	return {
 		totalLength: maxLength,
 		totalWidth: maxWidth,
@@ -295,7 +297,6 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 								</tr>
 							</thead>
 							<tbody>
-								{" "}
 								{shipment.packedItems.map((item: ShippingItem, idx: number) => (
 									<tr key={`${String(item._id)}-${idx}`}>
 										<td>
