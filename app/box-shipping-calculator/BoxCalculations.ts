@@ -1,9 +1,11 @@
 /**
  * Box Calculations
- * Updated: May 13, 2025
+ * Updated: 14/05/2025
  * Author: Deej Potter
  * Description: Helper functions for calculating the best box size for shipping items.
  * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
+ * Extreme Point-based 3D bin packing algorithm is a heuristic approach to efficiently pack items into boxes.
+ * That means it
  */
 
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
@@ -23,6 +25,8 @@ export interface MultiBoxPackingResult {
 // These constants control how we select boxes for shipping
 const MAX_PREFERRED_LENGTH = 1200; // mm - boxes longer than this will be penalized
 const LENGTH_PENALTY_FACTOR = 1.5; // Higher values penalize length more
+const EXTREME_LENGTH_THRESHOLD = 1500; // mm - boxes longer than this receive extreme penalties
+const EXTREME_LENGTH_PENALTY_FACTOR = 10.0; // Very high penalty for extremely long boxes
 const VOLUME_THRESHOLD = 30000000; // 30 million cubic mm (~30L) threshold for trying single-box packing
 
 /**
@@ -94,6 +98,14 @@ export const standardBoxes: ShippingBox[] = [
 		length: 290,
 		width: 290,
 		height: 190,
+		maxWeight: 25000,
+	},
+	{
+		_id: "bigger",
+		name: "Bigger Box",
+		length: 440,
+		width: 340,
+		height: 240,
 		maxWeight: 25000,
 	},
 	{
@@ -359,11 +371,32 @@ function createPackingBox(box: ShippingBox): PackingBox {
  * This prefers smaller boxes and penalizes excessively large ones
  *
  * @param box - The box to calculate preference for
+ * @param longestItemLength - Length of the longest item to be packed (optional)
  * @returns A score where lower is better
  */
-function calculateBoxPreference(box: ShippingBox): number {
+function calculateBoxPreference(
+	box: ShippingBox,
+	longestItemLength: number = 0
+): number {
 	const volume = box.length * box.width * box.height;
-	// Apply penalty for extremely long boxes (which are more expensive to ship)
+
+	// Only use extremely long boxes if we actually need the length
+	// This prevents using 3m boxes for items that don't need them
+	if (
+		box.length > EXTREME_LENGTH_THRESHOLD &&
+		longestItemLength < EXTREME_LENGTH_THRESHOLD
+	) {
+		// Apply extreme penalty if the box is much longer than needed
+		return (
+			volume *
+			Math.pow(
+				box.length / EXTREME_LENGTH_THRESHOLD,
+				EXTREME_LENGTH_PENALTY_FACTOR
+			)
+		);
+	}
+
+	// Apply standard penalty for moderately long boxes (which are more expensive to ship)
 	const lengthPenalty =
 		box.length > MAX_PREFERRED_LENGTH
 			? Math.pow(box.length / MAX_PREFERRED_LENGTH, LENGTH_PENALTY_FACTOR)
@@ -403,10 +436,24 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 			expandedItems.push({ ...item, quantity: 1 });
 		}
 	}
+	// Find the longest item dimension to help with box selection
+	let longestItemDimension = 0;
+	for (const item of expandedItems) {
+		// Consider all dimensions as the item could be rotated
+		longestItemDimension = Math.max(
+			longestItemDimension,
+			item.length,
+			item.width,
+			item.height
+		);
+	}
 
 	// Sort boxes by preference score (preferred first)
 	const sortedBoxes = [...standardBoxes].sort((a, b) => {
-		return calculateBoxPreference(a) - calculateBoxPreference(b);
+		return (
+			calculateBoxPreference(a, longestItemDimension) -
+			calculateBoxPreference(b, longestItemDimension)
+		);
 	});
 
 	// Try to fit all items in each box, starting from the preferred
@@ -548,14 +595,28 @@ export function packItemsIntoMultipleBoxes(
 	// Only try to pack in a single box if items are uniform or total volume is small
 	if (uniformItems || totalVolume < VOLUME_THRESHOLD) {
 		try {
-			const singleBoxResult = findBestBox([...itemsToPack]);
-
-			// Only use single box if it's not an oversized box
+			const singleBoxResult = findBestBox([...itemsToPack]); // Only use single box if it's not an oversized box
 			// (prevents using 3m box for small items)
+			// Determine if we need an extremely long box based on the longest item
+			let needsLongBox = false;
+			let longestItemDimension = 0;
+
+			for (const item of itemsToPack) {
+				longestItemDimension = Math.max(
+					longestItemDimension,
+					item.length,
+					item.width,
+					item.height
+				);
+			}
+
+			// Only use extremely long box if we have an item that requires it
+			needsLongBox = longestItemDimension >= EXTREME_LENGTH_THRESHOLD;
+
 			if (
 				singleBoxResult.success &&
 				singleBoxResult.box &&
-				singleBoxResult.box.length < MAX_PREFERRED_LENGTH * 1.5
+				(singleBoxResult.box.length < EXTREME_LENGTH_THRESHOLD || needsLongBox)
 			) {
 				return {
 					success: true,
@@ -595,10 +656,24 @@ export function packItemsIntoMultipleBoxes(
 	// Create array of boxes and unfittable items
 	const boxes: PackingBox[] = [];
 	const unfitItems: ShippingItem[] = [];
+	// Find the longest item dimension to help with box selection
+	let longestItemDimension = 0;
+	for (const item of expandedItems) {
+		// Consider all dimensions as the item could be rotated
+		longestItemDimension = Math.max(
+			longestItemDimension,
+			item.length,
+			item.width,
+			item.height
+		);
+	}
 
 	// Sort standardBoxes by preference score (smallest/preferred first)
 	const boxesBySize = [...standardBoxes].sort((a, b) => {
-		return calculateBoxPreference(a) - calculateBoxPreference(b);
+		return (
+			calculateBoxPreference(a, longestItemDimension) -
+			calculateBoxPreference(b, longestItemDimension)
+		);
 	});
 
 	// Process each item

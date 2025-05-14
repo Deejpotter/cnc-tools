@@ -1,6 +1,6 @@
 /**
  * Box Results Display Component
- * Updated: May 13, 2025
+ * Updated: 14/05/2025
  * Author: Deej Potter
  * Description: Displays detailed information about box packing results.
  * This component visualizes the packing solution with metrics like weight and volume utilization.
@@ -167,6 +167,7 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 		return calculateBoxUtilization(shipment.box, shipment.packedItems);
 	}, [shipment]);
 
+	// useMemo s
 	const dimensions = useMemo(() => {
 		return calculateBoxDimensions(shipment.packedItems);
 	}, [shipment.packedItems]);
@@ -200,32 +201,7 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 				</div>
 			</div>{" "}
 			<div className="card-body">
-				{/* Summary at the top to show box utilization */}
-				{(() => {
-					const lengthPct = Math.round(
-						(dimensions.totalLength / shipment.box.length) * 100
-					);
-					const widthPct = Math.round(
-						(dimensions.totalWidth / shipment.box.width) * 100
-					);
-					const heightPct = Math.round(
-						(dimensions.totalHeight / shipment.box.height) * 100
-					);
-					const avgDimPct = Math.round((lengthPct + widthPct + heightPct) / 3);
-
-					return (
-						<div className="alert alert-info p-2 mb-3 small">
-							<div className="d-flex justify-content-between">
-								<span>Box space utilization:</span>
-								<span>
-									{Math.round(metrics.volumePercentage)}% by volume, {avgDimPct}
-									% by dimensions
-								</span>
-							</div>
-						</div>
-					);
-				})()}
-
+				{/* Display box dimensions and weight utilization metrics */}
 				<div className="mb-3">
 					{" "}
 					<div className="d-flex align-items-center mb-2">

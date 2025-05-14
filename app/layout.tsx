@@ -1,3 +1,11 @@
+/**
+ * Next.js Root Layout
+ * Updated: 14/05/2025
+ * Author: Deej Potter
+ * Description: This is the root layout component for the Next.js application.
+ * This component wraps the entire application and provides a consistent layout and styling. 
+ * It can be overridden by creating a new layout file in the relevant directory.
+ */
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.scss";

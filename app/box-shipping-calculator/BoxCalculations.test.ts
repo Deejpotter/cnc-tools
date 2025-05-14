@@ -1,6 +1,6 @@
 /**
- * BoxCalculations.test
- * Updated: 05/13/2025
+ * Box Calculations tests
+ * Updated: 14/05/2025
  * Author: Deej Potter
  * Description: Test suite for the BoxCalculations utility functions.
  * Tests the bin packing algorithm with various item configurations.
@@ -212,7 +212,7 @@ describe("BoxCalculations", () => {
 			// This test requires custom standard boxes as current ones don't have same volume easily.
 			const originalStandardBoxes = [...standardBoxes]; // Save original
 			standardBoxes.splice(0, standardBoxes.length); // Clear current standardBoxes
-			
+
 			// Create test boxes for this specific test
 			const boxA = {
 				_id: "boxA",
@@ -222,7 +222,7 @@ describe("BoxCalculations", () => {
 				height: 10,
 				maxWeight: 1000,
 			};
-			
+
 			const boxB = {
 				_id: "boxB",
 				name: "Box B (Shorter)",
@@ -231,7 +231,7 @@ describe("BoxCalculations", () => {
 				height: 10,
 				maxWeight: 1000,
 			};
-			
+
 			standardBoxes.push(boxA, boxB);
 			const items = [createMockShippingItem("lenTest", 5, 5, 5, 10, 1)];
 			const result = findBestBox(items);
@@ -247,7 +247,8 @@ describe("BoxCalculations", () => {
 			const items = [
 				createMockShippingItem("volFail1", 70, 70, 15, 10, 1), // 73500
 				createMockShippingItem("volFail2", 70, 70, 15, 10, 1), // 73500. Total: 147000. Fits.
-			];			const resultFit = findBestBox(items);
+			];
+			const resultFit = findBestBox(items);
 			// Current algorithm successfully finds a box for these items
 			expect(resultFit.success).toBe(true);
 			// Expect the resultFit.box to be "Small Satchel" or "Small Box"
@@ -256,7 +257,7 @@ describe("BoxCalculations", () => {
 			const itemsVolOverflow = [
 				createMockShippingItem("volFail3", 80, 80, 15, 10, 1), // 96000
 				createMockShippingItem("volFail4", 80, 80, 15, 10, 1), // 96000. Total: 192000. Exceeds Padded Satchel vol.
-			];			// All individual items fit, weight is fine (20g).
+			]; // All individual items fit, weight is fine (20g).
 			// Padded Satchel vol: 160000. Items total vol: 192000.
 			// Small Satchel vol: 240*150*100 = 3,600,000. This should be chosen.
 			const resultOverflow = findBestBox(itemsVolOverflow);
@@ -314,7 +315,8 @@ describe("BoxCalculations", () => {
 				),
 			];
 
-			it("should select the 'Extra Large Box' for the problematic items set", () => {				const result = findBestBox(problematicItems);
+			it("should select the 'Extra Large Box' for the problematic items set", () => {
+				const result = findBestBox(problematicItems);
 				// Current algorithm actually succeeds with these problematic items
 				expect(result.success).toBe(true);
 				// The algorithm selects Extra Large Box due to the long cable
@@ -339,7 +341,8 @@ describe("BoxCalculations", () => {
 					quantity: 1,
 					sku: "TEST-SMALL-ITEM",
 				},
-			];			const result = findBestBox(items);
+			];
+			const result = findBestBox(items);
 			// Current algorithm actually succeeds with this small item
 			expect(result.success).toBe(true);
 			// The algorithm selects Small Box for this small item
@@ -371,7 +374,7 @@ describe("BoxCalculations", () => {
 		 * Test cases for single item type (V-Slot 20x40mm extrusions)
 		 * These tests verify the core functionality of quantity distribution
 		 * when dealing with a single product type in different quantities
-		 */	test("should pack 20 extrusions into a single box", () => {
+		 */ test("should pack 20 extrusions into a single box", () => {
 			const items = create20x40x1000mmExtrusions(20);
 			const result = packItemsIntoMultipleBoxes(items);
 
@@ -379,13 +382,14 @@ describe("BoxCalculations", () => {
 			expect(result.success).toBe(true);
 			expect(result.shipments.length).toBe(1);
 			expect(result.unfitItems.length).toBe(0);
-			
+
 			// Check that all extrusions are in the single box
-			expect(result.shipments[0].packedItems[0].quantity).toBe(20);			// Check that we're using an appropriate box (Extra Large, XXL or 3m Box)
+			expect(result.shipments[0].packedItems[0].quantity).toBe(20); // Check that we're using an appropriate box (Extra Large, XXL or 3m Box)
 			expect(["Extra Large Box", "XXL Box", "3m Box"]).toContain(
 				result.shipments[0].box.name
 			);
-		});	test("should pack 19 extrusions into a single box", () => {
+		});
+		test("should pack 19 extrusions into a single box", () => {
 			const items = create20x40x1000mmExtrusions(19);
 			const result = packItemsIntoMultipleBoxes(items);
 
@@ -393,10 +397,11 @@ describe("BoxCalculations", () => {
 			expect(result.success).toBe(true);
 			expect(result.shipments.length).toBe(1);
 			expect(result.unfitItems.length).toBe(0);
-			
+
 			// Check that all extrusions are in the single box
 			expect(result.shipments[0].packedItems[0].quantity).toBe(19);
-		});		test("should pack 10 extrusions into a single box", () => {
+		});
+		test("should pack 10 extrusions into a single box", () => {
 			const items = create20x40x1000mmExtrusions(10);
 			const result = packItemsIntoMultipleBoxes(items);
 
@@ -404,12 +409,13 @@ describe("BoxCalculations", () => {
 			expect(result.success).toBe(true);
 			expect(result.shipments.length).toBe(1);
 			expect(result.shipments[0].packedItems[0].quantity).toBe(10);
-		});		test("should pack 11 extrusions into 2 boxes (10 in first, 1 in second)", () => {
+		});
+		test("should pack 11 extrusions into 2 boxes (10 in first, 1 in second)", () => {
 			const items = create20x40x1000mmExtrusions(11);
 			const result = packItemsIntoMultipleBoxes(items);
 
 			// Current algorithm successfully packs items
-			expect(result.success).toBe(true);			// Current algorithm optimizes to use a single box for 11 extrusions
+			expect(result.success).toBe(true); // Current algorithm optimizes to use a single box for 11 extrusions
 			expect(result.shipments.length).toBe(1);
 			expect(result.shipments[0].packedItems[0].quantity).toBe(11);
 		});
@@ -463,16 +469,18 @@ describe("BoxCalculations", () => {
 			// - V-Slot 20x60mm - 20 Series - 1000mm (1000g each, SKU: LR-2060-S-1000) - 6 pieces total
 			// Total weight: 19500g distributed across two boxes
 			const items = createMixedVSlotExtrusions();
-			const result = packItemsIntoMultipleBoxes(items);			// Verify overall success			// The algorithm now optimizes to use a single box
+			const result = packItemsIntoMultipleBoxes(items); // Verify overall success			// The algorithm now optimizes to use a single box
 			expect(result.success).toBe(true);
 			expect(result.shipments.length).toBe(1);
-			expect(result.unfitItems.length).toBe(0);			// We should use a box that fits 1000mm length items
-			expect(["Extra Large Box", "XXL Box", "3m Box"]).toContain(result.shipments[0].box.name);
+			expect(result.unfitItems.length).toBe(0); // We should use a box that fits 1000mm length items
+			expect(["Extra Large Box", "XXL Box", "3m Box"]).toContain(
+				result.shipments[0].box.name
+			);
 
 			// Find items in each shipment by their SKU
 			const findItemInShipment = (shipment, sku) => {
 				return shipment.packedItems.find((item) => item.sku === sku);
-			};			// Verify the single box has all items
+			}; // Verify the single box has all items
 			const box = result.shipments[0];
 			expect(findItemInShipment(box, "LR-2040-S-1000")?.quantity).toBe(9); // All 9 of 20x40
 			expect(findItemInShipment(box, "LR-2020-S-1000")?.quantity).toBe(9); // All 9 of 20x20
@@ -503,28 +511,32 @@ describe("BoxCalculations", () => {
 					quantity: 2, // Total 10kg
 					sku: "HEAVY-2",
 				},
-			];			const result = packItemsIntoMultipleBoxes(heavyItems);
+			];
+			const result = packItemsIntoMultipleBoxes(heavyItems);
 			// Current algorithm creates 3 boxes for proper weight distribution
 			expect(result.success).toBe(true);
 			expect(result.shipments.length).toBe(3);
 
 			// Verify weight distribution - no box should exceed 25kg
-			const boxWeights = result.shipments.map(shipment => 
+			const boxWeights = result.shipments.map((shipment) =>
 				shipment.packedItems.reduce(
 					(total, item) => total + item.weight * item.quantity,
 					0
 				)
 			);
-			
+
 			// Verify each box doesn't exceed weight limit
-			boxWeights.forEach(weight => {
+			boxWeights.forEach((weight) => {
 				expect(weight).toBeLessThanOrEqual(25000);
 			});
 
 			// Calculate total packed weight
-			const totalPackedWeight = boxWeights.reduce((sum, weight) => sum + weight, 0);
+			const totalPackedWeight = boxWeights.reduce(
+				(sum, weight) => sum + weight,
+				0
+			);
 			const totalItemWeight = 15000 * 3 + 5000 * 2; // 45kg + 10kg = 55kg
-			
+
 			// Verify all items were packed
 			expect(totalPackedWeight).toBe(totalItemWeight);
 		});
@@ -547,7 +559,8 @@ describe("BoxCalculations", () => {
 					quantity: 1,
 					sku: `BULK-${i}`,
 				});
-			}			const result = packItemsIntoMultipleBoxes(bulkyItems);
+			}
+			const result = packItemsIntoMultipleBoxes(bulkyItems);
 			// Current algorithm optimizes to use a single box
 			expect(result.success).toBe(true);
 			// Algorithm has been optimized to use fewer boxes
@@ -589,7 +602,8 @@ describe("BoxCalculations", () => {
 						quantity: 1,
 						sku: `COMP-${i}`,
 					})),
-			];			const result = packItemsIntoMultipleBoxes(mixedItems);
+			];
+			const result = packItemsIntoMultipleBoxes(mixedItems);
 
 			// Current algorithm successfully handles mixed dimensions
 			expect(result.success).toBe(true);
