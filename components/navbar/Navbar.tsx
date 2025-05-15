@@ -137,15 +137,28 @@ const Navbar = () => {
 							</span>
 							<ul className={`dropdown-menu ${isDropdownOpen ? "show" : ""}`}>
 								<li>
-									<Link href="/box-shipping-calculator" onClick={handleLinkClick}>
+									<Link
+										href="/box-shipping-calculator"
+										onClick={handleLinkClick}
+									>
 										<span className="dropdown-item">
 											Box Shipping Calculator
 										</span>
 									</Link>
-								</li>
+								</li>{" "}
 								<li>
 									<Link href="/enclosure-calculator" onClick={handleLinkClick}>
 										<span className="dropdown-item">Enclosure Calculator</span>
+									</Link>
+								</li>
+								<li>
+									<Link
+										href="/table-enclosure-calculator"
+										onClick={handleLinkClick}
+									>
+										<span className="dropdown-item">
+											Table & Enclosure Calculator
+										</span>
 									</Link>
 								</li>
 								<li>

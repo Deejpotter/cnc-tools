@@ -43,11 +43,18 @@ const Footer: React.FC = () => {
 								<Link href="/cnc-technical-ai">
 									<span className="text-decoration-none">CNC Technical AI</span>
 								</Link>
-							</li>
+							</li>{" "}
 							<li>
 								<Link href="/enclosure-calculator">
 									<span className="text-decoration-none">
 										Enclosure Calculator
+									</span>
+								</Link>
+							</li>
+							<li>
+								<Link href="/table-enclosure-calculator">
+									<span className="text-decoration-none">
+										Table & Enclosure Calculator
 									</span>
 								</Link>
 							</li>

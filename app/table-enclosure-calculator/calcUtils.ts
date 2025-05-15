@@ -48,6 +48,7 @@ const DOOR_HARDWARE = {
 	T_NUT_SLIDING: 8, // Per door
 	BUTTON_HEAD_M5_8MM: 8, // Per door
 	CORNER_BRACKET: 4, // Per door
+	SPRING_LOADED_T_NUT: 15, // Per door (based on Maker Store documentation)
 };
 
 /**
@@ -173,7 +174,7 @@ export const calculateMountingMaterials = () => {
 /**
  * Calculate door materials based on enclosure dimensions
  * @param dimensions The enclosure dimensions
- * @param doorConfig The door configuration (which doors are included)
+ * @param doorConfig The door configuration (which doors are included and type)
  * @returns Door material requirements
  */
 export const calculateDoorMaterials = (
@@ -183,12 +184,22 @@ export const calculateDoorMaterials = (
 		backDoor: boolean;
 		leftDoor: boolean;
 		rightDoor: boolean;
+		doorType: string;
 	}
 ) => {
 	const { length, width, height, isOutsideDimension } = dimensions;
+	const { doorType } = doorConfig;
 
-	// Adjustment factor for panel dimensions (12mm wider than ID as specified)
-	const panelAdjustment = 12;
+	// Adjustment factor for panel dimensions based on door type
+	let panelAdjustment = 12; // Default for standard doors
+
+	// Different adjustment factors based on door type
+	// These values come from Maker Store door panel cut size specifications
+	if (doorType === "AWNG") {
+		panelAdjustment = 16; // Awning doors have different panel sizes
+	} else if (doorType === "BFLD") {
+		panelAdjustment = 12; // Bi-fold doors have same adjustment but different panel layout
+	}
 
 	// Adjust dimensions based on whether they're inside or outside measurements
 	const adjustmentFactor = isOutsideDimension ? 20 : 0; // 20mm for 2020 extrusion
@@ -197,56 +208,123 @@ export const calculateDoorMaterials = (
 	const adjustedLength = length - adjustmentFactor;
 	const adjustedWidth = width - adjustmentFactor;
 
-	// Calculate door dimensions (add 12mm to ID as specified)
+	// Calculate door dimensions (add adjustment to ID as specified)
 	const doorHeight = height - adjustmentFactor + panelAdjustment;
 	const doorFrontBackWidth = adjustedWidth + panelAdjustment;
 	const doorSideWidth = adjustedLength + panelAdjustment;
+	// Count active doors (excluding the doorType property)
+	const doorCount = [
+		doorConfig.frontDoor,
+		doorConfig.backDoor,
+		doorConfig.leftDoor,
+		doorConfig.rightDoor,
+	].filter(Boolean).length;
 
-	// Count active doors
-	const doorCount = Object.values(doorConfig).filter(Boolean).length;
+	// Calculate total hardware needed based on number of doors and door type
+	let hingeCount = DOOR_HARDWARE.HINGE * doorCount;
+	let handleCount = DOOR_HARDWARE.HANDLE * doorCount;
+	let tnutCount = DOOR_HARDWARE.T_NUT_SLIDING * doorCount;
+	let buttonHeadCount = DOOR_HARDWARE.BUTTON_HEAD_M5_8MM * doorCount;
+	let cornerBracketCount = DOOR_HARDWARE.CORNER_BRACKET * doorCount;
 
-	// Calculate total hardware needed based on number of doors
+	// Adjust hardware counts based on door type
+	if (doorConfig.doorType === "BFLD") {
+		// Bi-fold doors need extra hinges for the fold and hardware to join panels
+		hingeCount += doorCount; // Extra hinges for fold joints
+		handleCount = doorCount; // One handle per door (not per panel)
+		tnutCount = Math.ceil(tnutCount * 1.5); // More t-nuts for connecting panels
+		buttonHeadCount = Math.ceil(buttonHeadCount * 1.5);
+	} else if (doorConfig.doorType === "AWNG") {
+		// Awning doors mount to top, so need slightly different hardware
+		hingeCount = doorCount * 2; // Fewer hinges for awning type
+		tnutCount = Math.ceil(tnutCount * 0.8); // Slightly fewer t-nuts
+	}
+
 	const doorHardware = {
-		HINGE: DOOR_HARDWARE.HINGE * doorCount,
-		HANDLE: DOOR_HARDWARE.HANDLE * doorCount,
-		T_NUT_SLIDING: DOOR_HARDWARE.T_NUT_SLIDING * doorCount,
-		BUTTON_HEAD_M5_8MM: DOOR_HARDWARE.BUTTON_HEAD_M5_8MM * doorCount,
-		CORNER_BRACKET: DOOR_HARDWARE.CORNER_BRACKET * doorCount,
+		HINGE: hingeCount,
+		HANDLE: handleCount,
+		T_NUT_SLIDING: tnutCount,
+		BUTTON_HEAD_M5_8MM: buttonHeadCount,
+		CORNER_BRACKET: cornerBracketCount,
+		SPRING_LOADED_T_NUT: Math.ceil(doorCount * 15), // From documentation: 15 per door
 	};
-
-	// Calculate door panel sizes based on configuration
+	// Calculate door panel sizes based on configuration and door type
 	const doorPanels = [];
 
+	/**
+	 * Helper function to get door panel dimensions based on door type
+	 * Values are based on Maker Store door panel cut size specifications
+	 */
+	const getDoorPanelDimensions = (
+		position: string,
+		width: number,
+		height: number
+	) => {
+		// Base dimensions for all doors
+		const baseDimensions = { position, width, height };
+
+		// For standard doors, just use the standard dimensions
+		if (doorConfig.doorType === "STND") {
+			return [baseDimensions];
+		}
+
+		// For awning doors, adjust the panel dimensions slightly
+		if (doorConfig.doorType === "AWNG") {
+			return [
+				{
+					...baseDimensions,
+					width: width - 4, // Awning doors have 4mm less width
+					height: height + 4, // Awning doors have 4mm more height
+					notes: "Awning Door - panel mounts to top frame",
+				},
+			];
+		}
+
+		// For bi-fold doors, create two panel dimensions per door
+		if (doorConfig.doorType === "BFLD") {
+			const halfWidth = Math.round(width / 2) - 2; // Split into two panels with 2mm gap
+			return [
+				{
+					position: `${position} (Left)`,
+					width: halfWidth,
+					height: height,
+					notes: "Bi-Fold Door - left panel",
+				},
+				{
+					position: `${position} (Right)`,
+					width: halfWidth,
+					height: height,
+					notes: "Bi-Fold Door - right panel",
+				},
+			];
+		}
+
+		// Fallback to standard dimensions
+		return [baseDimensions];
+	};
+
 	if (doorConfig.frontDoor) {
-		doorPanels.push({
-			position: "Front",
-			width: doorFrontBackWidth,
-			height: doorHeight,
-		});
+		doorPanels.push(
+			...getDoorPanelDimensions("Front", doorFrontBackWidth, doorHeight)
+		);
 	}
 
 	if (doorConfig.backDoor) {
-		doorPanels.push({
-			position: "Back",
-			width: doorFrontBackWidth,
-			height: doorHeight,
-		});
+		doorPanels.push(
+			...getDoorPanelDimensions("Back", doorFrontBackWidth, doorHeight)
+		);
 	}
 
 	if (doorConfig.leftDoor) {
-		doorPanels.push({
-			position: "Left",
-			width: doorSideWidth,
-			height: doorHeight,
-		});
+		doorPanels.push(
+			...getDoorPanelDimensions("Left", doorSideWidth, doorHeight)
+		);
 	}
 
 	if (doorConfig.rightDoor) {
-		doorPanels.push({
-			position: "Right",
-			width: doorSideWidth,
-			height: doorHeight,
-		});
+		doorPanels.push(
+			...getDoorPanelDimensions("Right", doorSideWidth, doorHeight)
+		);
 	}
 
 	return {
