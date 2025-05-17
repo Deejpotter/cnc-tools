@@ -1,13 +1,23 @@
+# Netlify configuration file for CNC Tools
+# Updated: 17/05/2025
+# Author: Deej Potter
+
 [build]
 command = "npm run build"
 publish = ".next"
 
 # Configure Netlify build environment
 [build.environment]
-NODE_VERSION = "18"
+# Updated to match Next.js 14.x requirements
+NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
-NEXT_TELEMETRY_DISABLED = "1"
 
 # Configure Next.js build cache
 [[plugins]]
 package = "@netlify/plugin-nextjs"
+
+# Add cache configuration for faster builds
+[[plugins]]
+package = "netlify-plugin-cache"
+[plugins.inputs]
+paths = [".next/cache", "node_modules/.cache"]

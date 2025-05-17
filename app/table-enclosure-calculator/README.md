@@ -13,20 +13,9 @@ The Table and Enclosure Calculator is a tool for calculating the materials neede
 - Support for doors and panels with various material types
 - Shareable URLs for saved configurations
 
-## Quick Quote Examples
+## Calculator Usage
 
-For frequently requested configurations, we provide pre-configured examples:
-
-### Table with Half Enclosure
-
-Access a pre-configured quote for a table with a 200mm half enclosure around the perimeter:
-
-- Working area: 1200mm × 1200mm
-- Total height: 950mm (including 200mm enclosure)
-- Enclosure panel material: Corflute
-- M8 caster wheels
-
-This example is available at: `/table-enclosure-calculator/examples/half-enclosure-quote-example`
+The calculator provides an easy-to-use interface for calculating materials needed for tables and enclosures with custom dimensions.
 
 ## Calculator API
 
@@ -42,19 +31,15 @@ import {
 } from './calcUtils';
 ```
 
-## Creating Custom Quotes
+## Extending the Calculator
 
-For creating custom quotes or specific configurations, see the example in:
-`/quotes/half-enclosure-quote.ts`
-
-This demonstrates how to create specialized quote calculators for specific customer requirements.
+The calculator is designed to be extensible. You can create custom configurations by using the calculation functions directly in your own components.
 
 ## Testing
 
 Tests for all calculation utilities are available in:
 
 - `calcUtils.test.ts` - Tests for the core calculation functions
-- `quotes/half-enclosure-quote.test.ts` - Tests for the half enclosure quote example
 
 Run tests with:
 

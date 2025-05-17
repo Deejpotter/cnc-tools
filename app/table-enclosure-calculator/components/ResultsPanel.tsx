@@ -1,3 +1,11 @@
+/**
+ * Results panel component
+ * Updated: 17/05/2025
+ * Author: Daniel Potter
+ * Description: This component displays the results of the table and enclosure calculator.
+ * It should take the results and configuration as props and render them in a user-friendly format.
+ */
+
 "use client";
 import React, { useRef } from "react";
 import {
@@ -62,11 +70,12 @@ export function ResultsPanel({
 				<div className="alert alert-primary mb-4">
 					<h3 className="h6">Project Summary</h3>
 					<div className="row">
+						{" "}
 						{config.includeTable && (
 							<div className="col-md-4 mb-2">
 								<strong>Table:</strong> {tableDimensions.length}mm ×{" "}
 								{tableDimensions.width}mm × {tableDimensions.height}mm
-								{tableDimensions.isOutsideDimension ? " (OD)" : " (ID)"}
+								{config.isOutsideDimension ? " (OD)" : " (ID)"}
 							</div>
 						)}
 						{config.includeEnclosure && (
@@ -74,7 +83,7 @@ export function ResultsPanel({
 								<strong>Enclosure:</strong> {enclosureDimensions.length}mm ×{" "}
 								{enclosureDimensions.width}mm × {enclosureDimensions.height}
 								mm
-								{enclosureDimensions.isOutsideDimension ? " (OD)" : " (ID)"}
+								{config.isOutsideDimension ? " (OD)" : " (ID)"}
 							</div>
 						)}
 						{config.includeDoors && (
@@ -471,7 +480,7 @@ export function ResultsPanel({
 													{((panel.width * panel.height) / 1000000).toFixed(3)}{" "}
 													m²)
 												</td>
-												<td className="small">{panel.notes || ""}</td>
+												<td className="small">{(panel as any).notes || ""}</td>
 											</tr>
 										))}
 									</tbody>

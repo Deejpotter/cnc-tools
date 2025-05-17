@@ -1,11 +1,11 @@
 "use client";
 /**
  * Table and Enclosure Calculator Page
- * Updated: 15/05/2025
+ * Updated: 16/05/2025
  * Author: Deej Potter
  * 
- * This is a server component wrapper around client components
- * for better performance and static generation.
+ * This is a client component that uses dynamic imports and Suspense
+ * for better performance and code splitting.
  */
 
 import LayoutContainer from "@/components/LayoutContainer";
@@ -30,13 +30,12 @@ const TableCalculator = dynamic(() => import('./components/TableCalculator'), {
   ssr: false
 });
 
-export default function TableEnclosureCalculator() {
-  return (
+export default function TableEnclosureCalculator() {  return (
     <LayoutContainer>
       <div className="table-enclosure-calculator">
         <h1 className="mb-4">Table and Enclosure Calculator</h1>
         
-        {/* Quick Access to Common Quote Configurations */}
+        {/* Instructions for using the calculator */}
         <QuickExamples />
         
         {/* Client Component Calculator */}

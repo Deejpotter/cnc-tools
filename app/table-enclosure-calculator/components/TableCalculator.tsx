@@ -1,16 +1,13 @@
+/**
+ * Table calculator component
+ * Updated: 17/05/2025
+ * Author: Daniel Potter
+ * Description: The TableCalculator component is responsible for rendering
+ */
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
-import {
-	TableConfig,
-	MaterialConfig,
-	Results,
-	DoorType,
-	DoorPanelDimensions,
-} from "../types";
-import { ConfigPanel } from "./ConfigPanel";
-import { ResultsPanel } from "./ResultsPanel";
 import {
 	calculateTableMaterials,
 	calculateEnclosureMaterials,
@@ -18,8 +15,18 @@ import {
 	calculateDoorMaterials,
 	calculatePanelMaterials,
 	CONSTANTS,
-	Dimensions,
 } from "../calcUtils";
+import type {
+	Dimensions,
+	DoorConfig,
+	TableConfig,
+	MaterialConfig,
+	Results,
+} from "../types";
+import { DoorType } from "../types";
+import { ConfigPanel } from "./ConfigPanel";
+import { ResultsPanel } from "./ResultsPanel";
+import { useSearchParams, useRouter } from "next/navigation";
 
 // Import constants from calcUtils
 const {
@@ -30,40 +37,54 @@ const {
 	DOOR_HARDWARE,
 } = CONSTANTS;
 
+/**
+ * TableCalculator component
+ * This component handles the table and enclosure calculator logic,
+ * including state management, calculations, and rendering.
+ *
+ * @param {Array} materialTypes - Array of material types for selection
+ * @param {number} materialThickness - Fixed material thickness for calculations
+ */
 interface TableCalculatorProps {
 	materialTypes: Array<{
 		id: string;
 		name: string;
-		defaultThickness: number;
 	}>;
-	materialThicknesses: number[];
+	materialThickness: number;
 }
 
+/**
+ * The table calculator component.
+ * @param param0 - Props for the TableCalculator component
+ * @param materialTypes - Array of material types for selection
+ */
 export default function TableCalculator({
 	materialTypes,
-	materialThicknesses,
+	materialThickness,
 }: TableCalculatorProps) {
 	const printRef = useRef<HTMLDivElement>(null);
 
 	// State for table dimensions
-	const [tableDimensions, setTableDimensions] = useState<Dimensions>({
+	const [tableDimensions, setTableDimensions] = useState<
+		Omit<Dimensions, "isOutsideDimension">
+	>({
 		length: 1000,
 		width: 1000,
 		height: 800,
-		isOutsideDimension: true,
 	});
 
 	// State for enclosure dimensions
-	const [enclosureDimensions, setEnclosureDimensions] = useState<Dimensions>({
+	const [enclosureDimensions, setEnclosureDimensions] = useState<
+		Omit<Dimensions, "isOutsideDimension">
+	>({
 		length: 1000,
 		width: 1000,
 		height: 1000,
-		isOutsideDimension: true,
 	});
 	// Material configuration for panels and doors
 	const [materialConfig, setMaterialConfig] = useState<MaterialConfig>({
-		type: "acrylic",
-		thickness: 3, // mm
+		type: materialTypes[0].id,
+		thickness: materialThickness,
 		includePanels: false,
 		panelConfig: {
 			top: false,
@@ -71,218 +92,285 @@ export default function TableCalculator({
 			left: false,
 			right: false,
 			back: false,
+			front: false, // ensure front is part of the initial state
 		},
-	}); // Configuration options
+	});
+
 	const [config, setConfig] = useState<TableConfig>({
 		includeTable: true,
 		includeEnclosure: false,
 		mountEnclosureToTable: false,
 		includeDoors: false,
-		autoSizeEnclosure: true, // Default to auto-sizing enabled
+		isOutsideDimension: true, // Centralized control for dimension type
 		doorConfig: {
 			frontDoor: false,
 			backDoor: false,
 			leftDoor: false,
 			rightDoor: false,
-			doorType: DoorType.STANDARD, // Default to standard door type
+			doorType: DoorType.STANDARD,
 		},
 	});
 
 	// Calculation results
 	const [results, setResults] = useState<Results>({});
 
-	/**
-	 * Updates enclosure dimensions based on table dimensions
-	 * Maintains the height from the current enclosure settings
-	 * Adds a margin around the table for the enclosure
-	 */
-	const updateEnclosureDimensionsFromTable = (tableDims: Dimensions) => {
-		// Calculate enclosure dimensions based on table dimensions
-		// For inside dimensions, use table dimensions directly
-		// For outside dimensions, add 40mm margin all around (assuming 20mm extrusion width)
-		let enclosureLength, enclosureWidth;
+	const materialTypesMap = materialTypes.reduce((acc, curr) => {
+		acc[curr.id] = curr;
+		return acc;
+	}, {} as Record<string, any>);
 
-		if (tableDims.isOutsideDimension) {
-			// If table uses outside dimensions, enclosure should surround the table with margin
-			enclosureLength = tableDims.length + 80; // 40mm margin on each side
-			enclosureWidth = tableDims.width + 80;
-		} else {
-			// If table uses inside dimensions, enclosure should be the inside plus extrusion width
-			enclosureLength = tableDims.length + 40;
-			enclosureWidth = tableDims.width + 40;
-		}
-
-		setEnclosureDimensions({
-			...enclosureDimensions,
-			length: enclosureLength,
-			width: enclosureWidth,
-			// Height and isOutsideDimension settings remain unchanged
-		});
-	};
-	/**
-	 * Calculate recommended enclosure dimensions based on table dimensions
-	 * This will make the enclosure slightly larger than the table to allow proper fitting
-	 * Used by the existing updateEnclosureDimensionsFromTable function
-	 */
 	const getRecommendedEnclosureSize = useCallback(
-		(tableDim: Dimensions, enclosureHeight: number): Dimensions => {
-			// Add margin around the table (100mm on each side)
-			const margin = 100;
-
-			// For a good fit, make the enclosure larger than the table
+		(
+			tableDim: Omit<Dimensions, "isOutsideDimension">,
+			enclosureHeight: number,
+			isOutsideDim: boolean
+		): Omit<Dimensions, "isOutsideDimension"> => {
+			// Logic to calculate recommended size, potentially using isOutsideDim
+			// For example, if tableDim is outside, enclosure might need to be slightly larger
+			// If tableDim is inside, enclosure might match or be slightly larger depending on wall thickness assumptions
+			const adjustment = isOutsideDim ? 20 : 0; // Example adjustment
 			return {
-				length: tableDim.length + margin * 2,
-				width: tableDim.width + margin * 2,
-				height: enclosureHeight, // Use the specified height
-				isOutsideDimension: true,
+				length: tableDim.length + adjustment,
+				width: tableDim.width + adjustment,
+				height: enclosureHeight,
 			};
 		},
 		[]
 	);
 
 	/**
+	 * Updates enclosure dimensions based on table dimensions if a table is included.
+	 * Maintains the height from the current enclosure settings.
+	 */
+	const updateEnclosureDimensionsFromTable = useCallback(
+		(
+			tableDims: Omit<Dimensions, "isOutsideDimension">,
+			currentEnclosureHeight: number,
+			isOutsideDim: boolean
+		) => {
+			if (config.includeTable) {
+				const recommended = getRecommendedEnclosureSize(
+					tableDims,
+					currentEnclosureHeight,
+					isOutsideDim
+				);
+				setEnclosureDimensions(recommended);
+			}
+		},
+		[config.includeTable, getRecommendedEnclosureSize] // Added isOutsideDim to dependency if it changes config
+	);
+	// Initialize hooks for routing and URL parameters
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	// Effect to load configuration from URL search parameters
+	useEffect(() => {
+		if (searchParams && searchParams.size > 0) {
+			const newConfig: Partial<TableConfig> = {};
+			const newTableDimensions: Partial<
+				Omit<Dimensions, "isOutsideDimension">
+			> = {};
+			const newEnclosureDimensions: Partial<
+				Omit<Dimensions, "isOutsideDimension">
+			> = {};
+			const newMaterialConfig: Partial<MaterialConfig> = {};
+
+			if (searchParams.has("it"))
+				newConfig.includeTable = searchParams.get("it") === "1";
+			if (searchParams.has("ie"))
+				newConfig.includeEnclosure = searchParams.get("ie") === "1";
+			if (searchParams.has("iod"))
+				newConfig.isOutsideDimension = searchParams.get("iod") !== "0"; // Updated for central config
+			if (searchParams.has("me"))
+				newConfig.mountEnclosureToTable = searchParams.get("me") === "1";
+			if (searchParams.has("id"))
+				newConfig.includeDoors = searchParams.get("id") === "1";
+
+			const doorConfigUpdate: Partial<DoorConfig> = {};
+			if (searchParams.has("dcf"))
+				doorConfigUpdate.frontDoor = searchParams.get("dcf") === "1";
+			if (searchParams.has("dcb"))
+				doorConfigUpdate.backDoor = searchParams.get("dcb") === "1";
+			if (searchParams.has("dcl"))
+				doorConfigUpdate.leftDoor = searchParams.get("dcl") === "1";
+			if (searchParams.has("dcr"))
+				doorConfigUpdate.rightDoor = searchParams.get("dcr") === "1";
+			if (searchParams.has("dct"))
+				doorConfigUpdate.doorType = searchParams.get("dct") as DoorType;
+			if (Object.keys(doorConfigUpdate).length > 0) {
+				newConfig.doorConfig = { ...config.doorConfig, ...doorConfigUpdate };
+			}
+
+			if (searchParams.has("tl"))
+				newTableDimensions.length = parseInt(searchParams.get("tl") || "0");
+			if (searchParams.has("tw"))
+				newTableDimensions.width = parseInt(searchParams.get("tw") || "0");
+			if (searchParams.has("th"))
+				newTableDimensions.height = parseInt(searchParams.get("th") || "0");
+
+			if (searchParams.has("el"))
+				newEnclosureDimensions.length = parseInt(searchParams.get("el") || "0");
+			if (searchParams.has("ew"))
+				newEnclosureDimensions.width = parseInt(searchParams.get("ew") || "0");
+			if (searchParams.has("eh"))
+				newEnclosureDimensions.height = parseInt(searchParams.get("eh") || "0");
+
+			if (searchParams.has("mt"))
+				newMaterialConfig.type = searchParams.get("mt") || materialTypes[0].id;
+			// Thickness is now fixed, so no need to load it from URL params. It's set from props.
+			// if (searchParams.has("mth")) newMaterialConfig.thickness = parseInt(searchParams.get("mth") || "0");
+			if (searchParams.has("mip"))
+				newMaterialConfig.includePanels = searchParams.get("mip") === "1";
+
+			const panelConfigUpdate: Partial<MaterialConfig["panelConfig"]> = {};
+			if (searchParams.has("pc_t"))
+				panelConfigUpdate.top = searchParams.get("pc_t") === "1";
+			if (searchParams.has("pc_b"))
+				panelConfigUpdate.bottom = searchParams.get("pc_b") === "1";
+			if (searchParams.has("pc_l"))
+				panelConfigUpdate.left = searchParams.get("pc_l") === "1";
+			if (searchParams.has("pc_r"))
+				panelConfigUpdate.right = searchParams.get("pc_r") === "1";
+			if (searchParams.has("pc_bk"))
+				panelConfigUpdate.back = searchParams.get("pc_bk") === "1";
+			if (searchParams.has("pc_f"))
+				panelConfigUpdate.front = searchParams.get("pc_f") === "1";
+			if (Object.keys(panelConfigUpdate).length > 0) {
+				newMaterialConfig.panelConfig = {
+					...materialConfig.panelConfig,
+					...panelConfigUpdate,
+				};
+			}
+
+			setConfig((prev) => ({ ...prev, ...newConfig }));
+			setTableDimensions((prev) => ({ ...prev, ...newTableDimensions }));
+			setEnclosureDimensions((prev) => ({
+				...prev,
+				...newEnclosureDimensions,
+			}));
+			setMaterialConfig((prev) => ({
+				...prev,
+				...newMaterialConfig,
+				thickness: materialThickness,
+			})); // Ensure fixed thickness
+
+			// Auto-adjust enclosure if table is included and dimensions were loaded
+			if (
+				newConfig.includeTable &&
+				(newTableDimensions.length || newTableDimensions.width)
+			) {
+				const currentEnclosureHeight =
+					newEnclosureDimensions.height || enclosureDimensions.height;
+				const currentIsOutside =
+					newConfig.isOutsideDimension !== undefined
+						? newConfig.isOutsideDimension
+						: config.isOutsideDimension;
+				updateEnclosureDimensionsFromTable(
+					{
+						length: newTableDimensions.length || tableDimensions.length,
+						width: newTableDimensions.width || tableDimensions.width,
+						height: newTableDimensions.height || tableDimensions.height, // table height is not directly used for enclosure L/W
+					},
+					currentEnclosureHeight,
+					currentIsOutside
+				);
+			}
+		}
+	}, [
+		materialTypes,
+		materialThickness,
+		updateEnclosureDimensionsFromTable,
+		searchParams,
+		config.doorConfig,
+		config.isOutsideDimension,
+		enclosureDimensions.height,
+		materialConfig.panelConfig,
+		tableDimensions.height,
+		tableDimensions.length,
+		tableDimensions.width,
+	]);
+
+	// Effect to update URL when config or dimensions change
+	useEffect(() => {
+		const params = new URLSearchParams();
+		params.set("it", config.includeTable ? "1" : "0");
+		params.set("ie", config.includeEnclosure ? "1" : "0");
+		params.set("iod", config.isOutsideDimension ? "1" : "0"); // Save centralized value
+		params.set("me", config.mountEnclosureToTable ? "1" : "0");
+		params.set("id", config.includeDoors ? "1" : "0");
+
+		params.set("dcf", config.doorConfig.frontDoor ? "1" : "0");
+		params.set("dcb", config.doorConfig.backDoor ? "1" : "0");
+		params.set("dcl", config.doorConfig.leftDoor ? "1" : "0");
+		params.set("dcr", config.doorConfig.rightDoor ? "1" : "0");
+		params.set("dct", config.doorConfig.doorType);
+
+		params.set("tl", tableDimensions.length.toString());
+		params.set("tw", tableDimensions.width.toString());
+		params.set("th", tableDimensions.height.toString());
+
+		params.set("el", enclosureDimensions.length.toString());
+		params.set("ew", enclosureDimensions.width.toString());
+		params.set("eh", enclosureDimensions.height.toString());
+
+		params.set("mt", materialConfig.type);
+		// Thickness is fixed, no longer part of URL params for material config
+		// params.set("mth", materialConfig.thickness.toString());
+		params.set("mip", materialConfig.includePanels ? "1" : "0");
+
+		if (materialConfig.includePanels) {
+			params.set("pc_t", materialConfig.panelConfig.top ? "1" : "0");
+			params.set("pc_b", materialConfig.panelConfig.bottom ? "1" : "0");
+			params.set("pc_l", materialConfig.panelConfig.left ? "1" : "0");
+			params.set("pc_r", materialConfig.panelConfig.right ? "1" : "0");
+			params.set("pc_bk", materialConfig.panelConfig.back ? "1" : "0");
+			if (materialConfig.panelConfig.front !== undefined) {
+				params.set("pc_f", materialConfig.panelConfig.front ? "1" : "0");
+			}
+		}
+
+		// Update URL without page reload
+		window.history.pushState(null, "", `?${params.toString()}`);
+	}, [config, tableDimensions, enclosureDimensions, materialConfig]);
+
+	/**
 	 * Handle table dimension changes
 	 * Converts mm inputs to numeric values
-	 * If auto-size is enabled, also updates enclosure dimensions
+	 * If a table and enclosure are included, also updates enclosure dimensions
 	 */
 	const handleTableDimensionChange = (
 		e: React.ChangeEvent<HTMLInputElement>
 	) => {
 		const { name, value, type, checked } = e.target;
+		const val = type === "checkbox" ? checked : parseInt(value) || 0;
 
-		const newTableDimensions = {
-			...tableDimensions,
-			[name]: type === "checkbox" ? checked : parseFloat(value),
-		};
-
-		setTableDimensions(newTableDimensions);
-
-		// If auto-size enclosure is enabled, update enclosure dimensions
-		if (
-			config.autoSizeEnclosure &&
-			config.includeTable &&
-			config.includeEnclosure
-		) {
-			updateEnclosureDimensionsFromTable(newTableDimensions);
-		}
+		setTableDimensions((prev) => {
+			const newDims = { ...prev, [name]: val };
+			// If table and enclosure are included, update enclosure dimensions
+			if (config.includeTable && config.includeEnclosure) {
+				updateEnclosureDimensionsFromTable(
+					newDims,
+					enclosureDimensions.height,
+					config.isOutsideDimension
+				);
+			}
+			return newDims;
+		});
 	};
+
 	/**
 	 * Handle enclosure dimension changes
 	 * Converts mm inputs to numeric values
+	 * This is primarily for height, as L/W are auto-adjusted if a table is present.
 	 */
 	const handleEnclosureDimensionChange = (
 		e: React.ChangeEvent<HTMLInputElement>
 	) => {
 		const { name, value, type, checked } = e.target;
+		const val = type === "checkbox" ? checked : parseInt(value) || 0;
 
-		setEnclosureDimensions({
-			...enclosureDimensions,
-			[name]: type === "checkbox" ? checked : parseFloat(value),
-		});
-	};
-
-	/**
-	 * Handle configuration changes
-	 * Includes special handling for doorConfig which is a nested object
-	 */
-	const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, checked } = e.target;
-
-		// Handle door configuration changes
-		if (
-			name === "frontDoor" ||
-			name === "backDoor" ||
-			name === "leftDoor" ||
-			name === "rightDoor"
-		) {
-			setConfig({
-				...config,
-				doorConfig: {
-					...config.doorConfig,
-					[name]: checked,
-				},
-			});
-		} else if (name === "autoSizeEnclosure") {
-			// When auto-size is enabled, immediately update enclosure dimensions
-			const newConfig = {
-				...config,
-				autoSizeEnclosure: checked,
-			};
-			setConfig(newConfig);
-			// If auto-size is now enabled and we have a table and enclosure, update dimensions
-			if (checked && config.includeTable && config.includeEnclosure) {
-				updateEnclosureDimensionsFromTable(tableDimensions);
-			}
-		} else if (name === "includeTable" || name === "includeEnclosure") {
-			// When table or enclosure options change
-			const newConfig = {
-				...config,
-				[name]: checked,
-			};
-
-			setConfig(newConfig);
-			// If including both table and enclosure and auto-size is enabled, update enclosure dimensions
-			if (
-				name === "includeEnclosure" &&
-				checked &&
-				config.includeTable &&
-				config.autoSizeEnclosure
-			) {
-				updateEnclosureDimensionsFromTable(tableDimensions);
-			}
-		} else {
-			// Update the config with the new value
-			const newConfig = {
-				...config,
-				[name]: checked,
-			};
-
-			setConfig(newConfig);
-
-			// If autoSizeEnclosure is toggled on and we have both components
-			if (
-				name === "autoSizeEnclosure" &&
-				checked &&
-				newConfig.includeTable &&
-				newConfig.includeEnclosure
-			) {
-				// Update enclosure sizes based on table dimensions
-				updateEnclosureDimensionsFromTable(tableDimensions);
-			}
-
-			// If enabling the enclosure and auto-size is on, set dimensions based on table
-			if (
-				name === "includeEnclosure" &&
-				checked &&
-				newConfig.autoSizeEnclosure &&
-				newConfig.includeTable
-			) {
-				updateEnclosureDimensionsFromTable(tableDimensions);
-			}
-		}
-	};
-
-	/**
-	 * Handle panel configuration changes
-	 * Processes include/exclude panel toggle and panel configuration
-	 */
-	const handlePanelConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, checked } = e.target;
-
-		if (name === "includePanels") {
-			setMaterialConfig({
-				...materialConfig,
-				[name]: checked,
-			});
-		} else {
-			setMaterialConfig({
-				...materialConfig,
-				panelConfig: {
-					...materialConfig.panelConfig,
-					[name]: checked,
-				},
-			});
-		}
+		setEnclosureDimensions((prev) => ({ ...prev, [name]: val }));
+		// If table is not included, L/W changes are manual. If table IS included, L/W are derived.
+		// Height is always manual for enclosure.
 	};
 
 	/**
@@ -291,340 +379,175 @@ export default function TableCalculator({
 	const handleMaterialTypeChange = (
 		e: React.ChangeEvent<HTMLSelectElement>
 	) => {
-		const { name, value } = e.target;
-		const selectedMaterial = materialTypes.find((m) => m.id === value);
-
-		setMaterialConfig({
-			...materialConfig,
-			[name]: value,
-			thickness: selectedMaterial?.defaultThickness || 3,
-		});
+		setMaterialConfig((prev) => ({
+			...prev,
+			type: e.target.value,
+		}));
 	};
 
-	/**
-	 * Handle material thickness change
-	 */
-	const handleMaterialThicknessChange = (
-		e: React.ChangeEvent<HTMLSelectElement>
-	) => {
-		const { name, value } = e.target;
+	// Removed handleMaterialThicknessChange as thickness is fixed
 
-		setMaterialConfig({
-			...materialConfig,
-			[name]: parseInt(value),
-		});
+	/**
+	 * Handle panel configuration changes (e.g., which panels to include)
+	 */
+	const handlePanelConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, checked } = e.target;
+		setMaterialConfig((prevConfig) => ({
+			...prevConfig,
+			panelConfig: {
+				...prevConfig.panelConfig,
+				[name]: checked,
+			},
+		}));
 	};
 
-	/**
-	 * Handle door type changes
-	 * Updates the door configuration when user selects a different door type
-	 */
 	const handleDoorTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
 		const { value } = e.target;
-
-		setConfig({
-			...config,
+		setConfig((prevConfig) => ({
+			...prevConfig,
 			doorConfig: {
-				...config.doorConfig,
+				...prevConfig.doorConfig,
 				doorType: value as DoorType,
 			},
-		});
+		}));
 	};
 
-	/**
-	 * Calculate the required materials based on dimensions and configuration
-	 * This function sets the results state with the calculated materials
-	 */
-	const calculateMaterials = useCallback(() => {
-		let calculatedResults: Results = {};
+	const copyShareableURL = () => {
+		const params = new URLSearchParams();
+		params.append("tl", tableDimensions.length.toString());
+		params.append("tw", tableDimensions.width.toString());
+		params.append("th", tableDimensions.height.toString());
+		params.append("el", enclosureDimensions.length.toString());
+		params.append("ew", enclosureDimensions.width.toString());
+		params.append("eh", enclosureDimensions.height.toString());
+		params.append("it", config.includeTable ? "1" : "0");
+		params.append("ie", config.includeEnclosure ? "1" : "0");
+		params.append("met", config.mountEnclosureToTable ? "1" : "0");
+		params.append("id", config.includeDoors ? "1" : "0");
+		params.append("iod", config.isOutsideDimension ? "1" : "0");
+		params.append("dcf", config.doorConfig.frontDoor ? "1" : "0");
+		params.append("dcb", config.doorConfig.backDoor ? "1" : "0");
+		params.append("dcl", config.doorConfig.leftDoor ? "1" : "0");
+		params.append("dcr", config.doorConfig.rightDoor ? "1" : "0");
+		params.append("dct", config.doorConfig.doorType);
+		params.append("mct", materialConfig.type);
+		params.append("mip", materialConfig.includePanels ? "1" : "0");
+		params.append("pcpT", materialConfig.panelConfig.top ? "1" : "0");
+		params.append("pcpB", materialConfig.panelConfig.bottom ? "1" : "0");
+		params.append("pcpL", materialConfig.panelConfig.left ? "1" : "0");
+		params.append("pcpR", materialConfig.panelConfig.right ? "1" : "0");
+		params.append("pcpK", materialConfig.panelConfig.back ? "1" : "0");
+		params.append("pcpF", materialConfig.panelConfig.front ? "1" : "0");
 
-		// Calculate table materials if needed
-		if (config.includeTable) {
-			calculatedResults.table = calculateTableMaterials(tableDimensions);
+		const shareUrl = `${window.location.pathname}?${params.toString()}`;
+		navigator.clipboard
+			.writeText(window.location.origin + shareUrl)
+			.then(() => alert("Shareable URL copied to clipboard!"))
+			.catch((err) => console.error("Failed to copy URL: ", err));
+		router.push(shareUrl, { scroll: false });
+	};
+
+	const printBOM = () => {
+		const printContents = printRef.current?.innerHTML;
+		const originalContents = document.body.innerHTML;
+		if (printContents) {
+			document.body.innerHTML = printContents;
+			window.print();
+			document.body.innerHTML = originalContents;
+			window.location.reload();
 		}
+	};
+	// Removed duplicated useEffect for handling searchParams
+	// We already have the parameters loading in the first useEffect
+	useEffect(() => {
+		// Calculate all results based on current dimensions and config
+		const tableResults = config.includeTable
+			? calculateTableMaterials(tableDimensions, config.isOutsideDimension)
+			: undefined;
 
-		// Calculate enclosure materials if needed
-		if (config.includeEnclosure) {
-			calculatedResults.enclosure =
-				calculateEnclosureMaterials(enclosureDimensions);
-
-			// Calculate door materials if doors are included
-			if (
-				config.includeDoors &&
-				Object.values(config.doorConfig).some(Boolean)
-			) {
-				calculatedResults.doors = calculateDoorMaterials(
+		const enclosureResults = config.includeEnclosure
+			? calculateEnclosureMaterials(
 					enclosureDimensions,
-					config.doorConfig
-				);
-			}
+					config.isOutsideDimension
+			  )
+			: undefined;
 
-			// Calculate panel materials if panels are included
-			if (
-				materialConfig.includePanels &&
-				Object.values(materialConfig.panelConfig).some(Boolean)
-			) {
-				calculatedResults.panels = calculatePanelMaterials(
-					enclosureDimensions,
-					materialConfig
-				);
-			}
-		}
-
-		// Add mounting hardware if both components are included and mounting is enabled
-		if (
+		const mountingResults =
 			config.includeTable &&
 			config.includeEnclosure &&
 			config.mountEnclosureToTable
-		) {
-			calculatedResults.mounting = calculateMountingMaterials();
-		}
+				? calculateMountingMaterials()
+				: undefined;
+		const doorResults =
+			config.includeEnclosure && config.includeDoors
+				? calculateDoorMaterials(
+						enclosureDimensions,
+						config.isOutsideDimension,
+						config.doorConfig
+				  )
+				: undefined;
 
-		setResults(calculatedResults);
-	}, [tableDimensions, enclosureDimensions, config, materialConfig]);
+		const panelResults =
+			config.includeEnclosure && materialConfig.includePanels
+				? calculatePanelMaterials(
+						enclosureDimensions,
+						config.isOutsideDimension,
+						materialConfig
+				  )
+				: undefined;
 
-	// Memoized material types lookup for optimization
-	const materialTypesMap = React.useMemo(() => {
-		return materialTypes.reduce((acc, material) => {
-			acc[material.id] = material;
-			return acc;
-		}, {} as Record<string, (typeof materialTypes)[0]>);
-	}, [materialTypes]);
-
-	// Recalculate when inputs change or configuration changes
-	useEffect(() => {
-		calculateMaterials();
-	}, [calculateMaterials]);
-
+		setResults({
+			table: tableResults,
+			enclosure: enclosureResults,
+			mounting: mountingResults,
+			doors: doorResults,
+			panels: panelResults,
+		});
+	}, [config, tableDimensions, enclosureDimensions, materialConfig]);
 	/**
-	 * Generates a shareable URL with the current configuration
+	 * Handle general configuration changes for table and enclosure options
 	 */
-	const generateShareableURL = () => {
-		const params = new URLSearchParams();
+	const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, checked, type, value } = e.target;
 
-		// Table dimensions
-		if (config.includeTable) {
-			params.set("tl", tableDimensions.length.toString());
-			params.set("tw", tableDimensions.width.toString());
-			params.set("th", tableDimensions.height.toString());
-			params.set("tod", tableDimensions.isOutsideDimension ? "1" : "0");
-		}
+		if (name.includes(".")) {
+			// Handle nested properties like doorConfig.frontDoor
+			const [parent, child] = name.split(".");
 
-		// Enclosure dimensions
-		if (config.includeEnclosure) {
-			params.set("el", enclosureDimensions.length.toString());
-			params.set("ew", enclosureDimensions.width.toString());
-			params.set("eh", enclosureDimensions.height.toString());
-			params.set("eod", enclosureDimensions.isOutsideDimension ? "1" : "0");
-		}
-
-		// Configuration options
-		params.set("it", config.includeTable ? "1" : "0");
-		params.set("ie", config.includeEnclosure ? "1" : "0");
-		params.set("met", config.mountEnclosureToTable ? "1" : "0");
-		params.set("id", config.includeDoors ? "1" : "0");
-		// Door configuration
-		if (config.includeDoors) {
-			params.set("fd", config.doorConfig.frontDoor ? "1" : "0");
-			params.set("bd", config.doorConfig.backDoor ? "1" : "0");
-			params.set("ld", config.doorConfig.leftDoor ? "1" : "0");
-			params.set("rd", config.doorConfig.rightDoor ? "1" : "0");
-			params.set("dt", config.doorConfig.doorType.toString());
-		}
-
-		// Material configuration
-		if (config.includeEnclosure) {
-			params.set("ip", materialConfig.includePanels ? "1" : "0");
-
-			if (materialConfig.includePanels) {
-				params.set("mt", materialConfig.type);
-				params.set("mth", materialConfig.thickness.toString());
-				params.set("pt", materialConfig.panelConfig.top ? "1" : "0");
-				params.set("pb", materialConfig.panelConfig.bottom ? "1" : "0");
-				params.set("pl", materialConfig.panelConfig.left ? "1" : "0");
-				params.set("pr", materialConfig.panelConfig.right ? "1" : "0");
-				params.set("pbk", materialConfig.panelConfig.back ? "1" : "0");
-			}
-		}
-
-		// Get the base URL
-		const baseUrl = window.location.origin + window.location.pathname;
-		const shareableUrl = `${baseUrl}?${params.toString()}`;
-
-		return shareableUrl;
-	};
-
-	/**
-	 * Copy the shareable URL to the clipboard
-	 */
-	const copyShareableURL = () => {
-		const url = generateShareableURL();
-		navigator.clipboard
-			.writeText(url)
-			.then(() => {
-				alert("Shareable URL copied to clipboard!");
-			})
-			.catch((err) => {
-				console.error("Failed to copy URL: ", err);
-				alert("Failed to copy URL. Please try again.");
-			});
-	};
-
-	/**
-	 * Print the bill of materials
-	 */
-	const printBOM = () => {
-		if (printRef.current) {
-			const content = printRef.current;
-			const printWindow = window.open("", "_blank");
-
-			if (printWindow) {
-				printWindow.document.write(`
-					<!DOCTYPE html>
-					<html>
-					<head>
-						<title>Table and Enclosure Bill of Materials</title>
-						<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-						<style>
-							body { padding: 20px; }
-							.print-header { margin-bottom: 20px; }
-							@media print {
-								.no-print { display: none; }
-							}
-						</style>
-					</head>
-					<body>
-						<div class="container">
-							<div class="print-header">
-								<h1>Table and Enclosure Bill of Materials</h1>
-								<p>Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-							</div>
-							${content.innerHTML}
-							<div class="text-center mt-5 no-print">
-								<button onclick="window.print()" class="btn btn-primary">Print</button>
-								<button onclick="window.close()" class="btn btn-secondary ms-2">Close</button>
-							</div>
-						</div>
-					</body>
-					</html>
-				`);
-				printWindow.document.close();
-			}
-		}
-	};
-	/**
-	 * Load configuration from URL parameters
-	 */
-	useEffect(() => {
-		// Get searchParams as a snapshot to avoid the React Hook dependency warning
-		const params = new URLSearchParams(window.location.search);
-		if (params.size === 0) return;
-
-		try {
-			// Table configuration
-			const includeTable = params.get("it") === "1";
-
-			if (includeTable) {
-				const tLength = params.get("tl");
-				const tWidth = params.get("tw");
-				const tHeight = params.get("th");
-				const tOutsideDim = params.get("tod") === "1";
-
-				if (tLength && tWidth && tHeight) {
-					setTableDimensions({
-						length: parseFloat(tLength),
-						width: parseFloat(tWidth),
-						height: parseFloat(tHeight),
-						isOutsideDimension: tOutsideDim,
-					});
-				}
-			} // Enclosure configuration
-			const includeEnclosure = params.get("ie") === "1";
-
-			if (includeEnclosure) {
-				const eLength = params.get("el");
-				const eWidth = params.get("ew");
-				const eHeight = params.get("eh");
-				const eOutsideDim = params.get("eod") === "1";
-
-				if (eLength && eWidth && eHeight) {
-					setEnclosureDimensions({
-						length: parseFloat(eLength),
-						width: parseFloat(eWidth),
-						height: parseFloat(eHeight),
-						isOutsideDimension: eOutsideDim,
-					});
-				}
-
-				// Door configuration
-				const includeDoors = params.get("id") === "1";
-
-				if (includeDoors) {
-					const frontDoor = params.get("fd") === "1";
-					const backDoor = params.get("bd") === "1";
-					const leftDoor = params.get("ld") === "1";
-					const rightDoor = params.get("rd") === "1";
-					const doorTypeParam = params.get("dt") || DoorType.STANDARD;
-
-					setConfig((prev) => ({
-						...prev,
-						includeDoors,
-						doorConfig: {
-							frontDoor,
-							backDoor,
-							leftDoor,
-							rightDoor,
-							doorType: doorTypeParam as DoorType,
-						},
-					}));
-				}
-
-				// Panel configuration
-				const includePanels = params.get("ip") === "1";
-				if (includePanels) {
-					const materialType = params.get("mt") || "acrylic";
-					const materialThickness = params.get("mth")
-						? parseInt(params.get("mth")!)
-						: 3;
-					const topPanel = params.get("pt") === "1";
-					const bottomPanel = params.get("pb") === "1";
-					const leftPanel = params.get("pl") === "1";
-					const rightPanel = params.get("pr") === "1";
-					const backPanel = params.get("pbk") === "1";
-
-					setMaterialConfig({
-						type: materialType,
-						thickness: materialThickness,
-						includePanels,
-						panelConfig: {
-							top: topPanel,
-							bottom: bottomPanel,
-							left: leftPanel,
-							right: rightPanel,
-							back: backPanel,
-						},
-					});
-				}
-
-				// Set overall config last
-				const mountEnclosureToTable = params.get("met") === "1";
-
+			// Type-safe handling for doorConfig
+			if (parent === "doorConfig") {
 				setConfig((prev) => ({
 					...prev,
-					includeTable,
-					includeEnclosure,
-					mountEnclosureToTable,
+					doorConfig: {
+						...prev.doorConfig,
+						[child]: type === "checkbox" ? checked : value,
+					},
 				}));
 			}
-		} catch (error) {
-			console.error("Error loading configuration from URL:", error);
-			// Keep default config if error
+			// Add other nested config objects if needed
+		} else {
+			// Handle top-level properties
+			setConfig((prev) => ({
+				...prev,
+				[name]: type === "checkbox" ? checked : value,
+			}));
 		}
-	}, []);
+
+		// Special handling for enclosure dimension adjustments when toggling table/enclosure inclusion
+		if (name === "includeTable" || name === "includeEnclosure") {
+			if (name === "includeTable" && checked && config.includeEnclosure) {
+				// If enabling table and enclosure exists, update enclosure dimensions
+				updateEnclosureDimensionsFromTable(
+					tableDimensions,
+					enclosureDimensions.height,
+					config.isOutsideDimension
+				);
+			}
+		}
+	};
 
 	return (
-		<>
-			{" "}
+		<div className="container mt-0">
 			<ConfigPanel
 				config={config}
 				tableDimensions={tableDimensions}
@@ -635,10 +558,10 @@ export default function TableCalculator({
 				handleEnclosureDimensionChange={handleEnclosureDimensionChange}
 				handlePanelConfigChange={handlePanelConfigChange}
 				handleMaterialTypeChange={handleMaterialTypeChange}
-				handleMaterialThicknessChange={handleMaterialThicknessChange}
+				// handleMaterialThicknessChange removed
 				handleDoorTypeChange={handleDoorTypeChange}
 				MATERIAL_TYPES={materialTypes}
-				MATERIAL_THICKNESSES={materialThicknesses}
+				MATERIAL_THICKNESS={materialThickness} // Changed from MATERIAL_THICKNESSES
 			/>
 			<ResultsPanel
 				results={results}
@@ -650,6 +573,6 @@ export default function TableCalculator({
 				printBOM={printBOM}
 				materialTypesMap={materialTypesMap}
 			/>
-		</>
+		</div>
 	);
 }

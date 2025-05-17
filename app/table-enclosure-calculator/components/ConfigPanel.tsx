@@ -1,18 +1,36 @@
+/**
+ * Config panel component
+ * Updated: 17/05/2025
+ * Author: Daniel Potter
+ * Description: This component handles the configuration of the table and enclosure calculator.
+ * It holds the state and interfaces for the configuration options panel that controls most of the configurable options for the table and enclosure.
+ * The sizes for the table and enclosure are passed in as props and they come from the table and enclosure panels.
+ */
+
 "use client";
 import React from "react";
-import {
+import type {
+	Dimensions,
 	TableConfig,
 	MaterialConfig,
-	DoorType,
-	DoorPanelDimensions,
-	DoorTypeDisplayNames,
-} from "@/app/table-enclosure-calculator/types";
-import { Dimensions } from "@/app/table-enclosure-calculator/calcUtils";
+	DoorConfig,
+} from "../types";
+import { DoorType, DoorTypeDisplayNames } from "../types";
 
+/**
+ * The props for the ConfigPanel component.
+ * @property {TableConfig} config - The configuration object for the table and enclosure.
+ * @property {Omit<Dimensions, "isOutsideDimension">} tableDimensions - The dimensions of the table.
+ * @property {Omit<Dimensions, "isOutsideDimension">} enclosureDimensions - The dimensions of the enclosure.
+ * @property {MaterialConfig} materialConfig - The material configuration object.
+ * @property {function} handleConfigChange - Function to handle changes in the configuration.
+ * @property {function} handleTableDimensionChange - Function to handle changes in table dimensions.
+ * @property {function} handleEnclosureDimensionChange - Function to handle changes in enclosure dimensions.
+ */
 interface ConfigPanelProps {
 	config: TableConfig;
-	tableDimensions: Dimensions;
-	enclosureDimensions: Dimensions;
+	tableDimensions: Omit<Dimensions, "isOutsideDimension">;
+	enclosureDimensions: Omit<Dimensions, "isOutsideDimension">;
 	materialConfig: MaterialConfig;
 	handleConfigChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	handleTableDimensionChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -21,12 +39,9 @@ interface ConfigPanelProps {
 	) => void;
 	handlePanelConfigChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	handleMaterialTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-	handleMaterialThicknessChange: (
-		e: React.ChangeEvent<HTMLSelectElement>
-	) => void;
 	handleDoorTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-	MATERIAL_TYPES: Array<{ id: string; name: string; defaultThickness: number }>;
-	MATERIAL_THICKNESSES: number[];
+	MATERIAL_TYPES: Array<{ id: string; name: string }>;
+	MATERIAL_THICKNESS: number;
 }
 
 /**
@@ -42,10 +57,9 @@ export function ConfigPanel({
 	handleEnclosureDimensionChange,
 	handlePanelConfigChange,
 	handleMaterialTypeChange,
-	handleMaterialThicknessChange,
 	handleDoorTypeChange,
 	MATERIAL_TYPES,
-	MATERIAL_THICKNESSES,
+	MATERIAL_THICKNESS,
 }: ConfigPanelProps) {
 	return (
 		<>
@@ -57,25 +71,27 @@ export function ConfigPanel({
 				<div className="card-body">
 					<div className="row g-3">
 						<div className="col-md-4">
-							<div className="form-check">
+							<div className="form-check form-switch">
 								<input
-									type="checkbox"
 									className="form-check-input"
+									type="checkbox"
+									role="switch"
 									id="includeTable"
 									name="includeTable"
 									checked={config.includeTable}
 									onChange={handleConfigChange}
 								/>
 								<label className="form-check-label" htmlFor="includeTable">
-									Include Machine Table
+									Include Table
 								</label>
 							</div>
 						</div>
 						<div className="col-md-4">
-							<div className="form-check">
+							<div className="form-check form-switch">
 								<input
-									type="checkbox"
 									className="form-check-input"
+									type="checkbox"
+									role="switch"
 									id="includeEnclosure"
 									name="includeEnclosure"
 									checked={config.includeEnclosure}
@@ -86,58 +102,54 @@ export function ConfigPanel({
 								</label>
 							</div>
 						</div>{" "}
+						{/* Moved "Use Outside Dimensions" here */}
+						<div className="col-md-4">
+							<div className="form-check form-switch">
+								<input
+									className="form-check-input"
+									type="checkbox"
+									role="switch"
+									id="isOutsideDimension"
+									name="isOutsideDimension"
+									checked={config.isOutsideDimension}
+									onChange={handleConfigChange}
+								/>
+								<label
+									className="form-check-label"
+									htmlFor="isOutsideDimension"
+								>
+									Use Outside Dimensions
+								</label>
+							</div>
+						</div>
 						{config.includeTable && config.includeEnclosure && (
-							<>
-								<div className="col-md-4">
-									<div className="form-check">
-										<input
-											type="checkbox"
-											className="form-check-input"
-											id="mountEnclosureToTable"
-											name="mountEnclosureToTable"
-											checked={config.mountEnclosureToTable}
-											onChange={handleConfigChange}
-										/>
-										<label
-											className="form-check-label"
-											htmlFor="mountEnclosureToTable"
-										>
-											Mount Enclosure to Table
-										</label>
-									</div>
+							<div className="col-md-4">
+								<div className="form-check form-switch">
+									<input
+										className="form-check-input"
+										type="checkbox"
+										id="mountEnclosureToTable"
+										name="mountEnclosureToTable" // Handled by handleConfigChange
+										checked={config.mountEnclosureToTable}
+										onChange={handleConfigChange}
+									/>
+									<label
+										className="form-check-label"
+										htmlFor="mountEnclosureToTable"
+									>
+										Mount Enclosure to Table
+									</label>
 								</div>
-								<div className="col-md-4">
-									<div className="form-check">
-										<input
-											type="checkbox"
-											className="form-check-input"
-											id="autoSizeEnclosure"
-											name="autoSizeEnclosure"
-											checked={config.autoSizeEnclosure}
-											onChange={handleConfigChange}
-										/>
-										<label
-											className="form-check-label"
-											htmlFor="autoSizeEnclosure"
-										>
-											<strong>Auto-Size Enclosure to Table</strong>
-										</label>
-										<div className="form-text">
-											Automatically sets enclosure dimensions based on table
-											size (height remains configurable)
-										</div>
-									</div>
-								</div>
-							</>
+							</div>
 						)}
 						{config.includeEnclosure && (
 							<div className="col-md-4">
-								<div className="form-check">
+								<div className="form-check form-switch">
 									<input
-										type="checkbox"
 										className="form-check-input"
+										type="checkbox"
 										id="includeDoors"
-										name="includeDoors"
+										name="includeDoors" // Handled by handleConfigChange
 										checked={config.includeDoors}
 										onChange={handleConfigChange}
 									/>
@@ -146,103 +158,55 @@ export function ConfigPanel({
 									</label>
 								</div>
 							</div>
-						)}{" "}
+						)}
 						{config.includeEnclosure && config.includeDoors && (
 							<>
-								{/* Door Type Selection */}
-								<div className="col-md-12 mb-3">
+								<div className="col-md-4">
 									<label htmlFor="doorType" className="form-label">
 										Door Type
 									</label>
 									<select
 										className="form-select"
 										id="doorType"
-										name="doorType"
+										name="doorConfig.doorType" // Special handling in handleConfigChange or use handleDoorTypeChange
 										value={config.doorConfig.doorType}
 										onChange={handleDoorTypeChange}
 									>
-										{" "}
-										<option value={DoorType.STANDARD}>
-											{DoorTypeDisplayNames[DoorType.STANDARD]} Door
-										</option>
-										<option value={DoorType.BIFOLD}>
-											{DoorTypeDisplayNames[DoorType.BIFOLD]} Door
-										</option>
-										<option value={DoorType.AWNING}>
-											{DoorTypeDisplayNames[DoorType.AWNING]} Door
-										</option>
+										{Object.values(DoorType).map((type) => (
+											<option key={type} value={type}>
+												{DoorTypeDisplayNames[type]}
+											</option>
+										))}
 									</select>
-									<div className="form-text">
-										{config.doorConfig.doorType === DoorType.STANDARD &&
-											"Standard doors open from one side and are mounted on hinges."}
-										{config.doorConfig.doorType === DoorType.BIFOLD &&
-											"Bi-fold doors consist of two panels that fold in the middle."}
-										{config.doorConfig.doorType === DoorType.AWNING &&
-											"Awning doors open upward from the bottom."}
-									</div>
 								</div>
-
-								<div className="col-md-3">
-									<div className="form-check">
-										<input
-											type="checkbox"
-											className="form-check-input"
-											id="frontDoor"
-											name="frontDoor"
-											checked={config.doorConfig.frontDoor}
-											onChange={handleConfigChange}
-										/>
-										<label className="form-check-label" htmlFor="frontDoor">
-											Front Door
-										</label>
-									</div>
-								</div>
-
-								<div className="col-md-3">
-									<div className="form-check">
-										<input
-											type="checkbox"
-											className="form-check-input"
-											id="backDoor"
-											name="backDoor"
-											checked={config.doorConfig.backDoor}
-											onChange={handleConfigChange}
-										/>
-										<label className="form-check-label" htmlFor="backDoor">
-											Back Door
-										</label>
-									</div>
-								</div>
-
-								<div className="col-md-3">
-									<div className="form-check">
-										<input
-											type="checkbox"
-											className="form-check-input"
-											id="leftDoor"
-											name="leftDoor"
-											checked={config.doorConfig.leftDoor}
-											onChange={handleConfigChange}
-										/>
-										<label className="form-check-label" htmlFor="leftDoor">
-											Left Door
-										</label>
-									</div>
-								</div>
-
-								<div className="col-md-3">
-									<div className="form-check">
-										<input
-											type="checkbox"
-											className="form-check-input"
-											id="rightDoor"
-											name="rightDoor"
-											checked={config.doorConfig.rightDoor}
-											onChange={handleConfigChange}
-										/>
-										<label className="form-check-label" htmlFor="rightDoor">
-											Right Door
-										</label>
+								<div className="col-12">
+									<label className="form-label">Door Positions:</label>
+									<div className="d-flex flex-wrap">
+										{(Object.keys(config.doorConfig) as Array<keyof DoorConfig>)
+											.filter((key) => key !== "doorType") // Exclude doorType from checkboxes
+											.map((key) => {
+												const pos = key.replace("Door", ""); // e.g. frontDoor -> front
+												const capitalizedPos =
+													pos.charAt(0).toUpperCase() + pos.slice(1);
+												return (
+													<div className="form-check me-3" key={key}>
+														<input
+															className="form-check-input"
+															type="checkbox"
+															id={`doorConfig${capitalizedPos}Door`}
+															name={`doorConfig.${key}`} // e.g., doorConfig.frontDoor
+															checked={config.doorConfig[key] as boolean} // Assert as boolean
+															onChange={handleConfigChange} // General handler should work for doorConfig.key
+														/>
+														<label
+															className="form-check-label"
+															htmlFor={`doorConfig${capitalizedPos}Door`}
+														>
+															{capitalizedPos} Door
+														</label>
+													</div>
+												);
+											})}
 									</div>
 								</div>
 							</>
@@ -254,193 +218,118 @@ export function ConfigPanel({
 			{config.includeTable && (
 				<div className="card mb-4">
 					<div className="card-header">
-						<h2 className="h5 mb-0">Table Dimensions</h2>
+						<h2 className="h5 mb-0">Table Dimensions (mm)</h2>
 					</div>
 					<div className="card-body">
 						{" "}
 						<div className="row g-3">
 							<div className="col-md-3 col-sm-6">
-								<div className="form-floating">
-									<input
-										type="number"
-										className="form-control"
-										id="tableLength"
-										name="length"
-										value={tableDimensions.length}
-										onChange={handleTableDimensionChange}
-										placeholder="Length (mm)"
-									/>
-									<label htmlFor="tableLength">Length (mm)</label>
-								</div>
+								<label htmlFor="tableLength" className="form-label">
+									Length (mm)
+								</label>
+								<input
+									type="number"
+									className="form-control"
+									id="tableLength"
+									name="length"
+									value={tableDimensions.length}
+									onChange={handleTableDimensionChange}
+									min="0"
+								/>
 							</div>
 
 							<div className="col-md-3 col-sm-6">
-								<div className="form-floating">
-									<input
-										type="number"
-										className="form-control"
-										id="tableWidth"
-										name="width"
-										value={tableDimensions.width}
-										onChange={handleTableDimensionChange}
-										placeholder="Width (mm)"
-									/>
-									<label htmlFor="tableWidth">Width (mm)</label>
-								</div>
+								<label htmlFor="tableWidth" className="form-label">
+									Width (mm)
+								</label>
+								<input
+									type="number"
+									className="form-control"
+									id="tableWidth"
+									name="width"
+									value={tableDimensions.width}
+									onChange={handleTableDimensionChange}
+									min="0"
+								/>
 							</div>
 
 							<div className="col-md-3 col-sm-6">
-								<div className="form-floating">
-									<input
-										type="number"
-										className="form-control"
-										id="tableHeight"
-										name="height"
-										value={tableDimensions.height}
-										onChange={handleTableDimensionChange}
-										placeholder="Height (mm)"
-									/>
-									<label htmlFor="tableHeight">Height (mm)</label>
-								</div>
+								<label htmlFor="tableHeight" className="form-label">
+									Height (mm)
+								</label>
+								<input
+									type="number"
+									className="form-control"
+									id="tableHeight"
+									name="height"
+									value={tableDimensions.height}
+									onChange={handleTableDimensionChange}
+									min="0"
+								/>
 							</div>
-
-							<div className="col-md-3 col-sm-6">
-								<div className="form-check mt-3">
-									<input
-										type="checkbox"
-										className="form-check-input"
-										id="tableIsOutsideDimension"
-										name="isOutsideDimension"
-										checked={tableDimensions.isOutsideDimension}
-										onChange={handleTableDimensionChange}
-									/>
-									<label
-										className="form-check-label"
-										htmlFor="tableIsOutsideDimension"
-									>
-										Outside Dimensions
-									</label>
-								</div>
-							</div>
+							{/* Removed individual isOutsideDimension checkbox for table */}
 						</div>
 					</div>
 				</div>
-			)}{" "}
+			)}
 			{/* Enclosure Dimensions */}
 			{config.includeEnclosure && (
 				<div className="card mb-4">
 					<div className="card-header">
-						<h2 className="h5 mb-0">Enclosure Dimensions</h2>
-						{config.includeTable && config.autoSizeEnclosure && (
-							<small className="text-muted">
-								Length and width will automatically adjust to fit your table
-								with a margin
+						<h2 className="h5 mb-0">Enclosure Dimensions (mm)</h2>
+						{config.includeTable && (
+							<small className="text-muted ms-2">
+								(Length & Width auto-adjusted if table is included)
 							</small>
 						)}
 					</div>
 					<div className="card-body">
 						<div className="row g-3">
-							{/* Length input - show as disabled when auto-sizing */}
 							<div className="col-md-3 col-sm-6">
-								<div className="form-floating">
-									<input
-										type="number"
-										className="form-control"
-										id="enclosureLength"
-										name="length"
-										value={enclosureDimensions.length}
-										onChange={handleEnclosureDimensionChange}
-										placeholder="Length (mm)"
-										disabled={config.includeTable && config.autoSizeEnclosure}
-										// Add visual indicator for auto-sized values
-										style={
-											config.includeTable && config.autoSizeEnclosure
-												? { backgroundColor: "#f0f8ff" }
-												: {}
-										}
-									/>
-									<label htmlFor="enclosureLength">Length (mm)</label>
-								</div>
-								{config.includeTable && config.autoSizeEnclosure && (
-									<small className="text-muted">
-										Auto-sized from table length
-									</small>
-								)}
+								<label htmlFor="enclosureLength" className="form-label">
+									Length (mm)
+								</label>
+								<input
+									type="number"
+									className="form-control"
+									id="enclosureLength"
+									name="length"
+									value={enclosureDimensions.length}
+									onChange={handleEnclosureDimensionChange}
+									min="0"
+									disabled={config.includeTable} // Disabled if table dictates size
+								/>
 							</div>
-
-							{/* Width input - show as disabled when auto-sizing */}
 							<div className="col-md-3 col-sm-6">
-								<div className="form-floating">
-									<input
-										type="number"
-										className="form-control"
-										id="enclosureWidth"
-										name="width"
-										value={enclosureDimensions.width}
-										onChange={handleEnclosureDimensionChange}
-										placeholder="Width (mm)"
-										disabled={config.includeTable && config.autoSizeEnclosure}
-										// Add visual indicator for auto-sized values
-										style={
-											config.includeTable && config.autoSizeEnclosure
-												? { backgroundColor: "#f0f8ff" }
-												: {}
-										}
-									/>
-									<label htmlFor="enclosureWidth">Width (mm)</label>
-								</div>
-								{config.includeTable && config.autoSizeEnclosure && (
-									<small className="text-muted">
-										Auto-sized from table width
-									</small>
-								)}
+								<label htmlFor="enclosureWidth" className="form-label">
+									Width (mm)
+								</label>
+								<input
+									type="number"
+									className="form-control"
+									id="enclosureWidth"
+									name="width"
+									value={enclosureDimensions.width}
+									onChange={handleEnclosureDimensionChange}
+									min="0"
+									disabled={config.includeTable} // Disabled if table dictates size
+								/>
 							</div>
-
-							{/* Height input - always enabled even with auto-sizing */}
 							<div className="col-md-3 col-sm-6">
-								<div className="form-floating">
-									<input
-										type="number"
-										className="form-control"
-										id="enclosureHeight"
-										name="height"
-										value={enclosureDimensions.height}
-										onChange={handleEnclosureDimensionChange}
-										placeholder="Height (mm)"
-										// Highlight this as it's still editable with auto-sizing
-										style={
-											config.includeTable && config.autoSizeEnclosure
-												? { backgroundColor: "#ffffff", borderColor: "#6c757d" }
-												: {}
-										}
-									/>
-									<label htmlFor="enclosureHeight">Height (mm)</label>
-								</div>
-								{config.includeTable && config.autoSizeEnclosure && (
-									<small className="text-info">
-										<strong>Height remains configurable</strong>
-									</small>
-								)}
+								<label htmlFor="enclosureHeight" className="form-label">
+									Height (mm)
+								</label>
+								<input
+									type="number"
+									className="form-control"
+									id="enclosureHeight"
+									name="height"
+									value={enclosureDimensions.height}
+									onChange={handleEnclosureDimensionChange}
+									min="0"
+								/>
 							</div>
-
-							<div className="col-md-3 col-sm-6">
-								<div className="form-check mt-3">
-									<input
-										type="checkbox"
-										className="form-check-input"
-										id="enclosureIsOutsideDimension"
-										name="isOutsideDimension"
-										checked={enclosureDimensions.isOutsideDimension}
-										onChange={handleEnclosureDimensionChange}
-									/>
-									<label
-										className="form-check-label"
-										htmlFor="enclosureIsOutsideDimension"
-									>
-										Outside Dimensions
-									</label>
-								</div>
-							</div>
+							{/* Removed individual isOutsideDimension checkbox for enclosure */}
 						</div>
 					</div>
 				</div>
@@ -453,148 +342,67 @@ export function ConfigPanel({
 					</div>
 					<div className="card-body">
 						<div className="row mb-3">
-							<div className="col-md-4">
-								<div className="form-check">
-									<input
-										type="checkbox"
-										className="form-check-input"
-										id="includePanels"
-										name="includePanels"
-										checked={materialConfig.includePanels}
-										onChange={handlePanelConfigChange}
-									/>
-									<label className="form-check-label" htmlFor="includePanels">
-										Include Panel Materials
-									</label>
-								</div>
+							<div className="col-md-6">
+								<label htmlFor="materialType" className="form-label">
+									Material Type (All {MATERIAL_THICKNESS}mm Thick)
+								</label>
+								<select
+									className="form-select"
+									id="materialType"
+									value={materialConfig.type}
+									onChange={handleMaterialTypeChange}
+								>
+									{MATERIAL_TYPES.map((type) => (
+										<option key={type.id} value={type.id}>
+											{type.name}
+										</option>
+									))}
+								</select>
 							</div>
+							{/* Removed Material Thickness dropdown */}
 						</div>
 
 						{materialConfig.includePanels && (
-							<>
-								{" "}
-								<div className="row mb-3">
-									<div className="col-md-6 col-sm-12 mb-3 mb-md-0">
-										<label htmlFor="materialType" className="form-label">
-											Material Type
-										</label>
-										<select
-											className="form-select"
-											id="materialType"
-											name="type"
-											value={materialConfig.type}
-											onChange={handleMaterialTypeChange}
+							<div>
+								<label className="form-label">Panel Positions:</label>
+								<div className="d-flex flex-wrap">
+									{(
+										Object.keys(materialConfig.panelConfig) as Array<
+											keyof MaterialConfig["panelConfig"]
 										>
-											{MATERIAL_TYPES.map((material) => (
-												<option key={material.id} value={material.id}>
-													{material.name}
-												</option>
-											))}
-										</select>
-										<div className="form-text">Select panel material type</div>
-									</div>
-
-									<div className="col-md-6 col-sm-12">
-										<label htmlFor="materialThickness" className="form-label">
-											Material Thickness (mm)
-										</label>
-										<select
-											className="form-select"
-											id="materialThickness"
-											name="thickness"
-											value={materialConfig.thickness}
-											onChange={handleMaterialThicknessChange}
-										>
-											{MATERIAL_THICKNESSES.map((thickness) => (
-												<option key={thickness} value={thickness}>
-													{thickness}mm
-												</option>
-											))}
-										</select>
-										<div className="form-text">Select material thickness</div>
-									</div>
+									).map((key) => {
+										const pos = key.charAt(0).toUpperCase() + key.slice(1);
+										return (
+											<div className="form-check me-3" key={key}>
+												<input
+													className="form-check-input"
+													type="checkbox"
+													id={`panelConfig${pos}`}
+													name={key} // e.g. top, bottom, left - handled by handlePanelConfigChange
+													checked={materialConfig.panelConfig[key]}
+													onChange={handlePanelConfigChange}
+													// Disable front panel if front door is included
+													disabled={
+														key === "front" &&
+														config.includeDoors &&
+														config.doorConfig.frontDoor
+													}
+												/>
+												<label
+													className="form-check-label"
+													htmlFor={`panelConfig${pos}`}
+												>
+													{pos}
+													{key === "front" &&
+														config.includeDoors &&
+														config.doorConfig.frontDoor &&
+														" (Door)"}
+												</label>
+											</div>
+										);
+									})}
 								</div>
-								<div className="row">
-									<div className="col-12">
-										<label className="form-label">Panel Configuration</label>
-									</div>
-									<div className="col-md-2">
-										<div className="form-check">
-											<input
-												type="checkbox"
-												className="form-check-input"
-												id="panelTop"
-												name="top"
-												checked={materialConfig.panelConfig.top}
-												onChange={handlePanelConfigChange}
-											/>
-											<label className="form-check-label" htmlFor="panelTop">
-												Top
-											</label>
-										</div>
-									</div>
-									<div className="col-md-2">
-										<div className="form-check">
-											<input
-												type="checkbox"
-												className="form-check-input"
-												id="panelBottom"
-												name="bottom"
-												checked={materialConfig.panelConfig.bottom}
-												onChange={handlePanelConfigChange}
-											/>
-											<label className="form-check-label" htmlFor="panelBottom">
-												Bottom
-											</label>
-										</div>
-									</div>
-									<div className="col-md-2">
-										<div className="form-check">
-											<input
-												type="checkbox"
-												className="form-check-input"
-												id="panelLeft"
-												name="left"
-												checked={materialConfig.panelConfig.left}
-												onChange={handlePanelConfigChange}
-											/>
-											<label className="form-check-label" htmlFor="panelLeft">
-												Left
-											</label>
-										</div>
-									</div>
-									<div className="col-md-2">
-										<div className="form-check">
-											<input
-												type="checkbox"
-												className="form-check-input"
-												id="panelRight"
-												name="right"
-												checked={materialConfig.panelConfig.right}
-												onChange={handlePanelConfigChange}
-											/>
-											<label className="form-check-label" htmlFor="panelRight">
-												Right
-											</label>
-										</div>
-									</div>
-									<div className="col-md-2">
-										<div className="form-check">
-											<input
-												type="checkbox"
-												className="form-check-input"
-												id="panelBack"
-												name="back"
-												checked={materialConfig.panelConfig.back}
-												onChange={handlePanelConfigChange}
-											/>
-											<label className="form-check-label" htmlFor="panelBack">
-												Back
-											</label>
-										</div>
-									</div>
-								</div>
-							</>
+							</div>
 						)}
 					</div>
 				</div>

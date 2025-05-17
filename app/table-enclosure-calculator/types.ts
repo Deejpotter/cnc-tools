@@ -22,13 +22,13 @@ export const DoorTypeDisplayNames = {
 
 /**
  * Interface for dimensions of table or enclosure
- * Includes flag for specifying whether dimensions are inside or outside measurements
+ * Includes centralized control for dimension type (inside vs outside)
  */
 export interface Dimensions {
 	length: number;
 	width: number;
 	height: number;
-	isOutsideDimension: boolean;
+	isOutsideDimension?: boolean; // Optional flag for backward compatibility
 }
 
 /**
@@ -61,7 +61,7 @@ export interface TableConfig {
 	mountEnclosureToTable: boolean;
 	includeDoors: boolean;
 	doorConfig: DoorConfig;
-	autoSizeEnclosure: boolean; // Flag to automatically size enclosure based on table dimensions
+	isOutsideDimension: boolean; // Added: Centralized control for dimension type
 }
 
 /**
@@ -77,6 +77,7 @@ export interface MaterialConfig {
 		left: boolean;
 		right: boolean;
 		back: boolean;
+		front?: boolean; // Optional: for front panel if no door or specific design
 	};
 }
 
