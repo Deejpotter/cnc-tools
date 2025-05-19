@@ -285,6 +285,7 @@ async function estimateItemDimensions(
 			length: 50,
 			width: 50,
 			height: 50,
+			weight: item.weight || 100, // Ensure weight has a default value
 		}));
 	}
 }
@@ -354,7 +355,27 @@ async function getItemDimensions(
 					`Failed to estimate dimensions for SKU: ${invoiceItem.sku}. Skipping item.`
 				);
 				continue;
-			}
+			} // Ensure all dimensions and weight are valid numbers
+			const length =
+				typeof estimatedItemDetails.length === "number" &&
+				!isNaN(estimatedItemDetails.length)
+					? estimatedItemDetails.length
+					: 50;
+			const width =
+				typeof estimatedItemDetails.width === "number" &&
+				!isNaN(estimatedItemDetails.width)
+					? estimatedItemDetails.width
+					: 50;
+			const height =
+				typeof estimatedItemDetails.height === "number" &&
+				!isNaN(estimatedItemDetails.height)
+					? estimatedItemDetails.height
+					: 50;
+			const weight =
+				typeof estimatedItemDetails.weight === "number" &&
+				!isNaN(estimatedItemDetails.weight)
+					? estimatedItemDetails.weight
+					: 100;
 
 			const newItemDataForDb: Omit<
 				ShippingItem,
@@ -362,10 +383,10 @@ async function getItemDimensions(
 			> & { deletedAt: null | Date } = {
 				name: estimatedItemDetails.name,
 				sku: estimatedItemDetails.sku.trim().toUpperCase(), // Standardize SKU to uppercase before saving
-				length: estimatedItemDetails.length,
-				width: estimatedItemDetails.width,
-				height: estimatedItemDetails.height,
-				weight: estimatedItemDetails.weight,
+				length: length,
+				width: width,
+				height: height,
+				weight: weight,
 				deletedAt: null,
 			};
 
@@ -392,13 +413,13 @@ async function getItemDimensions(
 						_id: tempId,
 						name: newItemDataForDb.name,
 						sku: newItemDataForDb.sku,
-						length: newItemDataForDb.length,
-						width: newItemDataForDb.width,
-						height: newItemDataForDb.height,
-						weight: newItemDataForDb.weight,
-						quantity: invoiceItem.quantity,
-						createdAt: new Date(), // Corrected to Date object
-						updatedAt: new Date(), // Corrected to Date object
+						length: newItemDataForDb.length || 50, // Ensure length has a default value
+						width: newItemDataForDb.width || 50, // Ensure width has a default value
+						height: newItemDataForDb.height || 50, // Ensure height has a default value
+						weight: newItemDataForDb.weight || 100, // Ensure weight has a default value
+						quantity: invoiceItem.quantity || 1, // Ensure quantity has a default value
+						createdAt: new Date(),
+						updatedAt: new Date(),
 						deletedAt: null,
 					});
 				}
@@ -412,13 +433,13 @@ async function getItemDimensions(
 					_id: tempId,
 					name: newItemDataForDb.name,
 					sku: newItemDataForDb.sku,
-					length: newItemDataForDb.length,
-					width: newItemDataForDb.width,
-					height: newItemDataForDb.height,
-					weight: newItemDataForDb.weight,
-					quantity: invoiceItem.quantity,
-					createdAt: new Date(), // Corrected to Date object
-					updatedAt: new Date(), // Corrected to Date object
+					length: newItemDataForDb.length || 50, // Ensure length has a default value
+					width: newItemDataForDb.width || 50, // Ensure width has a default value
+					height: newItemDataForDb.height || 50, // Ensure height has a default value
+					weight: newItemDataForDb.weight || 100, // Ensure weight has a default value
+					quantity: invoiceItem.quantity || 1, // Ensure quantity has a default value
+					createdAt: new Date(),
+					updatedAt: new Date(),
 					deletedAt: null,
 				});
 			}
