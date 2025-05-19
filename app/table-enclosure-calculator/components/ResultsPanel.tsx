@@ -22,7 +22,7 @@ interface ResultsPanelProps {
 	materialConfig: MaterialConfig;
 	tableDimensions: any;
 	enclosureDimensions: any;
-	copyShareableURL: () => void;
+	copyShareableURL?: () => void; // Made optional since we've simplified this functionality
 	printBOM: () => void;
 	materialTypesMap: Record<string, any>;
 }
@@ -45,16 +45,9 @@ export function ResultsPanel({
 	return (
 		<div className="card mb-4">
 			<div className="card-header d-flex justify-content-between align-items-center">
-				<h2 className="h5 mb-0">Bill of Materials</h2>
+				<h2 className="h5 mb-0">Bill of Materials</h2>{" "}
 				<div className="d-flex">
-					<button
-						className="btn btn-sm btn-outline-primary me-2"
-						onClick={copyShareableURL}
-						disabled={!config.includeTable && !config.includeEnclosure}
-						title="Create a shareable link with your current configuration"
-					>
-						<i className="bi bi-link-45deg me-1"></i> Share Config
-					</button>
+					{/* Share button temporarily removed to simplify code */}
 					<button
 						className="btn btn-sm btn-outline-secondary"
 						onClick={printBOM}
@@ -73,15 +66,15 @@ export function ResultsPanel({
 						{" "}
 						{config.includeTable && (
 							<div className="col-md-4 mb-2">
-								<strong>Table:</strong> {tableDimensions.length}mm ×{" "}
-								{tableDimensions.width}mm × {tableDimensions.height}mm
+								<strong>Table:</strong> {tableDimensions.length}mm x{" "}
+								{tableDimensions.width}mm x {tableDimensions.height}mm
 								{config.isOutsideDimension ? " (OD)" : " (ID)"}
 							</div>
 						)}
 						{config.includeEnclosure && (
 							<div className="col-md-4 mb-2">
-								<strong>Enclosure:</strong> {enclosureDimensions.length}mm ×{" "}
-								{enclosureDimensions.width}mm × {enclosureDimensions.height}
+								<strong>Enclosure:</strong> {enclosureDimensions.length}mm x{" "}
+								{enclosureDimensions.width}mm x {enclosureDimensions.height}
 								mm
 								{config.isOutsideDimension ? " (OD)" : " (ID)"}
 							</div>
@@ -153,13 +146,13 @@ export function ResultsPanel({
 									</tr>
 									<tr>
 										<td>4</td>
-										<td>In-Out Corner Bracket – 60mm</td>
+										<td>In-Out Corner Bracket - 60mm</td>
 										<td>BRAC-IOCNR-60</td>
 										<td>{results.table.hardware.IOCNR_60}</td>
 									</tr>
 									<tr>
 										<td>5</td>
-										<td>Universal L Brackets – Triple</td>
+										<td>Universal L Brackets - Triple</td>
 										<td>BRAC-L3</td>
 										<td>{results.table.hardware.L_BRACKET_TRIPLE}</td>
 									</tr>
@@ -171,19 +164,19 @@ export function ResultsPanel({
 									</tr>
 									<tr>
 										<td>7</td>
-										<td>M5 Cap Head Bolts – 8MM</td>
+										<td>M5 Cap Head Bolts - 8MM</td>
 										<td>BOLT-M5-CAP-008-1PC</td>
 										<td>{results.table.hardware.CAP_HEAD_M5_8MM}</td>
 									</tr>
 									<tr>
 										<td>8</td>
-										<td>M5 Button Head Screws – 8MM</td>
+										<td>M5 Button Head Screws - 8MM</td>
 										<td>SCREWS-M5-BH-8-1</td>
 										<td>{results.table.hardware.BUTTON_HEAD_M5_8MM}</td>
 									</tr>
 									<tr>
 										<td>9</td>
-										<td>M5 Low Profile Screws – 25MM</td>
+										<td>M5 Low Profile Screws - 25MM</td>
 										<td>SCREWS-M5-LP-25-1</td>
 										<td>{results.table.hardware.LOW_PROFILE_M5_25MM}</td>
 									</tr>
@@ -226,19 +219,19 @@ export function ResultsPanel({
 								<tbody>
 									<tr>
 										<td>1</td>
-										<td>In-Out Corner Bracket – 20mm</td>
+										<td>In-Out Corner Bracket - 20mm</td>
 										<td>BRAC-IOCNR-20</td>
 										<td>{results.enclosure.hardware.IOCNR_20}</td>
 									</tr>
 									<tr>
 										<td>2</td>
-										<td>In-Out Corner Bracket – 40mm</td>
+										<td>In-Out Corner Bracket - 40mm</td>
 										<td>BRAC-IOCNR-40</td>
 										<td>{results.enclosure.hardware.IOCNR_40}</td>
 									</tr>
 									<tr>
 										<td>3</td>
-										<td>In-Out Corner Bracket – 60mm</td>
+										<td>In-Out Corner Bracket - 60mm</td>
 										<td>BRAC-IOCNR-60</td>
 										<td>{results.enclosure.hardware.IOCNR_60}</td>
 									</tr>
@@ -256,7 +249,7 @@ export function ResultsPanel({
 									</tr>
 									<tr>
 										<td>6</td>
-										<td>M5 Cap Head Bolts – 8MM</td>
+										<td>M5 Cap Head Bolts - 8MM</td>
 										<td>BOLT-M5-CAP-008-1PC</td>
 										<td>{results.enclosure.hardware.CAP_HEAD_M5_8MM}</td>
 									</tr>
@@ -305,7 +298,7 @@ export function ResultsPanel({
 									</tr>
 									<tr>
 										<td>10</td>
-										<td>M5 Button Head Bolts – 8MM</td>
+										<td>M5 Button Head Bolts - 8MM</td>
 										<td>SCREWS-M5-BH-008-1</td>
 										<td>{results.enclosure.hardware.BUTTON_HEAD_M5_8MM}</td>
 									</tr>
@@ -368,7 +361,7 @@ export function ResultsPanel({
 								<tbody>
 									<tr>
 										<td>1</td>
-										<td>In-Out Corner Bracket – 40mm</td>
+										<td>In-Out Corner Bracket - 40mm</td>
 										<td>BRAC-IOCNR-40</td>
 										<td>{results.mounting.hardware.IOCNR_40}</td>
 									</tr>
@@ -380,7 +373,7 @@ export function ResultsPanel({
 									</tr>
 									<tr>
 										<td>3</td>
-										<td>M5 Cap Head Bolts – 8MM</td>
+										<td>M5 Cap Head Bolts - 8MM</td>
 										<td>BOLT-M5-CAP-008-1PC</td>
 										<td>{results.mounting.hardware.CAP_HEAD_M5_8MM}</td>
 									</tr>
@@ -426,7 +419,7 @@ export function ResultsPanel({
 										</tr>
 										<tr>
 											<td>4</td>
-											<td>M5 Button Head Bolts – 8MM</td>
+											<td>M5 Button Head Bolts - 8MM</td>
 											<td>SCREWS-M5-BH-008-1</td>
 											<td>{results.doors.hardware.BUTTON_HEAD_M5_8MM}</td>
 										</tr>
@@ -526,8 +519,8 @@ export function ResultsPanel({
 												<td>
 													{panel.position === "Top" ||
 													panel.position === "Bottom"
-														? `${panel.width}mm × ${panel.length}mm`
-														: `${panel.width}mm × ${panel.height}mm`}
+														? `${panel.width}mm x ${panel.length}mm`
+														: `${panel.width}mm x ${panel.height}mm`}
 												</td>
 												<td>
 													{panel.position === "Top" ||

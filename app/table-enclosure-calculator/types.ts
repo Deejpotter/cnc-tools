@@ -23,6 +23,19 @@ export const DoorTypeDisplayNames = {
 /**
  * Interface for dimensions of table or enclosure
  * Includes centralized control for dimension type (inside vs outside)
+ *
+ * For the enclosure and table:
+ * - If isOutsideDimension is true: length and width are the outside measurements of the frame
+ * - If isOutsideDimension is false: length and width are the inside measurements of the frame
+ * - Height is always the overall height including extrusions
+ *
+ * For large enclosures (≥1500mm):
+ * - Top horizontal extrusions use 2040 profile
+ * - Bottom horizontal extrusions use 2020 profile
+ * - Vertical extrusions always use 2020 profile
+ *
+ * For smaller enclosures:
+ * - All extrusions use 2020 profile
  */
 export interface Dimensions {
 	length: number;
@@ -61,7 +74,7 @@ export interface TableConfig {
 	mountEnclosureToTable: boolean;
 	includeDoors: boolean;
 	doorConfig: DoorConfig;
-	isOutsideDimension: boolean; // Added: Centralized control for dimension type
+	isOutsideDimension: boolean;
 }
 
 /**
@@ -77,7 +90,7 @@ export interface MaterialConfig {
 		left: boolean;
 		right: boolean;
 		back: boolean;
-		front?: boolean; // Optional: for front panel if no door or specific design
+		front: boolean;
 	};
 }
 
@@ -113,17 +126,17 @@ export interface Results {
 		extrusions: {
 			horizontal: {
 				length: {
-					type: string;
+					type: string; // Can be "2020" or "2040" depending on size
 					size: number;
 				};
 				width: {
-					type: string;
+					type: string; // Can be "2020" or "2040" depending on size
 					size: number;
 				};
 			};
 			vertical2020: {
-				size: number;
-				qty: number;
+				size: number; // Height accounting for top/bottom extrusion heights
+				qty: number; // Always 4 for standard enclosure
 			};
 		};
 		hardware: {
@@ -136,11 +149,11 @@ export interface Results {
 			BUTTON_HEAD_M5_8MM: number;
 		};
 		totalLengths: {
-			rail2020: number;
-			rail2040: number;
-			railWidth2020: number;
-			railWidth2040: number;
-			verticalRail2020: number;
+			rail2020: number; // Total length of 2020 extrusions for length rails
+			rail2040: number; // Total length of 2040 extrusions for length rails
+			railWidth2020: number; // Total length of 2020 extrusions for width rails
+			railWidth2040: number; // Total length of 2040 extrusions for width rails
+			verticalRail2020: number; // Total length of vertical 2020 extrusions
 		};
 	};
 	mounting?: {
@@ -158,11 +171,13 @@ export interface Results {
 			T_NUT_SLIDING: number;
 			BUTTON_HEAD_M5_8MM: number;
 			CORNER_BRACKET: number;
+			SPRING_LOADED_T_NUT: number; // Added for panel mounting
 		};
 		panels: Array<{
 			position: string;
 			width: number;
 			height: number;
+			notes?: string; // Optional notes field for door type specific information
 		}>;
 	};
 	panels?: {
