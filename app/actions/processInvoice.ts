@@ -1,6 +1,6 @@
 /**
  * Process Invoices server actions
- * Updated: 30/03/25
+ * Updated: 20/05/25
  * Author: Deej Potter
  * Description: Handles invoice processing, including PDF extraction and AI item extraction.
  * Uses Next.js 14 server actions and OpenAI API for item extraction.
@@ -18,9 +18,11 @@ import {
 	getAllDocuments,
 } from "./mongodb/actions";
 
-// Initialize PDF.js worker
-const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// Initialize PDF.js for server environment (no canvas needed)
+if (typeof window === 'undefined') {
+  // Only run this on the server side
+  pdfjs.GlobalWorkerOptions.workerSrc = '';
+}
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -125,12 +127,11 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 	try {
 		// gpt-4o-mini is the recommended model for basic tasks now.
 		const response = await openai.chat.completions.create({
-			model: "gpt-4o-mini",
-			messages: [
+			model: "gpt-4o-mini",			messages: [
 				{
 					role: "system",
 					content:
-						"Extract item details from invoice text. Return only the structured data.",
+						"Extract item details from invoice text. Return only the structured data. Ensure the SKU is accurate. Always provide weight in kilograms (kg).",
 				},
 				{
 					role: "user",
@@ -204,16 +205,16 @@ async function estimateItemDimensions(
 		// gpt-4o-mini is the recommended model for basic tasks now.
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
-			messages: [
-				{
+			messages: [				{
 					role: "system",
 					content: `
-                        Estimate dimensions for hardware items in millimeters.
+                        Estimate dimensions for hardware items in millimeters and weight in kilograms.
                         Consider:
                         - Standard hardware sizes
                         - Packaging for multi-packs
                         - Common engineering dimensions
                         - Item descriptions and SKUs
+                        - Weight should be in kilograms (kg)
                         Return conservative estimates that would fit the items.
                     `,
 				},
@@ -278,14 +279,13 @@ async function estimateItemDimensions(
 
 		return JSON.parse(functionCall.arguments).items;
 	} catch (error) {
-		console.error("Dimension estimation error:", error);
-		// Fallback to default dimensions if estimation fails
+		console.error("Dimension estimation error:", error);		// Fallback to default dimensions if estimation fails
 		return items.map((item) => ({
 			...item,
 			length: 50,
 			width: 50,
 			height: 50,
-			weight: item.weight || 100, // Ensure weight has a default value
+			weight: (item.weight || 0.1) * 1000, // Convert default weight from kg to g (0.1kg = 100g)
 		}));
 	}
 }
@@ -332,11 +332,13 @@ async function getItemDimensions(
 	// Convert Map iterator to an array to avoid downlevelIteration issues
 	for (const invoiceItem of Array.from(aggregatedInvoiceItems.values())) {
 		const dbItem = dbItemsBySku.get(invoiceItem.sku); // SKU is already trimmed and uppercased
-
 		if (dbItem) {
 			console.log(
 				`SKU ${invoiceItem.sku} found in database. Using existing data for item: ${dbItem.name}`
 			);
+			
+			// Note: The database already stores weights in grams as per BoxCalculations.ts,
+			// so no conversion needed here
 			finalShippingItems.push({
 				...dbItem, // Includes _id, name, length, width, height, sku, createdAt, updatedAt, deletedAt from DB
 				quantity: invoiceItem.quantity, // Aggregated quantity from the current invoice
@@ -345,8 +347,7 @@ async function getItemDimensions(
 		} else {
 			console.log(
 				`SKU ${invoiceItem.sku} not found in database. Estimating dimensions for: ${invoiceItem.name}`
-			);
-			const [estimatedItemDetails] = await estimateItemDimensions([
+			);			const [estimatedItemDetails] = await estimateItemDimensions([
 				invoiceItem,
 			]);
 
@@ -355,38 +356,24 @@ async function getItemDimensions(
 					`Failed to estimate dimensions for SKU: ${invoiceItem.sku}. Skipping item.`
 				);
 				continue;
-			} // Ensure all dimensions and weight are valid numbers
-			const length =
-				typeof estimatedItemDetails.length === "number" &&
-				!isNaN(estimatedItemDetails.length)
-					? estimatedItemDetails.length
-					: 50;
-			const width =
-				typeof estimatedItemDetails.width === "number" &&
-				!isNaN(estimatedItemDetails.width)
-					? estimatedItemDetails.width
-					: 50;
-			const height =
-				typeof estimatedItemDetails.height === "number" &&
-				!isNaN(estimatedItemDetails.height)
-					? estimatedItemDetails.height
-					: 50;
-			const weight =
-				typeof estimatedItemDetails.weight === "number" &&
-				!isNaN(estimatedItemDetails.weight)
-					? estimatedItemDetails.weight
-					: 100;
+			}
+					// Ensure all dimensions and weight are valid numbers with fallback values
+			const length = typeof estimatedItemDetails.length === "number" && !isNaN(estimatedItemDetails.length) ? estimatedItemDetails.length : 50;
+			const width = typeof estimatedItemDetails.width === "number" && !isNaN(estimatedItemDetails.width) ? estimatedItemDetails.width : 50;
+			const height = typeof estimatedItemDetails.height === "number" && !isNaN(estimatedItemDetails.height) ? estimatedItemDetails.height : 50;
+			
+			// Convert weight from kg to grams (OpenAI returns weights in kg, but box calculations use grams)
+			const weightInKg = typeof estimatedItemDetails.weight === "number" && !isNaN(estimatedItemDetails.weight) ? estimatedItemDetails.weight : 0.1;
+			const weight = weightInKg * 1000; // Convert from kg to g
 
+			// Prepare item data for database storage
 			const newItemDataForDb: Omit<
 				ShippingItem,
 				"_id" | "createdAt" | "updatedAt" | "deletedAt"
 			> & { deletedAt: null | Date } = {
 				name: estimatedItemDetails.name,
-				sku: estimatedItemDetails.sku.trim().toUpperCase(), // Standardize SKU to uppercase before saving
-				length: length,
-				width: width,
-				height: height,
-				weight: weight,
+				sku: estimatedItemDetails.sku.trim().toUpperCase(),
+				length, width, height, weight, // Use shorthand property names
 				deletedAt: null,
 			};
 
@@ -407,40 +394,28 @@ async function getItemDimensions(
 				} else {
 					console.error(
 						`Failed to add new item SKU ${invoiceItem.sku} to database: ${creationResponse.error}. Using temporary item.`
-					);
-					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
+					);					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
 					finalShippingItems.push({
 						_id: tempId,
-						name: newItemDataForDb.name,
-						sku: newItemDataForDb.sku,
-						length: newItemDataForDb.length || 50, // Ensure length has a default value
-						width: newItemDataForDb.width || 50, // Ensure width has a default value
-						height: newItemDataForDb.height || 50, // Ensure height has a default value
-						weight: newItemDataForDb.weight || 100, // Ensure weight has a default value
-						quantity: invoiceItem.quantity || 1, // Ensure quantity has a default value
+						...newItemDataForDb, // Use the already validated data
+						quantity: invoiceItem.quantity || 1,
 						createdAt: new Date(),
 						updatedAt: new Date(),
-						deletedAt: null,
+						// deletedAt is already included in newItemDataForDb
 					});
 				}
 			} catch (error) {
 				console.error(
 					`Exception while adding new item SKU ${invoiceItem.sku} to database:`,
 					error
-				);
-				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
+				);				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
 				finalShippingItems.push({
 					_id: tempId,
-					name: newItemDataForDb.name,
-					sku: newItemDataForDb.sku,
-					length: newItemDataForDb.length || 50, // Ensure length has a default value
-					width: newItemDataForDb.width || 50, // Ensure width has a default value
-					height: newItemDataForDb.height || 50, // Ensure height has a default value
-					weight: newItemDataForDb.weight || 100, // Ensure weight has a default value
-					quantity: invoiceItem.quantity || 1, // Ensure quantity has a default value
+					...newItemDataForDb, // Use the already validated data
+					quantity: invoiceItem.quantity || 1,
 					createdAt: new Date(),
 					updatedAt: new Date(),
-					deletedAt: null,
+					// deletedAt is already included in newItemDataForDb
 				});
 			}
 		}
