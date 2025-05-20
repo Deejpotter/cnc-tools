@@ -66,7 +66,8 @@ export default interface ShippingItem extends MongoDocument {
 	weight: number;
 
 	/**
-	 * An optional quantity of the item for use in calculations.
+	 * An optional quantity for UI operations only (not stored in database).
+	 * Used only for selected items in the box calculation.
 	 * @example 5
 	 */
 	quantity?: number;

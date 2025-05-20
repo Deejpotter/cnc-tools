@@ -19,9 +19,9 @@ import {
 } from "./mongodb/actions";
 
 // Initialize PDF.js for server environment (no canvas needed)
-if (typeof window === 'undefined') {
-  // Only run this on the server side
-  pdfjs.GlobalWorkerOptions.workerSrc = '';
+if (typeof window === "undefined") {
+	// Only run this on the server side
+	pdfjs.GlobalWorkerOptions.workerSrc = "";
 }
 
 const openai = new OpenAI({
@@ -127,7 +127,8 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 	try {
 		// gpt-4o-mini is the recommended model for basic tasks now.
 		const response = await openai.chat.completions.create({
-			model: "gpt-4o-mini",			messages: [
+			model: "gpt-4o-mini",
+			messages: [
 				{
 					role: "system",
 					content:
@@ -205,16 +206,17 @@ async function estimateItemDimensions(
 		// gpt-4o-mini is the recommended model for basic tasks now.
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
-			messages: [				{
+			messages: [
+				{
 					role: "system",
 					content: `
-                        Estimate dimensions for hardware items in millimeters and weight in kilograms.
+                        Estimate dimensions for hardware items in millimeters and weight in grams.
                         Consider:
                         - Standard hardware sizes
                         - Packaging for multi-packs
                         - Common engineering dimensions
                         - Item descriptions and SKUs
-                        - Weight should be in kilograms (kg)
+                        - Weight should be in grams (g)
                         Return conservative estimates that would fit the items.
                     `,
 				},
@@ -279,13 +281,13 @@ async function estimateItemDimensions(
 
 		return JSON.parse(functionCall.arguments).items;
 	} catch (error) {
-		console.error("Dimension estimation error:", error);		// Fallback to default dimensions if estimation fails
+		console.error("Dimension estimation error:", error); // Fallback to default dimensions if estimation fails
 		return items.map((item) => ({
 			...item,
 			length: 50,
 			width: 50,
 			height: 50,
-			weight: (item.weight || 0.1) * 1000, // Convert default weight from kg to g (0.1kg = 100g)
+			weight: item.weight || 1,
 		}));
 	}
 }
@@ -336,7 +338,7 @@ async function getItemDimensions(
 			console.log(
 				`SKU ${invoiceItem.sku} found in database. Using existing data for item: ${dbItem.name}`
 			);
-			
+
 			// Note: The database already stores weights in grams as per BoxCalculations.ts,
 			// so no conversion needed here
 			finalShippingItems.push({
@@ -347,7 +349,8 @@ async function getItemDimensions(
 		} else {
 			console.log(
 				`SKU ${invoiceItem.sku} not found in database. Estimating dimensions for: ${invoiceItem.name}`
-			);			const [estimatedItemDetails] = await estimateItemDimensions([
+			);
+			const [estimatedItemDetails] = await estimateItemDimensions([
 				invoiceItem,
 			]);
 
@@ -357,13 +360,29 @@ async function getItemDimensions(
 				);
 				continue;
 			}
-					// Ensure all dimensions and weight are valid numbers with fallback values
-			const length = typeof estimatedItemDetails.length === "number" && !isNaN(estimatedItemDetails.length) ? estimatedItemDetails.length : 50;
-			const width = typeof estimatedItemDetails.width === "number" && !isNaN(estimatedItemDetails.width) ? estimatedItemDetails.width : 50;
-			const height = typeof estimatedItemDetails.height === "number" && !isNaN(estimatedItemDetails.height) ? estimatedItemDetails.height : 50;
-			
-			// Convert weight from kg to grams (OpenAI returns weights in kg, but box calculations use grams)
-			const weightInKg = typeof estimatedItemDetails.weight === "number" && !isNaN(estimatedItemDetails.weight) ? estimatedItemDetails.weight : 0.1;
+			// Ensure all dimensions and weight are valid numbers with fallback values
+			const length =
+				typeof estimatedItemDetails.length === "number" &&
+				!isNaN(estimatedItemDetails.length)
+					? estimatedItemDetails.length
+					: 50;
+			const width =
+				typeof estimatedItemDetails.width === "number" &&
+				!isNaN(estimatedItemDetails.width)
+					? estimatedItemDetails.width
+					: 50;
+			const height =
+				typeof estimatedItemDetails.height === "number" &&
+				!isNaN(estimatedItemDetails.height)
+					? estimatedItemDetails.height
+					: 50;
+
+			// Convert weight from kg to grams (OpenAI returns weights in kg because of the invoice, but box calculations use grams)
+			const weightInKg =
+				typeof estimatedItemDetails.weight === "number" &&
+				!isNaN(estimatedItemDetails.weight)
+					? estimatedItemDetails.weight
+					: 0.1;
 			const weight = weightInKg * 1000; // Convert from kg to g
 
 			// Prepare item data for database storage
@@ -373,7 +392,10 @@ async function getItemDimensions(
 			> & { deletedAt: null | Date } = {
 				name: estimatedItemDetails.name,
 				sku: estimatedItemDetails.sku.trim().toUpperCase(),
-				length, width, height, weight, // Use shorthand property names
+				length,
+				width,
+				height,
+				weight, // Use shorthand property names
 				deletedAt: null,
 			};
 
@@ -394,7 +416,8 @@ async function getItemDimensions(
 				} else {
 					console.error(
 						`Failed to add new item SKU ${invoiceItem.sku} to database: ${creationResponse.error}. Using temporary item.`
-					);					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
+					);
+					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
 					finalShippingItems.push({
 						_id: tempId,
 						...newItemDataForDb, // Use the already validated data
@@ -408,7 +431,8 @@ async function getItemDimensions(
 				console.error(
 					`Exception while adding new item SKU ${invoiceItem.sku} to database:`,
 					error
-				);				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
+				);
+				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
 				finalShippingItems.push({
 					_id: tempId,
 					...newItemDataForDb, // Use the already validated data

@@ -230,38 +230,10 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 						<Ruler size={16} className="me-1" />
 						<span className="fw-bold me-2">Box Dimensions:</span>
 						{shipment.box.length} × {shipment.box.width} × {shipment.box.height}{" "}
-						mm
+						mm{" "}
 					</div>
-					<div className="d-flex align-items-center mb-2">
-						{" "}
-						<Maximize size={16} className="me-1" />
-						<span className="fw-bold me-2">Items Dimensions:</span>
-						{dimensions.totalLength} × {dimensions.totalWidth} ×{" "}
-						{dimensions.totalHeight} mm
-						{/* Calculate dimension utilization percentage for each dimension */}
-						{(() => {
-							const lengthPct = Math.round(
-								(dimensions.totalLength / shipment.box.length) * 100
-							);
-							const widthPct = Math.round(
-								(dimensions.totalWidth / shipment.box.width) * 100
-							);
-							const heightPct = Math.round(
-								(dimensions.totalHeight / shipment.box.height) * 100
-							);
-
-							return (
-								<span
-									className={`ms-2 badge ${getDimensionUtilizationClass(
-										Math.max(lengthPct, widthPct, heightPct)
-									)}`}
-									title="Percentage of box dimensions used by items"
-								>
-									({lengthPct}% × {widthPct}% × {heightPct}%)
-								</span>
-							);
-						})()}
-					</div>
+					{/* Items Dimensions section completely removed on May 20, 2025 
+					   to simplify the interface and remove potentially inaccurate calculations */}
 					<div className="d-flex align-items-center mb-2">
 						<Scale size={16} className="me-1" />
 						<span className="fw-bold me-2">Total Weight:</span>
