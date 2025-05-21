@@ -110,13 +110,27 @@ const Navbar = () => {
 							</Link>
 						</li>
 						<li className="nav-item">
-							<Link href="/cnc-calibration-tool" onClick={handleLinkClick}>
+							<Link
+								href="/table-enclosure-calculator"
+								onClick={handleLinkClick}
+							>
 								<span
 									className={`nav-link px-3 py-2 mx-1 ${
-										isActive("/cnc-calibration-tool") ? "active-link" : ""
+										isActive("/table-enclosure-calculator") ? "active-link" : ""
 									}`}
 								>
-									CNC Calibration Tool
+									Table & Enclosure Calculator
+								</span>
+							</Link>
+						</li>
+						<li className="nav-item">
+							<Link href="/box-shipping-calculator" onClick={handleLinkClick}>
+								<span
+									className={`nav-link px-3 py-2 mx-1 ${
+										isActive("/table-enclosure-calculator") ? "active-link" : ""
+									}`}
+								>
+									Box Shipping Calculator
 								</span>
 							</Link>
 						</li>
@@ -137,31 +151,6 @@ const Navbar = () => {
 							</span>
 							<ul className={`dropdown-menu ${isDropdownOpen ? "show" : ""}`}>
 								<li>
-									<Link
-										href="/box-shipping-calculator"
-										onClick={handleLinkClick}
-									>
-										<span className="dropdown-item">
-											Box Shipping Calculator
-										</span>
-									</Link>
-								</li>{" "}
-								<li>
-									<Link href="/enclosure-calculator" onClick={handleLinkClick}>
-										<span className="dropdown-item">Enclosure Calculator</span>
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/table-enclosure-calculator"
-										onClick={handleLinkClick}
-									>
-										<span className="dropdown-item">
-											Table & Enclosure Calculator
-										</span>
-									</Link>
-								</li>
-								<li>
 									<Link href="/40-series-extrusions" onClick={handleLinkClick}>
 										<span className="dropdown-item">40 Series Extrusions</span>
 									</Link>
@@ -169,6 +158,17 @@ const Navbar = () => {
 								<li>
 									<Link href="/20-series-extrusions" onClick={handleLinkClick}>
 										<span className="dropdown-item">20 Series Extrusions</span>
+									</Link>
+								</li>
+								<li>
+									<Link href="/cnc-calibration-tool" onClick={handleLinkClick}>
+										<span
+											className={`dropdown-item px-3 py-2 mx-1 ${
+												isActive("/cnc-calibration-tool") ? "active-link" : ""
+											}`}
+										>
+											CNC Calibration Tool
+										</span>
 									</Link>
 								</li>
 								{/* Add more dropdown items as needed */}
