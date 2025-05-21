@@ -11,6 +11,7 @@ const nextConfig = {
         domains: ['www.gravatar.com'],
     },
 
+
     // Configure how Next.js handles trailing slashes in URLs
     trailingSlash: false,
 
