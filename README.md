@@ -2,12 +2,6 @@
 
 A comprehensive collection of mini-applications designed to assist with CNC machining, 3D printing, and related tasks. This Next.js-powered application serves as a central hub for various specialized tools used in professional and hobby settings.
 
-**Last Updated:** May 13, 2025  
-**Author:** Deej Potter
-
-Last Updated: May 13, 2025  
-Author: Deej Potter
-
 ## Features
 
 This application contains several mini-apps:
@@ -78,7 +72,7 @@ This project is built with:
 1. Clone the repository
 2. Create a `.env.local` file with the following variables:
 
-   ```
+   ``` bash
    MONGODB_URI=your_mongodb_connection_string
    OPENAI_API_KEY=your_openai_api_key (for CNC Technical AI)
    ```

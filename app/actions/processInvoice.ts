@@ -1,6 +1,6 @@
 /**
  * Process Invoices server actions
- * Updated: 20/05/25
+ * Updated: 21/05/25
  * Author: Deej Potter
  * Description: Handles invoice processing, including PDF extraction and AI item extraction.
  * Uses Next.js 14 server actions and OpenAI API for item extraction.
@@ -18,11 +18,9 @@ import {
 	getAllDocuments,
 } from "./mongodb/actions";
 
-// Initialize PDF.js for server environment (no canvas needed)
-if (typeof window === "undefined") {
-	// Only run this on the server side
-	pdfjs.GlobalWorkerOptions.workerSrc = "";
-}
+// Initialize PDF.js worker - use the approach from the working build
+const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -132,7 +130,7 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 				{
 					role: "system",
 					content:
-						"Extract item details from invoice text. Return only the structured data. Ensure the SKU is accurate. Always provide weight in kilograms (kg).",
+						"Extract item details from invoice text. Return only the structured data.",
 				},
 				{
 					role: "user",
@@ -210,13 +208,12 @@ async function estimateItemDimensions(
 				{
 					role: "system",
 					content: `
-                        Estimate dimensions for hardware items in millimeters and weight in grams.
+                        Estimate dimensions for hardware items in millimeters.
                         Consider:
                         - Standard hardware sizes
                         - Packaging for multi-packs
                         - Common engineering dimensions
                         - Item descriptions and SKUs
-                        - Weight should be in grams (g)
                         Return conservative estimates that would fit the items.
                     `,
 				},
