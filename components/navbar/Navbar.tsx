@@ -127,7 +127,7 @@ const Navbar = () => {
 							<Link href="/box-shipping-calculator" onClick={handleLinkClick}>
 								<span
 									className={`nav-link px-3 py-2 mx-1 ${
-										isActive("/table-enclosure-calculator") ? "active-link" : ""
+										isActive("/box-shipping-calculator") ? "active-link" : ""
 									}`}
 								>
 									Box Shipping Calculator
