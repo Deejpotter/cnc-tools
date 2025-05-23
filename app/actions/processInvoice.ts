@@ -1,26 +1,21 @@
 /**
  * Process Invoices server actions
- * Updated: 30/03/25
+ * Updated: 23/05/25
  * Author: Deej Potter
  * Description: Handles invoice processing, including PDF extraction and AI item extraction.
- * Uses Next.js 14 server actions and OpenAI API for item extraction.
+ * Uses Next.js 14 server actions, pdf-parse, and OpenAI API for item extraction.
  */
 
 "use server";
 
 import { OpenAI } from "openai";
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
+import pdfParse from "pdf-parse";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
 	updateItemInDatabase,
 	getAllDocuments,
 } from "./mongodb/actions";
-
-// Initialize PDF.js worker
-const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -88,30 +83,18 @@ export async function processInvoice(
 }
 
 /**
- * Extract text content from PDF using pdf.js
+ * Extract text content from PDF using pdf-parse
  * @param buffer PDF file buffer
  * @returns Extracted text content
  */
 async function extractPdfText(buffer: ArrayBuffer): Promise<string | null> {
 	try {
-		const loadingTask = pdfjs.getDocument({
-			data: new Uint8Array(buffer),
-			useWorkerFetch: false,
-			isEvalSupported: false,
-		});
+		// Convert ArrayBuffer to Buffer for pdf-parse
+		const data = Buffer.from(buffer);
+		const result = await pdfParse(data);
 
-		const pdf = await loadingTask.promise;
-		let text = "";
-
-		for (let i = 1; i <= pdf.numPages; i++) {
-			const page = await pdf.getPage(i);
-			const content = await page.getTextContent();
-			text +=
-				content.items.map((item) => (item as TextItem).str).join(" ") + "\n";
-		}
-
-		// Only return if we actually got some text
-		return text.trim() || null;
+		// Return the text content from the PDF
+		return result.text.trim() || null;
 	} catch (error) {
 		console.error("PDF extraction error:", error);
 		return null;
@@ -278,13 +261,13 @@ async function estimateItemDimensions(
 
 		return JSON.parse(functionCall.arguments).items;
 	} catch (error) {
-		console.error("Dimension estimation error:", error);
-		// Fallback to default dimensions if estimation fails
+		console.error("Dimension estimation error:", error); // Fallback to default dimensions if estimation fails
 		return items.map((item) => ({
 			...item,
 			length: 50,
 			width: 50,
 			height: 50,
+			weight: item.weight || 1,
 		}));
 	}
 }
@@ -331,11 +314,13 @@ async function getItemDimensions(
 	// Convert Map iterator to an array to avoid downlevelIteration issues
 	for (const invoiceItem of Array.from(aggregatedInvoiceItems.values())) {
 		const dbItem = dbItemsBySku.get(invoiceItem.sku); // SKU is already trimmed and uppercased
-
 		if (dbItem) {
 			console.log(
 				`SKU ${invoiceItem.sku} found in database. Using existing data for item: ${dbItem.name}`
 			);
+
+			// Note: The database already stores weights in grams as per BoxCalculations.ts,
+			// so no conversion needed here
 			finalShippingItems.push({
 				...dbItem, // Includes _id, name, length, width, height, sku, createdAt, updatedAt, deletedAt from DB
 				quantity: invoiceItem.quantity, // Aggregated quantity from the current invoice
@@ -355,17 +340,42 @@ async function getItemDimensions(
 				);
 				continue;
 			}
+			// Ensure all dimensions and weight are valid numbers with fallback values
+			const length =
+				typeof estimatedItemDetails.length === "number" &&
+				!isNaN(estimatedItemDetails.length)
+					? estimatedItemDetails.length
+					: 50;
+			const width =
+				typeof estimatedItemDetails.width === "number" &&
+				!isNaN(estimatedItemDetails.width)
+					? estimatedItemDetails.width
+					: 50;
+			const height =
+				typeof estimatedItemDetails.height === "number" &&
+				!isNaN(estimatedItemDetails.height)
+					? estimatedItemDetails.height
+					: 50;
 
+			// Convert weight from kg to grams (OpenAI returns weights in kg because of the invoice, but box calculations use grams)
+			const weightInKg =
+				typeof estimatedItemDetails.weight === "number" &&
+				!isNaN(estimatedItemDetails.weight)
+					? estimatedItemDetails.weight
+					: 0.1;
+			const weight = weightInKg * 1000; // Convert from kg to g
+
+			// Prepare item data for database storage
 			const newItemDataForDb: Omit<
 				ShippingItem,
 				"_id" | "createdAt" | "updatedAt" | "deletedAt"
 			> & { deletedAt: null | Date } = {
 				name: estimatedItemDetails.name,
-				sku: estimatedItemDetails.sku.trim().toUpperCase(), // Standardize SKU to uppercase before saving
-				length: estimatedItemDetails.length,
-				width: estimatedItemDetails.width,
-				height: estimatedItemDetails.height,
-				weight: estimatedItemDetails.weight,
+				sku: estimatedItemDetails.sku.trim().toUpperCase(),
+				length,
+				width,
+				height,
+				weight, // Use shorthand property names
 				deletedAt: null,
 			};
 
@@ -390,16 +400,11 @@ async function getItemDimensions(
 					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
 					finalShippingItems.push({
 						_id: tempId,
-						name: newItemDataForDb.name,
-						sku: newItemDataForDb.sku,
-						length: newItemDataForDb.length,
-						width: newItemDataForDb.width,
-						height: newItemDataForDb.height,
-						weight: newItemDataForDb.weight,
-						quantity: invoiceItem.quantity,
-						createdAt: new Date(), // Corrected to Date object
-						updatedAt: new Date(), // Corrected to Date object
-						deletedAt: null,
+						...newItemDataForDb, // Use the already validated data
+						quantity: invoiceItem.quantity || 1,
+						createdAt: new Date(),
+						updatedAt: new Date(),
+						// deletedAt is already included in newItemDataForDb
 					});
 				}
 			} catch (error) {
@@ -410,16 +415,11 @@ async function getItemDimensions(
 				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
 				finalShippingItems.push({
 					_id: tempId,
-					name: newItemDataForDb.name,
-					sku: newItemDataForDb.sku,
-					length: newItemDataForDb.length,
-					width: newItemDataForDb.width,
-					height: newItemDataForDb.height,
-					weight: newItemDataForDb.weight,
-					quantity: invoiceItem.quantity,
-					createdAt: new Date(), // Corrected to Date object
-					updatedAt: new Date(), // Corrected to Date object
-					deletedAt: null,
+					...newItemDataForDb, // Use the already validated data
+					quantity: invoiceItem.quantity || 1,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					// deletedAt is already included in newItemDataForDb
 				});
 			}
 		}

@@ -1,6 +1,6 @@
 /**
  * Next.js Configuration File
- * Updated: 17/05/2025
+ * Updated: 24/05/2025
  * Author: Deej Potter
  * 
  * This configures Next.js for both local development and Netlify deployment.
@@ -10,11 +10,14 @@ const nextConfig = {
     images: {
         domains: ['www.gravatar.com'],
     },
-    // Explicitly set output directory for Netlify builds
-    output: 'standalone',
-
     // Configure how Next.js handles trailing slashes in URLs
     trailingSlash: false,
+
+    // Use server-side rendering instead of static export to support Server Actions
+    // output: 'export', // Removed to enable Server Actions
+
+    // This ensures compatibility with Netlify's plugin-nextjs
+    distDir: '.next',
 
     // Security headers can be added here if needed
     // headers: async () => [],

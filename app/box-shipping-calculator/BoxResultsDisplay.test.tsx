@@ -131,13 +131,11 @@ describe("BoxResultsDisplay", () => {
 
 			// Check if item names are displayed
 			expect(screen.getByText(/Small Item/)).toBeInTheDocument();
-			expect(screen.getByText(/Larger Item/)).toBeInTheDocument();
-			// Check if the box dimensions are displayed
+			expect(screen.getByText(/Larger Item/)).toBeInTheDocument(); // Check if the box dimensions are displayed
 			expect(screen.getByText(/Box Dimensions:/)).toBeInTheDocument();
 			expect(screen.getByText(/200 × 150 × 100 mm/)).toBeInTheDocument();
 
-			// Check if the items dimensions are displayed			expect(screen.getByText(/Items Dimensions:/)).toBeInTheDocument();
-			expect(screen.getByText(/100 × 80 × 80 mm/)).toBeInTheDocument();
+			// Items Dimensions display tests removed on May 20, 2025 as the feature was removed
 
 			// Check if total weight is displayed (500*2 + 1000*1 = 2000g)
 			expect(screen.getByText(/2000g \/ 5000g/)).toBeInTheDocument();
