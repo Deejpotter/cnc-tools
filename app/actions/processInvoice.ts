@@ -1,26 +1,21 @@
 /**
  * Process Invoices server actions
- * Updated: 21/05/25
+ * Updated: 23/05/25
  * Author: Deej Potter
  * Description: Handles invoice processing, including PDF extraction and AI item extraction.
- * Uses Next.js 14 server actions and OpenAI API for item extraction.
+ * Uses Next.js 14 server actions, pdf-parse, and OpenAI API for item extraction.
  */
 
 "use server";
 
 import { OpenAI } from "openai";
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
+import pdfParse from "pdf-parse";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
 	updateItemInDatabase,
 	getAllDocuments,
 } from "./mongodb/actions";
-
-// Initialize PDF.js worker - use the approach from the working build
-const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -88,30 +83,18 @@ export async function processInvoice(
 }
 
 /**
- * Extract text content from PDF using pdf.js
+ * Extract text content from PDF using pdf-parse
  * @param buffer PDF file buffer
  * @returns Extracted text content
  */
 async function extractPdfText(buffer: ArrayBuffer): Promise<string | null> {
 	try {
-		const loadingTask = pdfjs.getDocument({
-			data: new Uint8Array(buffer),
-			useWorkerFetch: false,
-			isEvalSupported: false,
-		});
+		// Convert ArrayBuffer to Buffer for pdf-parse
+		const data = Buffer.from(buffer);
+		const result = await pdfParse(data);
 
-		const pdf = await loadingTask.promise;
-		let text = "";
-
-		for (let i = 1; i <= pdf.numPages; i++) {
-			const page = await pdf.getPage(i);
-			const content = await page.getTextContent();
-			text +=
-				content.items.map((item) => (item as TextItem).str).join(" ") + "\n";
-		}
-
-		// Only return if we actually got some text
-		return text.trim() || null;
+		// Return the text content from the PDF
+		return result.text.trim() || null;
 	} catch (error) {
 		console.error("PDF extraction error:", error);
 		return null;
