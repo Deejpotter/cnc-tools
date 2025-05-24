@@ -26,7 +26,7 @@ import { TextItem } from "pdfjs-dist/types/src/display/api";
 
 // Initialize PDF.js worker
 const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
 
 /**
  * Type definition for AI extracted item
