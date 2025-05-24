@@ -8,7 +8,7 @@ publish = ".next"
 
 # Configure Netlify build environment
 [build.environment]
-# Updated to match Next.js 14.x requirements
+# Next.js 14 recommends node 20 lts.
 NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
 

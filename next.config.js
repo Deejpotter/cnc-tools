@@ -10,8 +10,6 @@ const nextConfig = {
     images: {
         domains: ['www.gravatar.com'],
     },
-    // Explicitly set output directory for Netlify builds
-    output: 'standalone',
 
     // Configure how Next.js handles trailing slashes in URLs
     trailingSlash: false,

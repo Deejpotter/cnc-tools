@@ -13,7 +13,7 @@ import React, { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { processInvoice } from "@/app/actions/processInvoice";
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
-import { Upload, AlertCircle, FileText, Check } from "lucide-react"; // Adding icons for better UX
+import { Upload, AlertCircle, FileText, Check } from "lucide-react";
 
 interface InvoiceUploaderProps {
 	onItemsFound: (items: ShippingItem[]) => void;
