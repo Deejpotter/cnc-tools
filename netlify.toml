@@ -9,7 +9,7 @@ publish = ".next"
 # Configure Netlify build environment
 [build.environment]
 # Updated to match Next.js 14.x requirements
-NODE_VERSION = "22"
+NODE_VERSION = "20"
 NPM_FLAGS = "--legacy-peer-deps"
 NETLIFY_BUILD_DEBUG = "true"
 

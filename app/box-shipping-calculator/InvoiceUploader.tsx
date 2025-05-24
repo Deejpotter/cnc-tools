@@ -11,7 +11,7 @@
 
 import React, { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { processInvoiceText } from "@/app/actions/processInvoice";
+import { processInvoice } from "@/app/actions/processInvoice";
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Upload, AlertCircle, FileText, Check } from "lucide-react";
 
@@ -48,26 +48,6 @@ function SubmitButton() {
 	);
 }
 
-async function extractPdfText(file: File): Promise<string> {
-	// Dynamically import pdfjsLib for client-side usage (v5+)
-	const pdfjsLib = await import("pdfjs-dist");
-	// Set workerSrc for pdfjsLib (required for browser usage)
-	if (pdfjsLib.GlobalWorkerOptions) {
-		pdfjsLib.GlobalWorkerOptions.workerSrc =
-			"//cdnjs.cloudflare.com/ajax/libs/pdf.js/5.2.133/pdf.worker.min.js";
-	}
-
-	const arrayBuffer = await file.arrayBuffer();
-	const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-	let text = "";
-	for (let i = 1; i <= pdf.numPages; i++) {
-		const page = await pdf.getPage(i);
-		const content = await page.getTextContent();
-		text += content.items.map((item: any) => item.str).join(" ") + "\n";
-	}
-	return text.trim();
-}
-
 export default function InvoiceUploader({
 	onItemsFound,
 	onError,
@@ -84,17 +64,7 @@ export default function InvoiceUploader({
 	 */
 	async function handleSubmit(formData: FormData) {
 		try {
-			const file = formData.get("invoice") as File;
-			if (!file) throw new Error("No file provided");
-			if (!file.name.endsWith(".pdf"))
-				throw new Error("Only PDF files are supported");
-
-			// Extract PDF text on the client
-			const pdfText = await extractPdfText(file);
-			if (!pdfText) throw new Error("Could not extract text from PDF");
-
-			// Send extracted text to the server action
-			const items = await processInvoiceText(pdfText);
+			const items = await processInvoice(formData);
 			if (items.length === 0) {
 				onError("No items found in invoice");
 				setFileSelected(false);
