@@ -47,12 +47,23 @@ export function calculateBoxUtilization(
 
 	let totalItemsVolume = 0;
 	let totalItemsWeight = 0;
-
 	items.forEach((item) => {
 		const quantity = item.quantity || 1;
-		const itemVolume = item.length * item.width * item.height * quantity;
+		// Ensure dimensions are valid numbers
+		const length =
+			typeof item.length === "number" && !isNaN(item.length) ? item.length : 50;
+		const width =
+			typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
+		const height =
+			typeof item.height === "number" && !isNaN(item.height) ? item.height : 50;
+		const weight =
+			typeof item.weight === "number" && !isNaN(item.weight)
+				? item.weight
+				: 100;
+
+		const itemVolume = length * width * height * quantity;
 		totalItemsVolume += itemVolume;
-		totalItemsWeight += item.weight * quantity;
+		totalItemsWeight += weight * quantity;
 	});
 
 	const volumePercentage = (totalItemsVolume / boxVolume) * 100;
@@ -92,13 +103,22 @@ export function calculateBoxDimensions(items: ShippingItem[]): BoxDimensions {
 	let totalHeight = 0;
 	items.forEach((item) => {
 		const quantity = item.quantity || 1;
-		const itemVolume = item.length * item.width * item.height * quantity;
+
+		// Ensure dimensions are valid numbers
+		const length =
+			typeof item.length === "number" && !isNaN(item.length) ? item.length : 50;
+		const width =
+			typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
+		const height =
+			typeof item.height === "number" && !isNaN(item.height) ? item.height : 50;
+
+		const itemVolume = length * width * height * quantity;
 		totalVolume += itemVolume;
 
 		// Update maximum dimensions
-		maxLength = Math.max(maxLength, item.length);
-		maxWidth = Math.max(maxWidth, item.width);
-		totalHeight += item.height * quantity;
+		maxLength = Math.max(maxLength, length);
+		maxWidth = Math.max(maxWidth, width);
+		totalHeight += height * quantity;
 	});
 
 	maxHeight = totalHeight; // Use the sum of heights
@@ -210,38 +230,10 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 						<Ruler size={16} className="me-1" />
 						<span className="fw-bold me-2">Box Dimensions:</span>
 						{shipment.box.length} × {shipment.box.width} × {shipment.box.height}{" "}
-						mm
+						mm{" "}
 					</div>
-					<div className="d-flex align-items-center mb-2">
-						{" "}
-						<Maximize size={16} className="me-1" />
-						<span className="fw-bold me-2">Items Dimensions:</span>
-						{dimensions.totalLength} × {dimensions.totalWidth} ×{" "}
-						{dimensions.totalHeight} mm
-						{/* Calculate dimension utilization percentage for each dimension */}
-						{(() => {
-							const lengthPct = Math.round(
-								(dimensions.totalLength / shipment.box.length) * 100
-							);
-							const widthPct = Math.round(
-								(dimensions.totalWidth / shipment.box.width) * 100
-							);
-							const heightPct = Math.round(
-								(dimensions.totalHeight / shipment.box.height) * 100
-							);
-
-							return (
-								<span
-									className={`ms-2 badge ${getDimensionUtilizationClass(
-										Math.max(lengthPct, widthPct, heightPct)
-									)}`}
-									title="Percentage of box dimensions used by items"
-								>
-									({lengthPct}% × {widthPct}% × {heightPct}%)
-								</span>
-							);
-						})()}
-					</div>
+					{/* Items Dimensions section completely removed on May 20, 2025 
+					   to simplify the interface and remove potentially inaccurate calculations */}
 					<div className="d-flex align-items-center mb-2">
 						<Scale size={16} className="me-1" />
 						<span className="fw-bold me-2">Total Weight:</span>
@@ -299,16 +291,23 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 							<tbody>
 								{shipment.packedItems.map((item: ShippingItem, idx: number) => (
 									<tr key={`${String(item._id)}-${idx}`}>
+										{" "}
 										<td>
 											<small>{item.name}</small>
 											<div>
 												<small className="text-muted">
-													{item.length}×{item.width}×{item.height}mm
+													{typeof item.length === "number" ? item.length : 0}×
+													{typeof item.width === "number" ? item.width : 0}×
+													{typeof item.height === "number" ? item.height : 0}mm
 												</small>
 											</div>
 										</td>
 										<td>{item.quantity || 1}</td>
-										<td>{item.weight * (item.quantity || 1)}g</td>
+										<td>
+											{(typeof item.weight === "number" ? item.weight : 0) *
+												(item.quantity || 1)}
+											g
+										</td>
 									</tr>
 								))}
 							</tbody>

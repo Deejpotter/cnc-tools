@@ -154,13 +154,20 @@ function getItemOrientations(item: ShippingItem): Array<{
 	height: number;
 	depth: number;
 }> {
+	// Ensure all dimensions are valid numbers
+	const width =
+		typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
+	const height =
+		typeof item.height === "number" && !isNaN(item.height) ? item.height : 50;
+	const length =
+		typeof item.length === "number" && !isNaN(item.length) ? item.length : 50;
 	return [
-		{ width: item.width, height: item.height, depth: item.length }, // Standard orientation
-		{ width: item.length, height: item.height, depth: item.width }, // Rotate 90° horizontally
-		{ width: item.width, height: item.length, depth: item.height }, // Rotate 90° vertically
-		{ width: item.height, height: item.width, depth: item.length }, // Flip width and height
-		{ width: item.length, height: item.width, depth: item.height }, // Flip and rotate 90° horizontally
-		{ width: item.height, height: item.length, depth: item.width }, // Flip and rotate 90° vertically
+		{ width: width, height: height, depth: length }, // Standard orientation
+		{ width: length, height: height, depth: width }, // Rotate 90° horizontally
+		{ width: width, height: length, depth: height }, // Rotate 90° vertically
+		{ width: height, height: width, depth: length }, // Flip width and height
+		{ width: length, height: width, depth: height }, // Flip and rotate 90° horizontally
+		{ width: height, height: length, depth: width }, // Flip and rotate 90° vertically
 	];
 }
 
@@ -427,24 +434,50 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 			unfitItems: [],
 		};
 	}
-
 	// Expand items by quantity
 	const expandedItems: ShippingItem[] = [];
 	for (const item of itemsToPack) {
-		const quantity = item.quantity || 1;
+		// Ensure all required properties exist and are valid numbers
+		const safeItem = {
+			...item,
+			length:
+				typeof item.length === "number" && !isNaN(item.length)
+					? item.length
+					: 50,
+			width:
+				typeof item.width === "number" && !isNaN(item.width) ? item.width : 50,
+			height:
+				typeof item.height === "number" && !isNaN(item.height)
+					? item.height
+					: 50,
+			weight:
+				typeof item.weight === "number" && !isNaN(item.weight)
+					? item.weight
+					: 100,
+		};
+
+		const quantity = safeItem.quantity || 1;
 		for (let i = 0; i < quantity; i++) {
-			expandedItems.push({ ...item, quantity: 1 });
+			expandedItems.push({ ...safeItem, quantity: 1 });
 		}
 	}
 	// Find the longest item dimension to help with box selection
 	let longestItemDimension = 0;
 	for (const item of expandedItems) {
+		// Ensure all dimensions are valid numbers
+		const length =
+			typeof item.length === "number" && !isNaN(item.length) ? item.length : 50;
+		const width =
+			typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
+		const height =
+			typeof item.height === "number" && !isNaN(item.height) ? item.height : 50;
+
 		// Consider all dimensions as the item could be rotated
 		longestItemDimension = Math.max(
 			longestItemDimension,
-			item.length,
-			item.width,
-			item.height
+			length,
+			width,
+			height
 		);
 	}
 
@@ -633,13 +666,26 @@ export function packItemsIntoMultipleBoxes(
 			// Determine if we need an extremely long box based on the longest item
 			let needsLongBox = false;
 			let longestItemDimension = 0;
-
 			for (const item of itemsToPack) {
+				// Safely access item dimensions with fallback values
+				const length =
+					typeof item.length === "number" && !isNaN(item.length)
+						? item.length
+						: 50;
+				const width =
+					typeof item.width === "number" && !isNaN(item.width)
+						? item.width
+						: 50;
+				const height =
+					typeof item.height === "number" && !isNaN(item.height)
+						? item.height
+						: 50;
+
 				longestItemDimension = Math.max(
 					longestItemDimension,
-					item.length,
-					item.width,
-					item.height
+					length,
+					width,
+					height
 				);
 			}
 
@@ -667,13 +713,31 @@ export function packItemsIntoMultipleBoxes(
 			// Continue to multi-box approach
 		}
 	}
-
 	// Expand items by quantity for individual packing
 	const expandedItems: ShippingItem[] = [];
 	for (const item of itemsToPack) {
-		const quantity = item.quantity || 1;
+		// Ensure all required properties exist and are valid numbers
+		const safeItem = {
+			...item,
+			length:
+				typeof item.length === "number" && !isNaN(item.length)
+					? item.length
+					: 50,
+			width:
+				typeof item.width === "number" && !isNaN(item.width) ? item.width : 50,
+			height:
+				typeof item.height === "number" && !isNaN(item.height)
+					? item.height
+					: 50,
+			weight:
+				typeof item.weight === "number" && !isNaN(item.weight)
+					? item.weight
+					: 100,
+		};
+
+		const quantity = safeItem.quantity || 1;
 		for (let i = 0; i < quantity; i++) {
-			expandedItems.push({ ...item, quantity: 1 });
+			expandedItems.push({ ...safeItem, quantity: 1 });
 		}
 	}
 
@@ -692,12 +756,20 @@ export function packItemsIntoMultipleBoxes(
 	// Find the longest item dimension to help with box selection
 	let longestItemDimension = 0;
 	for (const item of expandedItems) {
+		// Ensure all dimensions are valid numbers
+		const length =
+			typeof item.length === "number" && !isNaN(item.length) ? item.length : 50;
+		const width =
+			typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
+		const height =
+			typeof item.height === "number" && !isNaN(item.height) ? item.height : 50;
+
 		// Consider all dimensions as the item could be rotated
 		longestItemDimension = Math.max(
 			longestItemDimension,
-			item.length,
-			item.width,
-			item.height
+			length,
+			width,
+			height
 		);
 	}
 
