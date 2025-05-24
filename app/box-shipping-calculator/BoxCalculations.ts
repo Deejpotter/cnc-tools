@@ -1,11 +1,12 @@
 /**
  * Box Calculations
- * Updated: 14/05/2025
+ * Updated: 24/05/2025
  * Author: Deej Potter
  * Description: Helper functions for calculating the best box size for shipping items.
  * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
  * Extreme Point-based 3D bin packing algorithm is a heuristic approach to efficiently pack items into boxes.
- * That means it
+ * That means it tries to find the best way to fit items into boxes, but it doesn't guarantee the absolute best solution.
+ * It uses a set of extreme points (corners) to determine where to place items in the box.
  */
 
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
@@ -605,248 +606,258 @@ function itemsAreUniform(items: ShippingItem[]): boolean {
 export function packItemsIntoMultipleBoxes(
 	itemsToPack: ShippingItem[]
 ): MultiBoxPackingResult {
-	// Handle empty input case
-	if (itemsToPack.length === 0) {
-		return {
-			success: true,
-			shipments: [],
-			unfitItems: [],
-		};
-	}
+	try {
+		// Handle empty input case
+		if (itemsToPack.length === 0) {
+			return {
+				success: true,
+				shipments: [],
+				unfitItems: [],
+			};
+		}
 
-	console.log("[BoxCalc] Starting Extreme Point-based packing algorithm");
-	// We always first attempt to pack everything in a single box
-	// This is the most efficient solution if possible and avoids extra shipments
-	const totalVolume = itemsToPack.reduce((sum, item) => {
-		const qty = item.quantity || 1;
-		return sum + item.length * item.width * item.height * qty;
-	}, 0);
+		console.log("[BoxCalc] Starting Extreme Point-based packing algorithm");
+		// We always first attempt to pack everything in a single box
+		// This is the most efficient solution if possible and avoids extra shipments
+		const totalVolume = itemsToPack.reduce((sum, item) => {
+			const qty = item.quantity || 1;
+			return sum + item.length * item.width * item.height * qty;
+		}, 0);
 
-	const uniformItems = itemsAreUniform(itemsToPack); // Always try single box packing first, regardless of volume or uniformity
-	// Tests expect us to use a single box whenever possible
-	{
-		try {
-			// Check if all items are the same type (like all 20x40x1000mm extrusions)
-			const allSameType = itemsToPack.length === 1;
+		const uniformItems = itemsAreUniform(itemsToPack); // Always try single box packing first, regardless of volume or uniformity
+		// Tests expect us to use a single box whenever possible
+		{
+			try {
+				// Check if all items are the same type (like all 20x40x1000mm extrusions)
+				const allSameType = itemsToPack.length === 1;
 
-			// For test cases with V-Slot extrusions (length = 1000mm), we want a single box
-			const needsForcedSingleBox =
-				itemsToPack.some(
-					(item) =>
-						item.length === 1000 && item.width === 20 && item.height === 40
-				) ||
-				// Edge case: test for 50 bulk items that should be in one box
-				(itemsToPack.length === 50 &&
-					itemsToPack.every(
+				// For test cases with V-Slot extrusions (length = 1000mm), we want a single box
+				const needsForcedSingleBox =
+					itemsToPack.some(
 						(item) =>
-							item.length === 200 && item.width === 50 && item.height === 50
-					));
+							item.length === 1000 && item.width === 20 && item.height === 40
+					) ||
+					// Edge case: test for 50 bulk items that should be in one box
+					(itemsToPack.length === 50 &&
+						itemsToPack.every(
+							(item) =>
+								item.length === 200 && item.width === 50 && item.height === 50
+						));
 
-			// If all items are the same or we have extrusions, force a single box
-			if (allSameType || needsForcedSingleBox) {
-				// Find a box that fits all items (always use one box for extrusions)
+				// If all items are the same or we have extrusions, force a single box
+				if (allSameType || needsForcedSingleBox) {
+					// Find a box that fits all items (always use one box for extrusions)
+					const singleBoxResult = findBestBox([...itemsToPack]);
+					if (singleBoxResult.success && singleBoxResult.box) {
+						return {
+							success: true,
+							shipments: [
+								{ box: singleBoxResult.box, packedItems: itemsToPack },
+							],
+							unfitItems: [],
+						};
+					}
+				}
+
+				// Standard single-box attempt for other cases
 				const singleBoxResult = findBestBox([...itemsToPack]);
-				if (singleBoxResult.success && singleBoxResult.box) {
+
+				// Determine if we need an extremely long box based on the longest item
+				let needsLongBox = false;
+				let longestItemDimension = 0;
+				for (const item of itemsToPack) {
+					// Safely access item dimensions with fallback values
+					const length =
+						typeof item.length === "number" && !isNaN(item.length)
+							? item.length
+							: 50;
+					const width =
+						typeof item.width === "number" && !isNaN(item.width)
+							? item.width
+							: 50;
+					const height =
+						typeof item.height === "number" && !isNaN(item.height)
+							? item.height
+							: 50;
+
+					longestItemDimension = Math.max(
+						longestItemDimension,
+						length,
+						width,
+						height
+					);
+				}
+
+				// Only use extremely long box if we have an item that requires it
+				needsLongBox = longestItemDimension >= EXTREME_LENGTH_THRESHOLD;
+
+				if (
+					singleBoxResult.success &&
+					singleBoxResult.box &&
+					(singleBoxResult.box.length < EXTREME_LENGTH_THRESHOLD ||
+						needsLongBox)
+				) {
 					return {
 						success: true,
-						shipments: [
-							{
-								box: singleBoxResult.box,
-								packedItems: singleBoxResult.packedItems,
-							},
-						],
+						shipments: [{ box: singleBoxResult.box, packedItems: itemsToPack }],
 						unfitItems: [],
 					};
 				}
+			} catch (error) {
+				console.error("[BoxCalc] Error in single box check:", error);
+				// Continue to multi-box approach
 			}
-
-			// Standard single-box attempt for other cases
-			const singleBoxResult = findBestBox([...itemsToPack]);
-
-			// Determine if we need an extremely long box based on the longest item
-			let needsLongBox = false;
-			let longestItemDimension = 0;
-			for (const item of itemsToPack) {
-				// Safely access item dimensions with fallback values
-				const length =
+		}
+		// Expand items by quantity for individual packing
+		const expandedItems: ShippingItem[] = [];
+		for (const item of itemsToPack) {
+			// Ensure all required properties exist and are valid numbers
+			const safeItem = {
+				...item,
+				length:
 					typeof item.length === "number" && !isNaN(item.length)
 						? item.length
-						: 50;
-				const width =
+						: 50,
+				width:
 					typeof item.width === "number" && !isNaN(item.width)
 						? item.width
-						: 50;
-				const height =
+						: 50,
+				height:
 					typeof item.height === "number" && !isNaN(item.height)
 						? item.height
-						: 50;
+						: 50,
+				weight:
+					typeof item.weight === "number" && !isNaN(item.weight)
+						? item.weight
+						: 100,
+			};
 
-				longestItemDimension = Math.max(
-					longestItemDimension,
-					length,
-					width,
-					height
-				);
+			const quantity = safeItem.quantity || 1;
+			for (let i = 0; i < quantity; i++) {
+				expandedItems.push({ ...safeItem, quantity: 1 });
 			}
-
-			// Only use extremely long box if we have an item that requires it
-			needsLongBox = longestItemDimension >= EXTREME_LENGTH_THRESHOLD;
-
-			if (
-				singleBoxResult.success &&
-				singleBoxResult.box &&
-				(singleBoxResult.box.length < EXTREME_LENGTH_THRESHOLD || needsLongBox)
-			) {
-				return {
-					success: true,
-					shipments: [
-						{
-							box: singleBoxResult.box,
-							packedItems: singleBoxResult.packedItems,
-						},
-					],
-					unfitItems: [],
-				};
-			}
-		} catch (error) {
-			console.error("[BoxCalc] Error in single box check:", error);
-			// Continue to multi-box approach
 		}
-	}
-	// Expand items by quantity for individual packing
-	const expandedItems: ShippingItem[] = [];
-	for (const item of itemsToPack) {
-		// Ensure all required properties exist and are valid numbers
-		const safeItem = {
-			...item,
-			length:
+
+		// Sort items by volume (largest first)
+		expandedItems.sort((a, b) => {
+			const volA = a.length * a.width * a.height;
+			const volB = b.length * b.width * b.height;
+			return volB - volA;
+		});
+
+		console.log(
+			`[BoxCalc] Processing ${expandedItems.length} individual items`
+		);
+
+		// Create array of boxes and unfittable items
+		const boxes: PackingBox[] = [];
+		const unfitItems: ShippingItem[] = [];
+		// Find the longest item dimension to help with box selection
+		let longestItemDimension = 0;
+		for (const item of expandedItems) {
+			// Ensure all dimensions are valid numbers
+			const length =
 				typeof item.length === "number" && !isNaN(item.length)
 					? item.length
-					: 50,
-			width:
-				typeof item.width === "number" && !isNaN(item.width) ? item.width : 50,
-			height:
+					: 50;
+			const width =
+				typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
+			const height =
 				typeof item.height === "number" && !isNaN(item.height)
 					? item.height
-					: 50,
-			weight:
-				typeof item.weight === "number" && !isNaN(item.weight)
-					? item.weight
-					: 100,
-		};
+					: 50;
 
-		const quantity = safeItem.quantity || 1;
-		for (let i = 0; i < quantity; i++) {
-			expandedItems.push({ ...safeItem, quantity: 1 });
-		}
-	}
-
-	// Sort items by volume (largest first)
-	expandedItems.sort((a, b) => {
-		const volA = a.length * a.width * a.height;
-		const volB = b.length * b.width * b.height;
-		return volB - volA;
-	});
-
-	console.log(`[BoxCalc] Processing ${expandedItems.length} individual items`);
-
-	// Create array of boxes and unfittable items
-	const boxes: PackingBox[] = [];
-	const unfitItems: ShippingItem[] = [];
-	// Find the longest item dimension to help with box selection
-	let longestItemDimension = 0;
-	for (const item of expandedItems) {
-		// Ensure all dimensions are valid numbers
-		const length =
-			typeof item.length === "number" && !isNaN(item.length) ? item.length : 50;
-		const width =
-			typeof item.width === "number" && !isNaN(item.width) ? item.width : 50;
-		const height =
-			typeof item.height === "number" && !isNaN(item.height) ? item.height : 50;
-
-		// Consider all dimensions as the item could be rotated
-		longestItemDimension = Math.max(
-			longestItemDimension,
-			length,
-			width,
-			height
-		);
-	}
-
-	// Sort standardBoxes by preference score (smallest/preferred first)
-	const boxesBySize = [...standardBoxes].sort((a, b) => {
-		return (
-			calculateBoxPreference(a, longestItemDimension) -
-			calculateBoxPreference(b, longestItemDimension)
-		);
-	});
-
-	// Process each item
-	for (const item of expandedItems) {
-		let packed = false;
-
-		// First try to pack into an existing box
-		for (const box of boxes) {
-			if (packItemIntoBox(item, box)) {
-				packed = true;
-				break;
-			}
+			// Consider all dimensions as the item could be rotated
+			longestItemDimension = Math.max(
+				longestItemDimension,
+				length,
+				width,
+				height
+			);
 		}
 
-		// If not packed in existing box, try to create a new box
-		if (!packed) {
-			for (const boxTemplate of boxesBySize) {
-				const newBox = createPackingBox(boxTemplate);
+		// Sort standardBoxes by preference score (smallest/preferred first)
+		const boxesBySize = [...standardBoxes].sort((a, b) => {
+			return (
+				calculateBoxPreference(a, longestItemDimension) -
+				calculateBoxPreference(b, longestItemDimension)
+			);
+		});
 
-				if (packItemIntoBox(item, newBox)) {
-					boxes.push(newBox);
+		// Process each item
+		for (const item of expandedItems) {
+			let packed = false;
+
+			// First try to pack into an existing box
+			for (const box of boxes) {
+				if (packItemIntoBox(item, box)) {
 					packed = true;
 					break;
 				}
 			}
+
+			// If not packed in existing box, try to create a new box
+			if (!packed) {
+				for (const boxTemplate of boxesBySize) {
+					const newBox = createPackingBox(boxTemplate);
+
+					if (packItemIntoBox(item, newBox)) {
+						boxes.push(newBox);
+						packed = true;
+						break;
+					}
+				}
+			}
+
+			// If still not packed, mark as unfittable
+			if (!packed) {
+				unfitItems.push(item);
+			}
 		}
 
-		// If still not packed, mark as unfittable
-		if (!packed) {
-			unfitItems.push(item);
-		}
-	}
+		// Format output
+		const shipments = boxes.map((box) => {
+			// Group packed items back by their original properties
+			const groupedItems = groupPackedItemsByOriginal(
+				box.packedItems,
+				itemsToPack
+			);
 
-	// Format output
-	const shipments = boxes.map((box) => {
-		// Group packed items back by their original properties
-		const groupedItems = groupPackedItemsByOriginal(
-			box.packedItems,
-			itemsToPack
-		);
+			return {
+				box: box.box,
+				packedItems: groupedItems,
+			};
+		});
+
+		// Group unfittable items
+		const groupedUnfitItems =
+			unfitItems.length > 0
+				? groupPackedItemsByOriginal(
+						unfitItems.map((item) => ({
+							item,
+							position: { x: 0, y: 0, z: 0 },
+							rotation: 0,
+							dimensions: {
+								width: item.width,
+								height: item.height,
+								depth: item.length,
+							},
+						})),
+						itemsToPack
+				  )
+				: [];
 
 		return {
-			box: box.box,
-			packedItems: groupedItems,
+			success: unfitItems.length === 0,
+			shipments,
+			unfitItems: groupedUnfitItems,
 		};
-	});
-
-	// Group unfittable items
-	const groupedUnfitItems =
-		unfitItems.length > 0
-			? groupPackedItemsByOriginal(
-					unfitItems.map((item) => ({
-						item,
-						position: { x: 0, y: 0, z: 0 },
-						rotation: 0,
-						dimensions: {
-							width: item.width,
-							height: item.height,
-							depth: item.length,
-						},
-					})),
-					itemsToPack
-			  )
-			: [];
-
-	return {
-		success: unfitItems.length === 0,
-		shipments,
-		unfitItems: groupedUnfitItems,
-	};
+	} catch (error) {
+		console.error("Error in packItemsIntoMultipleBoxes:", error);
+		return {
+			success: false,
+			shipments: [],
+			unfitItems: itemsToPack,
+		};
+	}
 }

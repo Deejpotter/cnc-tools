@@ -1,6 +1,6 @@
 /**
  * Process Invoices server actions
- * Updated: 23/05/25
+ * Updated: 24/05/25
  * Author: Deej Potter
  * Description: Handles invoice processing, including PDF extraction and AI item extraction.
  * Uses Next.js 14 server actions, pdf-parse, and OpenAI API for item extraction.
@@ -425,4 +425,41 @@ async function getItemDimensions(
 		}
 	}
 	return finalShippingItems;
+}
+
+/**
+ * Process invoice text and extract items using AI
+ * @param invoiceText The extracted text content from the invoice PDF
+ * @returns Array of shipping items with dimensions
+ *
+ * NOTE: The client is now responsible for extracting PDF text using pdfjs-dist (pdf.js).
+ */
+export async function processInvoiceText(
+	invoiceText: string
+): Promise<ShippingItem[]> {
+	try {
+		if (!invoiceText || typeof invoiceText !== "string") {
+			throw new Error("No invoice text provided");
+		}
+
+		// Process with AI to extract items
+		const extractedItems = await processWithAI(invoiceText);
+		if (!extractedItems?.length) {
+			throw new Error("No items found in invoice");
+		}
+
+		// Get full ShippingItem objects, either from DB or by creating new ones
+		const shippingItemsFromInvoice = await getItemDimensions(extractedItems);
+		console.log(
+			"Shipping items from invoice processing:",
+			shippingItemsFromInvoice
+		);
+
+		return shippingItemsFromInvoice;
+	} catch (error) {
+		console.error("Invoice processing error:", error);
+		throw new Error(
+			error instanceof Error ? error.message : "Failed to process invoice"
+		);
+	}
 }

@@ -1,6 +1,6 @@
 /**
  * Data Actions
- * Updated: 07/05/25
+ * Updated: 24/05/25
  * Author: Deej Potter
  * Description: Server actions for data operations using our unified data layer
  * These actions can be used from client components for any data operations
@@ -19,7 +19,12 @@ import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 export async function getAvailableItems(): Promise<
 	DatabaseResponse<ShippingItem[]>
 > {
-	return DataService.shippingItems.getAvailable();
+	try {
+		return await DataService.shippingItems.getAvailable();
+	} catch (error) {
+		console.error("Error fetching available items:", error);
+		throw new Error("Failed to fetch available items.");
+	}
 }
 
 /**
@@ -30,7 +35,12 @@ export async function getAvailableItems(): Promise<
 export async function addItemToDatabase(
 	item: Omit<ShippingItem, "_id">
 ): Promise<DatabaseResponse<ShippingItem>> {
-	return DataService.shippingItems.add(item);
+	try {
+		return await DataService.shippingItems.add(item);
+	} catch (error) {
+		console.error("Error adding item to database:", error);
+		throw new Error("Failed to add item to database.");
+	}
 }
 
 /**
@@ -41,7 +51,12 @@ export async function addItemToDatabase(
 export async function updateItemInDatabase(
 	item: ShippingItem
 ): Promise<DatabaseResponse<ShippingItem>> {
-	return DataService.shippingItems.update(item);
+	try {
+		return await DataService.shippingItems.update(item);
+	} catch (error) {
+		console.error("Error updating item in database:", error);
+		throw new Error("Failed to update item in database.");
+	}
 }
 
 /**

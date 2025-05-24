@@ -13,9 +13,6 @@ const nextConfig = {
     // Configure how Next.js handles trailing slashes in URLs
     trailingSlash: false,
 
-    // Use server-side rendering instead of static export to support Server Actions
-    // output: 'export', // Removed to enable Server Actions
-
     // This ensures compatibility with Netlify's plugin-nextjs
     distDir: '.next',
 
