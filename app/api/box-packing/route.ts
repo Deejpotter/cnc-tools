@@ -5,10 +5,18 @@
  * Description: API endpoint for box packing calculations.
  * This route receives a list of items and returns the optimal box configuration.
  * Uses the Extreme Point-based 3D bin packing algorithm from BoxCalculations.ts.
+ * Optimized for serverless deployment to prevent client-side errors.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { packItemsIntoMultipleBoxes } from "@/app/box-shipping-calculator/BoxCalculations";
+// Import directly from relative path to avoid issues with path resolution in serverless
+import { packItemsIntoMultipleBoxes } from "../../box-shipping-calculator/BoxCalculations";
+
+// Mark this as edge runtime to optimize for Netlify Edge Functions
+export const runtime = "edge";
+
+// Specify preferred regions for better performance
+export const preferredRegion = ["iad1"]; // US East for better performance
 
 /**
  * POST handler for box packing calculations
@@ -56,7 +64,6 @@ export async function POST(request: NextRequest) {
 				{ status: 400 }
 			);
 		}
-
 		// Call the packing algorithm
 		const packingResult = packItemsIntoMultipleBoxes(itemsToPack);
 
@@ -64,8 +71,19 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(packingResult);
 	} catch (error) {
 		console.error("Error in box packing API:", error);
+
+		// Enhanced error response with more details for debugging
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
+		const errorStack = error instanceof Error ? error.stack : "";
+
 		return NextResponse.json(
-			{ error: "Internal server error" },
+			{
+				error: "Internal server error",
+				message: errorMessage,
+				// Only include stack trace in development for security
+				...(process.env.NODE_ENV !== "production" && { stack: errorStack }),
+			},
 			{ status: 500 }
 		);
 	}

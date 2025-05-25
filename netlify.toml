@@ -1,5 +1,5 @@
 # Netlify configuration file for CNC Tools
-# Updated: 17/05/2025
+# Updated: 25/05/2025
 # Author: Deej Potter
 
 [build]
@@ -10,3 +10,33 @@ publish = ".next"
 [build.environment]
 # Next.js 14 recommends node 20 lts.
 NODE_VERSION = "20"
+NEXT_TELEMETRY_DISABLED = "1"
+
+# Configure Netlify Edge Functions
+# This improves support for Next.js API routes
+[[edge_functions]]
+function = "next-server"
+path = "/*"
+
+# Function configuration for serverless functions
+[functions]
+# Increase timeout for functions that might take longer
+included_files = ["app/**/*.ts", "app/**/*.tsx", "utils/**/*.ts", "utils/**/*.tsx"]
+node_bundler = "esbuild"
+# Ensure MongoDB client is properly bundled with the functions
+external_node_modules = ["mongodb"]
+
+# Configure Netlify deployment settings
+[build.processing]
+skip_processing = false
+
+[build.processing.css]
+bundle = true
+minify = true
+
+[build.processing.js]
+bundle = true
+minify = true
+
+[build.processing.images]
+compress = true

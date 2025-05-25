@@ -21,12 +21,29 @@ const nextConfig = {
     // Configure how Next.js handles trailing slashes in URLs
     trailingSlash: false,
 
-    // Security headers can be added here if needed
-    // headers: async () => [],
+    // Configure output for Netlify compatibility
+    output: 'standalone',    // Optimize for serverless environments
+    experimental: {
+        // Enable optimizations for serverless deployments
+        serverComponentsExternalPackages: ['mongodb'],
+    },
 
-    // Redirects can be added here if needed
-    // redirects: async () => [],
+    // Prevent API routes from being incorrectly bundled
+    webpack: (config, { isServer }) => {
+        if (isServer) {
+            // Ensure API routes are properly bundled for serverless
+            config.optimization.moduleIds = 'named';
+        }
+        return config;
+    },
 
+    // Enable better error tracing for API routes
+    onDemandEntries: {
+        // Period (in ms) where the server will keep pages in the buffer
+        maxInactiveAge: 60 * 1000,
+        // Number of pages that should be kept simultaneously without being disposed
+        pagesBufferLength: 5,
+    },
 }
 
 module.exports = nextConfig

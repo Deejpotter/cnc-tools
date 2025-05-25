@@ -193,7 +193,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 				return;
 			}
 
-			// Call the API route for box packing calculations
+			// Call the API route for box packing calculations with better error handling
 			const response = await fetch("/api/box-packing", {
 				method: "POST",
 				headers: {
@@ -203,20 +203,36 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			});
 
 			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
 				throw new Error(
-					`Failed to calculate box size: ${response.status} ${response.statusText}`
+					`Failed to calculate box size: ${response.status} ${
+						response.statusText
+					}. ${errorData.message || ""}`
 				);
 			}
-
 			const result = await response.json();
 			setPackingResult(result);
 			setImportError(null); // Clear any previous errors on success
 		} catch (error) {
 			console.error("Error calculating box size:", error);
-			setImportError("Server calculation failed. Using client-side fallback.");
+
+			// More detailed error message with client-side fallback notice
+			setImportError(
+				`Server calculation failed: ${
+					error instanceof Error ? error.message : "Unknown error"
+				}. Using client-side fallback.`
+			);
+
 			// Fallback to client-side calculation if API fails
-			const result = packItemsIntoMultipleBoxes(itemsToCalculate);
-			setPackingResult(result);
+			try {
+				const result = packItemsIntoMultipleBoxes(itemsToCalculate);
+				setPackingResult(result);
+			} catch (fallbackError) {
+				console.error("Client-side fallback also failed:", fallbackError);
+				setImportError(
+					`Both server and client-side calculations failed. Please check the console for more details.`
+				);
+			}
 		}
 	};
 	/**
