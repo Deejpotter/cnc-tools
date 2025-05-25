@@ -39,7 +39,6 @@ For more details about the monorepo structure and best practices, see [MONOREPO.
 - `frontend/.env.local` for frontend secrets and API URLs
 - `backend/.env` for backend secrets (DB, API keys, etc.)
   - Copy `backend/.env.sample` to `backend/.env` and update with your values
-  - Copy `backend/.env.sample` to `backend/.env` and update with your values
 
 ## Netlify Setup
 

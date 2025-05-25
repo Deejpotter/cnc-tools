@@ -31,9 +31,6 @@ const createMockShippingItem = (
 	weight: weight,
 	quantity: qty,
 	sku: sku,
-	createdAt: new Date(),
-	updatedAt: new Date(),
-	deletedAt: null,
 });
 
 // Mock ShippingItem data for testing

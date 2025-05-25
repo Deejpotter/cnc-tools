@@ -61,6 +61,25 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/jest.cmd"
       }
+    },
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "cppdbg",
+      "request": "launch",
+      "args": [],
+      "stopAtEntry": false,
+      "externalConsole": true,
+      "cwd": "c:/Users/Deej/Repos/cnc-tools",
+      "program": "c:/Users/Deej/Repos/cnc-tools/build/Debug/outDebug",
+      "MIMode": "gdb",
+      "miDebuggerPath": "C:/Program Files/CodeBlocks/MinGW/bin/gdb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
     }
   ],
   "compounds": [

@@ -7,12 +7,10 @@
  * Enhanced with better visual feedback, consistent Bootstrap styling and improved accessibility.
  */
 
-"use client";
-
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import type ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
-import { Upload, AlertCircle, FileText, Check } from "lucide-react";
+import type ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import { Upload, FileText, Check } from "lucide-react";
 
 interface InvoiceUploaderProps {
 	onItemsFound: (items: ShippingItem[]) => void;
@@ -51,6 +49,7 @@ export default function InvoiceUploader({
 	onItemsFound,
 	onError,
 }: InvoiceUploaderProps) {
+	const [isPending, startTransition] = useTransition();
 	const [dragActive, setDragActive] = useState(false);
 	const [fileName, setFileName] = useState<string | null>(null);
 	const [fileSelected, setFileSelected] = useState(false);
@@ -73,17 +72,21 @@ export default function InvoiceUploader({
 			});
 			if (!response.ok) throw new Error("Failed to process invoice");
 			const items = await response.json();
-			if (!Array.isArray(items) || items.length === 0) {
-				onError("No items found in invoice");
-				setFileSelected(false);
-				setFileName(null);
-			} else {
-				onItemsFound(items);
-			}
+			startTransition(() => {
+				if (!Array.isArray(items) || items.length === 0) {
+					onError("No items found in invoice");
+					setFileSelected(false);
+					setFileName(null);
+				} else {
+					onItemsFound(items);
+				}
+			});
 		} catch (error) {
-			onError(
-				error instanceof Error ? error.message : "Failed to process invoice"
-			);
+			startTransition(() => {
+				onError(
+					error instanceof Error ? error.message : "Failed to process invoice"
+				);
+			});
 			setFileSelected(false);
 			setFileName(null);
 		}

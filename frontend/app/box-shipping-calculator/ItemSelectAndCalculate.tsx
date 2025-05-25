@@ -10,10 +10,8 @@
  * Database operations are handled through server actions to maintain proper separation of concerns.
  */
 
-"use client";
-
-import React, { useState, useMemo, useRef, useEffect } from "react";
-import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
+import React, { useState, useMemo, useRef, useEffect, useTransition } from "react";
+import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
 
 /**
@@ -25,7 +23,7 @@ interface ItemSelectAndCalculateProps {
 	selectedItems: ShippingItem[]; // Currently selected items for calculation
 	onSelectedItemsChange: (items: ShippingItem[]) => void; // Callback when selected items change
 	onCalculateBox: (items: ShippingItem[]) => void; // Callback to trigger box calculation
-	onItemsChange: () => void; // Callback when items are modified/deleted/added
+	onItemsChange: (items: ShippingItem[]) => void; // Callback when items are modified/deleted/added
 }
 
 /**
@@ -50,6 +48,7 @@ export default function ItemSelectAndCalculate({
 	onCalculateBox,
 	onItemsChange,
 }: ItemSelectAndCalculateProps) {
+	const [isPending, startTransition] = useTransition();
 	// State Management
 	// ---------------
 	const [searchTerm, setSearchTerm] = useState(""); // Search input value
