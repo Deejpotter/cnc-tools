@@ -62,14 +62,21 @@ export async function GET(request: NextRequest) {
 			.limit(limit)
 			.toArray();
 
-		// Return the results
-		return NextResponse.json(results);
+		// Return the results wrapped in a standardized response
+		const response = {
+			success: true,
+			message: "Query executed successfully",
+			data: results,
+		};
+		return NextResponse.json(response);
 	} catch (error) {
 		console.error("Error in MongoDB GET API:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 }
-		);
+		const errorResponse = {
+			success: false,
+			message: "Internal server error",
+			data: null,
+		};
+		return NextResponse.json(errorResponse, { status: 500 });
 	}
 }
 
