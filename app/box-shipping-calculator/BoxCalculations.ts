@@ -843,7 +843,6 @@ export function packItemsIntoMultipleBoxes(
 					itemsToPack
 			  )
 			: [];
-
 	return {
 		success: unfitItems.length === 0,
 		shipments,

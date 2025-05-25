@@ -116,14 +116,19 @@ The project follows a Next.js App Router structure:
   - `40-series-extrusions/` - 40-Series Extrusions calculator
   - `enclosure-calculator/` - Enclosure calculator
   - `price-difference-tool/` - Price comparison tool
-- `app/actions/` - Server actions for backend functionality
+- `app/api/` - API routes for server-side functionality
+  - `data/` - Data operations API
+  - `invoice-processing/` - Invoice processing API
+  - `mongodb/` - MongoDB operations API
 - `components/` - Reusable UI components
 - `interfaces/` - TypeScript interfaces
 - `contexts/` - React context providers
-- `utils/` - Utility functions
+- `utils/` - Utility functions and client-side API wrappers
 - `styles/` - CSS and SCSS files
 - `public/` - Static assets
 - `types/` - TypeScript type definitions
+
+For more details on code organization, see [CODE_ORGANIZATION.md](./CODE_ORGANIZATION.md).
 
 ## Learn More
 

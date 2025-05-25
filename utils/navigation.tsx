@@ -1,3 +1,13 @@
+/**
+ * Navigation Utilities
+ * Updated: 25/05/2025
+ * Author: Deej Potter
+ * Description: Provides navigation-related utility functions for the application.
+ *
+ * CONSOLIDATION NOTE: This file is maintained for backward compatibility.
+ * Further investigation is needed to determine if it can be removed in the future.
+ */
+
 import { IRoute } from "@/types/navigation";
 // NextJS Requirement
 export const isWindowAvailable = () => typeof window !== "undefined";

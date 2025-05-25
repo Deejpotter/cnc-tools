@@ -7,8 +7,8 @@
  */
 
 import { ObjectId } from "mongodb";
-import { getCollection } from "@/app/actions/mongodb/client";
-import { DatabaseResponse, MongoDocument } from "@/app/actions/mongodb/types";
+import { getCollection } from "@/app/api/mongodb/client";
+import { DatabaseResponse, MongoDocument } from "@/app/api/mongodb/types";
 import {
 	DataProvider,
 	DataProviderOptions,

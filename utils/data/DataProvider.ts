@@ -6,7 +6,7 @@
  * This abstraction allows us to switch between data sources transparently.
  */
 
-import { DatabaseResponse } from "@/app/actions/mongodb/types";
+import { DatabaseResponse } from "@/app/api/mongodb/types";
 
 /**
  * Data Provider Interface
