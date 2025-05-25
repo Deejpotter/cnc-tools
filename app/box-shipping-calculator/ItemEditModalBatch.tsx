@@ -1,6 +1,6 @@
 /**
  * ItemEditModalBatch
- * Updated: 14/05/2025
+ * Updated: 14/05/25
  * Author: Deej Potter
  * Description: Modal component for batch editing shipping items.
  * Allows efficient updating of weights and other properties across multiple items.

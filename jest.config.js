@@ -12,11 +12,18 @@ const customJestConfig = {
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you when using `next/jest`)
     '^@/(.*)$': '<rootDir>/$1',
-  },
-  testMatch: [
+  }, testMatch: [
     "**/__tests__/**/*.ts?(x)",
     "**/?(*.)+(spec|test).ts?(x)"
   ],
+  // Exclude E2E tests from Jest - they should run with Playwright
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/e2e/',
+    '<rootDir>/.next/'
+  ],
+  // Also exclude e2e from testMatch pattern  
+  modulePathIgnorePatterns: ["<rootDir>/e2e/"],
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
     'components/**/*.{js,jsx,ts,tsx}',

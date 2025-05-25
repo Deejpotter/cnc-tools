@@ -1,5 +1,9 @@
 /**
  * Tests for StepsPerMmSection Component
+ * Updated: 18/05/25
+ * Author: Deej Potter
+ * Description: Test suite for the Steps Per Millimeter calculator component.
+ * Tests rendering, calculation logic, and user interactions.
  */
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";

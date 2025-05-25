@@ -1,6 +1,6 @@
 /**
  * Table and Enclosure Calculator Utilities
- * Updated: 14/05/2025
+ * Updated: 14/05/25
  * Author: Deej Potter
  * Description: Utility functions for the Table and Enclosure Calculator component.
  * These functions handle calculations for different parts of a table and enclosure.

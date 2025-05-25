@@ -1,9 +1,9 @@
 /**
  * Data Service
- * Updated: 25/05/2025
+ * Updated: 25/05/25
  * Author: Deej Potter
- * Description: Centralized service for data operations across the application
- * Makes it easy to access data with the appropriate provider and options
+ * Description: Centralized service for data operations across the application.
+ * Makes it easy to access data with the appropriate provider and options.
  *
  * CONSOLIDATION NOTE: This file is maintained for backward compatibility.
  * It is used by the Data API route and cannot be removed at this time.

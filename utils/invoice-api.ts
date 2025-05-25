@@ -1,6 +1,6 @@
 /**
  * Invoice Processing API Integration
- * Updated: 25/05/2025
+ * Updated: 25/05/25
  * Author: Deej Potter
  * Description: This file provides utility functions to interact with the Invoice Processing API.
  * It abstracts away the API call details and provides a simple interface for invoice processing.
@@ -36,7 +36,16 @@ export async function processInvoiceWithAPI(
 			throw new Error(`API error: ${errorData.error || response.statusText}`);
 		}
 
-		return await response.json();
+		const data = await response.json();
+
+		// Validate the response format
+		if (!Array.isArray(data)) {
+			throw new Error(
+				"Invalid response format: expected an array of shipping items"
+			);
+		}
+
+		return data;
 	} catch (error) {
 		console.error("Error processing invoice:", error);
 		throw error;
@@ -67,7 +76,16 @@ export async function processInvoiceTextWithAPI(
 			throw new Error(`API error: ${errorData.error || response.statusText}`);
 		}
 
-		return await response.json();
+		const data = await response.json();
+
+		// Validate the response format
+		if (!Array.isArray(data)) {
+			throw new Error(
+				"Invalid response format: expected an array of shipping items"
+			);
+		}
+
+		return data;
 	} catch (error) {
 		console.error("Error processing invoice text:", error);
 		throw error;

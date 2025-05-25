@@ -1,6 +1,6 @@
 /**
  * Box Shipping Calculator Page Component
- * Updated: 07/05/25
+ * Updated: 25/05/25
  * Author: Deej Potter
  * Description: This component provides a user interface for calculating the best box size for shipping items.
  * It includes features for importing items from a Maker Store invoice, selecting items, and manually adding new items.
@@ -21,6 +21,7 @@ import {
 } from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
 import { dataAPI } from "@/utils/data-api";
+import { Loader } from "lucide-react"; // Loader icon for loading states
 
 /**
  * Box Shipping Calculator Page Component
@@ -61,7 +62,9 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			setItems(items);
 		} catch (error) {
 			console.error("Failed to load items:", error);
-			setImportError("Error loading items from database.");
+			setImportError(
+				"Error loading items from database. Please try syncing the data or reload the page."
+			);
 			setItems([]); // Clear items on error
 		} finally {
 			setIsLoading(false);
@@ -78,7 +81,9 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			setImportError(null);
 		} catch (error) {
 			console.error("Failed to add item:", error);
-			setImportError("Failed to add new item");
+			setImportError(
+				"Failed to add new item. Please check your network connection and try again."
+			);
 		}
 	};
 
@@ -160,6 +165,34 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 */
 	const handleCalculateBox = async (itemsToCalculate: ShippingItem[]) => {
 		try {
+			// First check if we have items to calculate
+			if (!itemsToCalculate || itemsToCalculate.length === 0) {
+				setImportError(
+					"Please select at least one item to calculate the box size."
+				);
+				return;
+			}
+
+			// Validate items have required dimensions and quantities
+			const invalidItems = itemsToCalculate.filter(
+				(item) =>
+					!item.length ||
+					!item.width ||
+					!item.height ||
+					!item.quantity ||
+					item.quantity <= 0
+			);
+
+			if (invalidItems.length > 0) {
+				const invalidSkus = invalidItems
+					.map((i) => i.sku || i.name || "Unknown item")
+					.join(", ");
+				setImportError(
+					`Some items have missing or invalid dimensions/quantities: ${invalidSkus}`
+				);
+				return;
+			}
+
 			// Call the API route for box packing calculations
 			const response = await fetch("/api/box-packing", {
 				method: "POST",
@@ -170,13 +203,17 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to calculate box size");
+				throw new Error(
+					`Failed to calculate box size: ${response.status} ${response.statusText}`
+				);
 			}
 
 			const result = await response.json();
 			setPackingResult(result);
+			setImportError(null); // Clear any previous errors on success
 		} catch (error) {
 			console.error("Error calculating box size:", error);
+			setImportError("Server calculation failed. Using client-side fallback.");
 			// Fallback to client-side calculation if API fails
 			const result = packItemsIntoMultipleBoxes(itemsToCalculate);
 			setPackingResult(result);
@@ -193,16 +230,20 @@ const BoxShippingCalculatorPage: React.FC = () => {
 				await loadItems(); // Reload items after successful sync
 				setImportError(null);
 			} else {
-				setImportError(response.message || "Sync failed");
+				setImportError(
+					response.message ||
+						"Sync failed. Please check the server logs for more information."
+				);
 			}
 		} catch (error) {
 			console.error("Failed to sync with remote database:", error);
-			setImportError("Failed to sync with remote database");
+			setImportError(
+				"Failed to sync with remote database. Please check your network connection and try again."
+			);
 		} finally {
 			setIsSyncing(false);
 		}
 	};
-
 	// Render loading state while fetching initial data
 	if (isLoading) {
 		return (
@@ -210,8 +251,9 @@ const BoxShippingCalculatorPage: React.FC = () => {
 				<div className="container pb-5">
 					<h1 className="mb-4">Box Shipping Calculator</h1>
 					<div className="text-center">
-						<div className="spinner-border" role="status">
-							<span className="visually-hidden">Loading...</span>
+						<div className="d-flex justify-content-center align-items-center">
+							<Loader className="me-2 animate-spin" size={24} />
+							<span>Loading item data...</span>
 						</div>
 					</div>
 				</div>

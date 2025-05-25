@@ -1,8 +1,11 @@
-// MongoDB Types and Interfaces
-// Moved from utils/data/mongoTypes.ts as part of API structure improvement
-// Defines types and interfaces for MongoDB documents and responses
-// Author: Deej Potter
-// Updated: 25/05/2025
+/**
+ * MongoDB Types
+ * Updated: 25/05/25
+ * Author: Deej Potter
+ * Description: Types and interfaces for MongoDB documents and responses.
+ * Moved from utils/data/mongoTypes.ts as part of API structure improvement.
+ * Defines types and interfaces that are used throughout the application for MongoDB operations.
+ */
 
 import { ObjectId, WithId } from "mongodb";
 

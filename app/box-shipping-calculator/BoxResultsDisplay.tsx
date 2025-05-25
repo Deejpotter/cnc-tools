@@ -1,6 +1,6 @@
 /**
  * Box Results Display Component
- * Updated: 14/05/2025
+ * Updated: 14/05/25
  * Author: Deej Potter
  * Description: Displays detailed information about box packing results.
  * This component visualizes the packing solution with metrics like weight and volume utilization.
@@ -97,10 +97,12 @@ export function calculateBoxDimensions(items: ShippingItem[]): BoxDimensions {
 	let totalVolume = 0;
 	let maxLength = 0;
 	let maxWidth = 0;
-	let maxHeight = 0; // Calculate total dimensions using a simple packing strategy
+
+	// Calculate total dimensions using a simple packing strategy
 	// For length and width, we take the maximum values
 	// For height, we sum the heights to simulate stacking
 	let totalHeight = 0;
+
 	items.forEach((item) => {
 		const quantity = item.quantity || 1;
 
@@ -121,11 +123,11 @@ export function calculateBoxDimensions(items: ShippingItem[]): BoxDimensions {
 		totalHeight += height * quantity;
 	});
 
-	maxHeight = totalHeight; // Use the sum of heights
+	// Use the sum of heights to account for stacking
 	return {
 		totalLength: maxLength,
 		totalWidth: maxWidth,
-		totalHeight: maxHeight,
+		totalHeight: totalHeight,
 		totalVolume: totalVolume,
 	};
 }

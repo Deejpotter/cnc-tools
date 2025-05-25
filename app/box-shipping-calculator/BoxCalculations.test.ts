@@ -1,6 +1,6 @@
 /**
  * Box Calculations tests
- * Updated: 14/05/2025
+ * Updated: 14/05/25
  * Author: Deej Potter
  * Description: Test suite for the BoxCalculations utility functions.
  * Tests the bin packing algorithm with various item configurations.

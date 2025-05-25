@@ -1,9 +1,12 @@
+/**
+ * Startup G-code Generator
+ * Updated: 18/05/25
+ * Author: Deej Potter
+ * Description: Component for generating optimized startup G-code sequences for 3D printers.
+ * Helps users create customized G-code for machine initialization based on printer specs.
+ */
 "use client";
 import React, { useState, useEffect } from "react";
-
-/**
- * Component for calculating and displaying CNC calibration data.
- */
 const StartupGcodeGeneratorSection = () => {
 	const [bedSizeX, setBedSizeX] = useState("300");
 	const [bedSizeY, setBedSizeY] = useState("300");

@@ -1,8 +1,11 @@
-// MongoDB client management utility
-// Moved from utils/data/mongoClient.ts as part of API structure improvement
-// Provides a cached MongoDB client for server-side and API route use
-// Author: Deej Potter
-// Updated: 25/05/2025
+/**
+ * MongoDB Client
+ * Updated: 25/05/25
+ * Author: Deej Potter
+ * Description: MongoDB client management utility.
+ * Provides a cached MongoDB client for server-side and API route use.
+ * Moved from utils/data/mongoClient.ts as part of API structure improvement.
+ */
 
 import { MongoClient } from "mongodb";
 

@@ -1,6 +1,6 @@
 /**
  * ShippingItemList
- * Updated: 05/13/2025
+ * Updated: 13/05/25
  * Author: Deej Potter
  * Description: Defines the structure for managing collections of shipping items.
  * Used for tracking items that need to be packed into shipping boxes.

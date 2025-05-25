@@ -1,11 +1,13 @@
-"use client";
-import React, { useState, useEffect } from "react";
-
 /**
- * Component for calculating and displaying CNC calibration data.
+ * Steps Per Millimeter Calculator
+ * Updated: 18/05/25
+ * Author: Deej Potter
+ * Description: Component for calculating and displaying CNC calibration data.
  * Allows users to input current steps/mm, target movement, and measured movement
  * to calculate the correct steps/mm value for accurate axis calibration.
  */
+"use client";
+import React, { useState, useEffect } from "react";
 const StepsPerMmSection = () => {
 	// State for holding form input values as strings
 	const [currentSteps, setCurrentSteps] = useState("");

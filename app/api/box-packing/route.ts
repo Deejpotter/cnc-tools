@@ -1,6 +1,6 @@
 /**
  * Box Packing API Route
- * Updated: 25/05/2025
+ * Updated: 25/05/25
  * Author: Deej Potter
  * Description: API endpoint for box packing calculations.
  * This route receives a list of items and returns the optimal box configuration.
@@ -20,11 +20,39 @@ export async function POST(request: NextRequest) {
 		// Parse the request body
 		const body = await request.json();
 		const itemsToPack = body.items;
-
 		// Validate input
 		if (!Array.isArray(itemsToPack)) {
 			return NextResponse.json(
 				{ error: "Invalid input. Expected an array of items." },
+				{ status: 400 }
+			);
+		}
+
+		if (itemsToPack.length === 0) {
+			return NextResponse.json(
+				{ error: "Empty input. Please provide at least one item to pack." },
+				{ status: 400 }
+			);
+		}
+
+		// Validate each item has the required dimensions
+		const invalidItems = itemsToPack.filter(
+			(item) =>
+				typeof item.length !== "number" ||
+				typeof item.width !== "number" ||
+				typeof item.height !== "number" ||
+				typeof item.quantity !== "number"
+		);
+
+		if (invalidItems.length > 0) {
+			return NextResponse.json(
+				{
+					error:
+						"Invalid items found. Each item must have valid length, width, height, and quantity properties.",
+					invalidItems: invalidItems.map(
+						(item) => item.sku || item.name || "unknown item"
+					),
+				},
 				{ status: 400 }
 			);
 		}

@@ -1,11 +1,13 @@
-"use client";
-import React, { useState, useEffect } from "react";
-
 /**
- * Component for calculating flow compensation for 3D printers.
+ * Flow Compensation Calculator
+ * Updated: 18/05/25
+ * Author: Deej Potter
+ * Description: Component for calculating flow compensation for 3D printers.
  * Helps users adjust flow rate to compensate for filament expansion
  * by measuring wall thickness and calculating the optimal flow percentage.
  */
+"use client";
+import React, { useState, useEffect } from "react";
 const FlowCompensationSection = () => {
 	// State for form values
 	const [currentFlow, setCurrentFlow] = useState("100");

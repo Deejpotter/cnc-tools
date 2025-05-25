@@ -63,18 +63,18 @@ jest.mock("next/dynamic", () => () => {
 	const TableCalculatorComponent = jest.requireActual(
 		"./components/TableCalculator"
 	).default;
-	const DynamicTableCalculator = (props: any) => (
-		<TableCalculatorComponent {...props} />
-	);
+	const DynamicTableCalculator = (props: any) => {
+		return React.createElement(TableCalculatorComponent, props);
+	};
 	DynamicTableCalculator.displayName = "DynamicTableCalculator";
 	return DynamicTableCalculator;
 });
 
 // Mock the LayoutContainer component
 jest.mock("@/components/LayoutContainer", () => {
-	const MockLayoutContainer = ({ children }: { children: React.ReactNode }) => (
-		<div>{children}</div>
-	);
+	const MockLayoutContainer = ({ children }: { children: React.ReactNode }) => {
+		return React.createElement("div", {}, children);
+	};
 	MockLayoutContainer.displayName = "MockLayoutContainer";
 	return MockLayoutContainer;
 });
@@ -86,9 +86,9 @@ jest.mock("./components/TableCalculator", () => {
 	const OriginalTableCalculator = jest.requireActual(
 		"./components/TableCalculator"
 	).default;
-	const MockTableCalculator = (props: any) => (
-		<OriginalTableCalculator {...props} />
-	); // Render the original but spy on it
+	const MockTableCalculator = (props: any) => {
+		return React.createElement(OriginalTableCalculator, props);
+	}; // Render the original but spy on it
 	MockTableCalculator.displayName = "MockTableCalculator";
 	return jest.fn(MockTableCalculator);
 });
@@ -120,16 +120,14 @@ describe("TableEnclosureCalculatorPage", () => {
 				),
 		});
 	});
-
 	it("renders the main heading", () => {
-		render(<TableEnclosureCalculatorPage />);
+		render(React.createElement(TableEnclosureCalculatorPage));
 		expect(
 			screen.getByRole("heading", { name: /Table and Enclosure Calculator/i })
 		).toBeInTheDocument();
 	});
-
 	it("passes correct material types and fixed thickness to TableCalculator", () => {
-		render(<TableEnclosureCalculatorPage />);
+		render(React.createElement(TableEnclosureCalculatorPage));
 		// Check that TableCalculator (or its mock wrapper) is rendered.
 		// This test relies on the mock for next/dynamic correctly passing props.
 		// We can't directly inspect props of the real TableCalculator easily here,
@@ -149,7 +147,7 @@ describe("TableEnclosureCalculatorPage", () => {
 
 	describe("Centralized Outside Dimensions Checkbox", () => {
 		it("renders a single 'Use Outside Dimensions' checkbox in the Configuration panel", () => {
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			const configPanel = screen.getByRole("region", {
 				name: /Configuration/i,
 			});
@@ -179,9 +177,8 @@ describe("TableEnclosureCalculatorPage", () => {
 				).not.toBeInTheDocument();
 			}
 		});
-
 		it("toggles 'isOutsideDimension' in config when the checkbox is clicked", async () => {
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			const outsideDimensionCheckbox = screen.getByLabelText(
 				/Use Outside Dimensions/i
 			);
@@ -214,7 +211,7 @@ describe("TableEnclosureCalculatorPage", () => {
 
 	describe("Simplified Material Options", () => {
 		it("renders material type dropdown with correct simplified options and fixed thickness label", () => {
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			const materialTypeDropdown = screen.getByLabelText(
 				`Material Type (All ${MATERIAL_THICKNESS}mm Thick)`
 			);
@@ -227,16 +224,14 @@ describe("TableEnclosureCalculatorPage", () => {
 				expect(options[index]).toHaveValue(material.id);
 			});
 		});
-
 		it("does not render a material thickness dropdown", () => {
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			expect(
 				screen.queryByLabelText(/Material Thickness/i)
 			).not.toBeInTheDocument();
 		});
-
 		it("updates material type in config and URL when selection changes", async () => {
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			const materialTypeDropdown = screen.getByLabelText(
 				`Material Type (All ${MATERIAL_THICKNESS}mm Thick)`
 			);
@@ -285,7 +280,7 @@ describe("TableEnclosureCalculatorPage", () => {
 				}
 			);
 
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			const outsideDimensionCheckbox = screen.getByLabelText(
 				/Use Outside Dimensions/i
 			);
@@ -311,7 +306,7 @@ describe("TableEnclosureCalculatorPage", () => {
 				}
 			);
 
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 			const materialTypeDropdown = screen.getByLabelText(
 				`Material Type (All ${MATERIAL_THICKNESS}mm Thick)`
 			);
@@ -392,7 +387,7 @@ describe("TableEnclosureCalculatorPage", () => {
 				searchParamsMock
 			);
 
-			render(<TableEnclosureCalculatorPage />);
+			render(React.createElement(TableEnclosureCalculatorPage));
 
 			// Check a few key fields to ensure loading logic ran
 			expect(screen.getByLabelText(/Include Table/i)).toBeChecked();
@@ -444,7 +439,7 @@ describe("TableEnclosureCalculator Component Basic Rendering", () => {
 			forEach: jest.fn(),
 			toString: jest.fn().mockReturnValue(""),
 		});
-		render(<TableEnclosureCalculatorPage />);
+		render(React.createElement(TableEnclosureCalculatorPage));
 		expect(screen.getByLabelText(/Include Table/i)).toBeChecked(); // Default
 		expect(screen.getByLabelText(/Use Outside Dimensions/i)).toBeChecked(); // Default
 		expect(
@@ -452,7 +447,3 @@ describe("TableEnclosureCalculator Component Basic Rendering", () => {
 		).toHaveValue(MATERIAL_TYPES[0].id); // Default material
 	});
 });
-
-// ... Other test suites like "Calculator Calculation Functions" and "Calculator Integration Tests" would need updates
-// if they directly interact with UI elements changed or use functions whose signatures changed.
-// For calcUtils.test.ts, the changes are already applied in a previous step.
