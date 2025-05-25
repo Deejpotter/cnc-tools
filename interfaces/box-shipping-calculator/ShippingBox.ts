@@ -1,9 +1,9 @@
 /**
  * ShippingBox
- * Updated: 05/13/2025
+ * Updated: 13/05/25
  * Author: Deej Potter
  * Description: Interface for shipping box dimensions and weight capacity.
- * 
+ *
  * Properties:
  * - id: The unique identifier of the box
  * - name: The name of the box

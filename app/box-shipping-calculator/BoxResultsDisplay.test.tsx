@@ -1,6 +1,6 @@
 /**
  * Tests for BoxResultsDisplay Component
- * Updated: May 13, 2025
+ * Updated: 13/05/25
  * Author: Deej Potter
  * Description: Tests the BoxResultsDisplay component which shows calculated box metrics
  */

@@ -1,12 +1,12 @@
-"use client";
 /**
  * Table and Enclosure Calculator Page
- * Updated: 17/05/2025
+ * Updated: 17/05/25
  * Author: Deej Potter
- *
+ * Description: Main page component for the Table and Enclosure Calculator tool.
  * This is a client component that uses dynamic imports and Suspense
  * for better performance and code splitting.
  */
+"use client";
 
 import LayoutContainer from "@/components/LayoutContainer";
 import React, { Suspense } from "react";

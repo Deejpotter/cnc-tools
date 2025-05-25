@@ -1,30 +1,32 @@
 /**
- * Process Invoices server actions
- * Updated: 23/05/25
+ * Invoice Processing API Route
+ * Updated: 25/05/25
  * Author: Deej Potter
- * Description: Handles invoice processing, including PDF extraction and AI item extraction.
- * Uses Next.js 14 server actions, pdf-parse, and OpenAI API for item extraction.
+ * Description: API endpoint for invoice processing and item extraction.
+ * This route processes uploaded invoices, extracts items using AI, and returns shipping items.
+ * Uses OpenAI API and MongoDB for data storage/retrieval.
+ *
+ * NOTE: For client-side invoice processing operations, please use the utilities in /utils/invoice-api.ts.
+ * This route file is for server-side API endpoints only, following Next.js conventions.
  */
 
-"use server";
-
+import { NextRequest, NextResponse } from "next/server";
 import { OpenAI } from "openai";
 import pdfParse from "pdf-parse";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
-import {
-	addItemToDatabase,
-	updateItemInDatabase,
-	getAllDocuments,
-} from "./mongodb/actions";
+// Keep using the utility function for server-side to avoid circular dependencies
+import { fetchDocuments, createDocument } from "@/utils/mongodb-api";
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
 });
 
+export const runtime = "nodejs";
+
 /**
  * Type definition for AI extracted item
  */
-export interface ExtractedItem {
+interface ExtractedItem {
 	name: string;
 	sku: string;
 	weight: number;
@@ -32,17 +34,17 @@ export interface ExtractedItem {
 }
 
 /**
- * Process invoice file and extract items using AI
- * @param formData Form data containing the invoice file
- * @returns Array of shipping items with dimensions
+ * POST handler for invoice processing
+ * @param request The incoming request with invoice file data
+ * @returns JSON response with extracted shipping items
  */
-export async function processInvoice(
-	formData: FormData
-): Promise<ShippingItem[]> {
+export async function POST(request: NextRequest) {
 	try {
+		const formData = await request.formData();
 		const file = formData.get("invoice") as File;
+
 		if (!file) {
-			throw new Error("No file provided");
+			return NextResponse.json({ error: "No file provided" }, { status: 400 });
 		}
 
 		// First try PDF extraction
@@ -62,7 +64,10 @@ export async function processInvoice(
 		// Process with AI to extract items
 		const extractedItems = await processWithAI(textContent);
 		if (!extractedItems?.length) {
-			throw new Error("No items found in invoice");
+			return NextResponse.json(
+				{ error: "No items found in invoice" },
+				{ status: 400 }
+			);
 		}
 
 		// Get full ShippingItem objects, either from DB or by creating new ones
@@ -72,29 +77,42 @@ export async function processInvoice(
 			shippingItemsFromInvoice
 		);
 
-		// The result from getItemDimensions is already Promise<ShippingItem[]>
-		return shippingItemsFromInvoice;
+		// Return the results
+		return NextResponse.json(shippingItemsFromInvoice);
 	} catch (error) {
 		console.error("Invoice processing error:", error);
-		throw new Error(
-			error instanceof Error ? error.message : "Failed to process invoice"
+		return NextResponse.json(
+			{
+				error:
+					error instanceof Error ? error.message : "Failed to process invoice",
+			},
+			{ status: 500 }
 		);
 	}
 }
 
 /**
  * Extract text content from PDF using pdf-parse
+ * Note: The pdf-parse library may produce Buffer() deprecation warnings
+ * during build/runtime. These come from the library itself, not our code.
+ * We're already using the recommended Buffer.from() method.
+ *
  * @param buffer PDF file buffer
  * @returns Extracted text content
  */
 async function extractPdfText(buffer: ArrayBuffer): Promise<string | null> {
 	try {
 		// Convert ArrayBuffer to Buffer for pdf-parse
+		// Using Buffer.from() as recommended (not the deprecated Buffer constructor)
 		const data = Buffer.from(buffer);
+
+		// Process PDF with pdf-parse library
 		const result = await pdfParse(data);
 
 		// Return the text content from the PDF
-		return result.text.trim() || null;
+		return result.text && typeof result.text === "string"
+			? result.text.trim() || null
+			: null;
 	} catch (error) {
 		console.error("PDF extraction error:", error);
 		return null;
@@ -113,7 +131,7 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 				{
 					role: "system",
 					content:
-						"Extract item details from invoice text. Return only the structured data.",
+						"Extract item details from invoice text. Identify product names, SKUs, weights, and quantities. For each item, extract: 1) Complete product name, 2) Exact SKU code, 3) Weight in kg, 4) Quantity. Return only the structured data without explanations.",
 				},
 				{
 					role: "user",
@@ -300,10 +318,8 @@ async function getItemDimensions(
 		}
 	}
 
-	// 2. Fetch existing items from DB
-	const dbResponse = await getAllDocuments<ShippingItem>("Items");
-	const existingDbItems =
-		dbResponse.success && dbResponse.data ? dbResponse.data : [];
+	// 2. Fetch existing items from DB using the new MongoDB API
+	const existingDbItems = await fetchDocuments("Items");
 	const dbItemsBySku = new Map(
 		existingDbItems.map((item) => [item.sku.trim().toUpperCase(), item]) // Standardize SKU to uppercase for lookup
 	);
@@ -366,45 +382,49 @@ async function getItemDimensions(
 			const weight = weightInKg * 1000; // Convert from kg to g
 
 			// Prepare item data for database storage
-			const newItemDataForDb: Omit<
-				ShippingItem,
-				"_id" | "createdAt" | "updatedAt" | "deletedAt"
-			> & { deletedAt: null | Date } = {
+			const newItemDataForDb = {
 				name: estimatedItemDetails.name,
 				sku: estimatedItemDetails.sku.trim().toUpperCase(),
 				length,
 				width,
 				height,
-				weight, // Use shorthand property names
+				weight,
 				deletedAt: null,
 			};
 
 			try {
-				const creationResponse = await addItemToDatabase(
-					newItemDataForDb as Omit<ShippingItem, "_id">
+				// Use the MongoDB API utility for creating a document
+				const creationResponse = await createDocument(
+					"Items",
+					newItemDataForDb
 				);
 
-				if (creationResponse.success && creationResponse.data) {
-					const newlyAddedItem = creationResponse.data;
+				if (creationResponse.acknowledged && creationResponse.insertedId) {
+					// Fetch the newly created document to get the complete item
+					const newlyAddedItems = await fetchDocuments("Items", {
+						_id: creationResponse.insertedId,
+					});
+					const newlyAddedItem = newlyAddedItems[0];
+
 					console.log(
 						`New item ${newlyAddedItem.name} (SKU: ${newlyAddedItem.sku}) added to database with ID: ${newlyAddedItem._id}`
 					);
+
 					finalShippingItems.push({
 						...newlyAddedItem,
 						quantity: invoiceItem.quantity,
 					});
 				} else {
 					console.error(
-						`Failed to add new item SKU ${invoiceItem.sku} to database: ${creationResponse.error}. Using temporary item.`
+						`Failed to add new item SKU ${invoiceItem.sku} to database. Using temporary item.`
 					);
 					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
 					finalShippingItems.push({
 						_id: tempId,
-						...newItemDataForDb, // Use the already validated data
+						...newItemDataForDb,
 						quantity: invoiceItem.quantity || 1,
 						createdAt: new Date(),
 						updatedAt: new Date(),
-						// deletedAt is already included in newItemDataForDb
 					});
 				}
 			} catch (error) {
@@ -415,11 +435,10 @@ async function getItemDimensions(
 				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
 				finalShippingItems.push({
 					_id: tempId,
-					...newItemDataForDb, // Use the already validated data
+					...newItemDataForDb,
 					quantity: invoiceItem.quantity || 1,
 					createdAt: new Date(),
 					updatedAt: new Date(),
-					// deletedAt is already included in newItemDataForDb
 				});
 			}
 		}
@@ -428,24 +447,31 @@ async function getItemDimensions(
 }
 
 /**
- * Process invoice text and extract items using AI
- * @param invoiceText The extracted text content from the invoice PDF
- * @returns Array of shipping items with dimensions
+ * Alternative endpoint to process invoice text without file upload
+ * Useful for client-side PDF extraction
  *
- * NOTE: The client is now responsible for extracting PDF text using pdfjs-dist (pdf.js).
+ * @param request The incoming request with extracted invoice text
+ * @returns JSON response with extracted shipping items
  */
-export async function processInvoiceText(
-	invoiceText: string
-): Promise<ShippingItem[]> {
+export async function PUT(request: NextRequest) {
 	try {
+		const body = await request.json();
+		const { invoiceText } = body;
+
 		if (!invoiceText || typeof invoiceText !== "string") {
-			throw new Error("No invoice text provided");
+			return NextResponse.json(
+				{ error: "No invoice text provided" },
+				{ status: 400 }
+			);
 		}
 
 		// Process with AI to extract items
 		const extractedItems = await processWithAI(invoiceText);
 		if (!extractedItems?.length) {
-			throw new Error("No items found in invoice");
+			return NextResponse.json(
+				{ error: "No items found in invoice" },
+				{ status: 400 }
+			);
 		}
 
 		// Get full ShippingItem objects, either from DB or by creating new ones
@@ -455,11 +481,15 @@ export async function processInvoiceText(
 			shippingItemsFromInvoice
 		);
 
-		return shippingItemsFromInvoice;
+		return NextResponse.json(shippingItemsFromInvoice);
 	} catch (error) {
 		console.error("Invoice processing error:", error);
-		throw new Error(
-			error instanceof Error ? error.message : "Failed to process invoice"
+		return NextResponse.json(
+			{
+				error:
+					error instanceof Error ? error.message : "Failed to process invoice",
+			},
+			{ status: 500 }
 		);
 	}
 }

@@ -1,3 +1,11 @@
+/**
+ * CNC Calibration Tool
+ * Updated: 20/05/25
+ * Author: Deej Potter
+ * Description: Main page component for the CNC calibration tools.
+ * Provides calculators and resources for calibrating 3D printers and CNC machines.
+ * Uses separate components for each calculator section for better code organization.
+ */
 "use client";
 import React from "react";
 import LayoutContainer from "@/components/LayoutContainer";
@@ -5,11 +13,6 @@ import StepsPerMmSection from "./StepsPerMmSection";
 import FlowCompensationSection from "./FlowCompensationSection";
 // import StartupGcodeGeneratorSection from "./StartupGcodeGeneratorSection";
 
-/**
- * Functional component for CNC Calibration Tool.
- * Provides calculators and resources for calibrating 3D printers and CNC machines.
- * Uses separate components for each calculator section for better code organization.
- */
 const CncCalibrationTool: React.FC = () => {
 	return (
 		<LayoutContainer>

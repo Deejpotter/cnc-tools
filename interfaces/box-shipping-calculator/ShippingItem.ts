@@ -1,13 +1,13 @@
 /**
  * ShippingItem
- * Updated: 05/13/2025
+ * Updated: 13/05/25
  * Author: Deej Potter
  * Description: Defines the structure of a shipping item in the database.
  * This interface extends the MongoDocument interface to include standard MongoDB fields.
  */
 
 import { ObjectId } from "mongodb";
-import { MongoDocument } from "@/app/actions/mongodb/types";
+import { MongoDocument } from "@/app/api/mongodb/types";
 
 /**
  * ShippingItem interface represents an item that can be shipped.

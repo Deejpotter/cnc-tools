@@ -1,3 +1,10 @@
+/**
+ * Footer Component
+ * Updated: 15/05/25
+ * Author: Deej Potter
+ * Description: Standard footer component used across the application.
+ * Displays copyright information, links to resources, and site navigation.
+ */
 "use client";
 import React from "react";
 import Link from "next/link";

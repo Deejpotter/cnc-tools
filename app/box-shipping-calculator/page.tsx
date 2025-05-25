@@ -1,6 +1,6 @@
 /**
  * Box Shipping Calculator Page Component
- * Updated: 07/05/25
+ * Updated: 25/05/25
  * Author: Deej Potter
  * Description: This component provides a user interface for calculating the best box size for shipping items.
  * It includes features for importing items from a Maker Store invoice, selecting items, and manually adding new items.
@@ -20,11 +20,8 @@ import {
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
-import {
-	getAvailableItems,
-	addItemToDatabase,
-	syncWithRemoteDatabase,
-} from "@/app/actions/data-actions";
+import { dataAPI } from "@/utils/data-api";
+import { Loader } from "lucide-react"; // Loader icon for loading states
 
 /**
  * Box Shipping Calculator Page Component
@@ -58,42 +55,35 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * Handles loading/reloading items from the database
 	 * Used when items are updated, deleted, or added
 	 * Shows loading state during fetch and handles errors
-	 */
-	const loadItems = async () => {
+	 */ const loadItems = async () => {
 		setIsLoading(true);
 		try {
-			const response = await getAvailableItems();
-			if (response.success && response.data) {
-				setItems(response.data);
-			} else {
-				setImportError(response.error || "Failed to load items");
-				setItems([]); // Clear items on error
-			}
+			const items = await dataAPI.shippingItems.getAvailable();
+			setItems(items);
 		} catch (error) {
 			console.error("Failed to load items:", error);
-			setImportError("Error loading items from database.");
+			setImportError(
+				"Error loading items from database. Please try syncing the data or reload the page."
+			);
 			setItems([]); // Clear items on error
 		} finally {
 			setIsLoading(false);
 		}
 	};
-
 	/**
 	 * Handler for adding new items to the available items list
 	 * @param item New item to be added to the database
 	 */
 	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
 		try {
-			const response = await addItemToDatabase(item);
-			if (response.success && response.data) {
-				setItems((prevItems) => [...prevItems, response.data]);
-				setImportError(null);
-			} else {
-				setImportError(response.error || "Failed to add item");
-			}
+			const newItem = await dataAPI.shippingItems.add(item);
+			setItems((prevItems) => [...prevItems, newItem]);
+			setImportError(null);
 		} catch (error) {
 			console.error("Failed to add item:", error);
-			setImportError("Failed to add new item");
+			setImportError(
+				"Failed to add new item. Please check your network connection and try again."
+			);
 		}
 	};
 
@@ -169,37 +159,107 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			);
 		}
 	};
-
 	/**
 	 * Handler for calculating the optimal box size
 	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
-	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
-		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
-		setPackingResult(result);
-	};
+	const handleCalculateBox = async (itemsToCalculate: ShippingItem[]) => {
+		try {
+			// First check if we have items to calculate
+			if (!itemsToCalculate || itemsToCalculate.length === 0) {
+				setImportError(
+					"Please select at least one item to calculate the box size."
+				);
+				return;
+			}
 
+			// Validate items have required dimensions and quantities
+			const invalidItems = itemsToCalculate.filter(
+				(item) =>
+					!item.length ||
+					!item.width ||
+					!item.height ||
+					!item.quantity ||
+					item.quantity <= 0
+			);
+
+			if (invalidItems.length > 0) {
+				const invalidSkus = invalidItems
+					.map((i) => i.sku || i.name || "Unknown item")
+					.join(", ");
+				setImportError(
+					`Some items have missing or invalid dimensions/quantities: ${invalidSkus}`
+				);
+				return;
+			}
+
+			// Call the API route for box packing calculations with better error handling
+			const response = await fetch("/api/box-packing", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ items: itemsToCalculate }),
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(
+					`Failed to calculate box size: ${response.status} ${
+						response.statusText
+					}. ${errorData.message || ""}`
+				);
+			}
+			const result = await response.json();
+			setPackingResult(result);
+			setImportError(null); // Clear any previous errors on success
+		} catch (error) {
+			console.error("Error calculating box size:", error);
+
+			// More detailed error message with client-side fallback notice
+			setImportError(
+				`Server calculation failed: ${
+					error instanceof Error ? error.message : "Unknown error"
+				}. Using client-side fallback.`
+			);
+
+			// Fallback to client-side calculation if API fails
+			try {
+				const result = packItemsIntoMultipleBoxes(itemsToCalculate);
+				setPackingResult(result);
+			} catch (fallbackError) {
+				console.error("Client-side fallback also failed:", fallbackError);
+				setImportError(
+					`Both server and client-side calculations failed. Please check the console for more details.`
+				);
+			}
+		}
+	};
 	/**
 	 * Handler for manually triggering a sync with the remote database
 	 */
 	const handleSync = async () => {
 		try {
 			setIsSyncing(true);
-			const response = await syncWithRemoteDatabase();
+			const response = await dataAPI.sync.sync();
 			if (response.success) {
 				await loadItems(); // Reload items after successful sync
 				setImportError(null);
 			} else {
-				setImportError(response.message || "Sync failed");
+				setImportError(
+					response.message ||
+						"Sync failed. Please check the server logs for more information."
+				);
 			}
 		} catch (error) {
 			console.error("Failed to sync with remote database:", error);
-			setImportError("Failed to sync with remote database");
+			setImportError(
+				"Failed to sync with remote database. Please check your network connection and try again."
+			);
 		} finally {
 			setIsSyncing(false);
 		}
 	};
-
 	// Render loading state while fetching initial data
 	if (isLoading) {
 		return (
@@ -207,8 +267,9 @@ const BoxShippingCalculatorPage: React.FC = () => {
 				<div className="container pb-5">
 					<h1 className="mb-4">Box Shipping Calculator</h1>
 					<div className="text-center">
-						<div className="spinner-border" role="status">
-							<span className="visually-hidden">Loading...</span>
+						<div className="d-flex justify-content-center align-items-center">
+							<Loader className="me-2 animate-spin" size={24} />
+							<span>Loading item data...</span>
 						</div>
 					</div>
 				</div>

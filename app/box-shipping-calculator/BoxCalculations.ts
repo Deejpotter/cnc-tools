@@ -1,11 +1,12 @@
 /**
  * Box Calculations
- * Updated: 14/05/2025
+ * Updated: 14/05/25
  * Author: Deej Potter
  * Description: Helper functions for calculating the best box size for shipping items.
  * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
  * Extreme Point-based 3D bin packing algorithm is a heuristic approach to efficiently pack items into boxes.
- * That means it
+ * That means it finds a good solution quickly without exhaustively checking all possible arrangements.
+ * This approach balances computational efficiency with high-quality packing results.
  */
 
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
@@ -843,7 +844,6 @@ export function packItemsIntoMultipleBoxes(
 					itemsToPack
 			  )
 			: [];
-
 	return {
 		success: unfitItems.length === 0,
 		shipments,

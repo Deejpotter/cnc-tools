@@ -9,6 +9,18 @@ import '@testing-library/jest-dom';
 // TextEncoder and TextDecoder, which are standard Web APIs.
 // Some libraries, like 'whatwg-url' (a dependency used by the MongoDB driver in your project),
 // rely on these being globally available.
+
+// Mock for PDF files in tests
+// This allows us to import/require PDF files in our tests without errors
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  readFileSync: jest.fn((path) => {
+    if (path.endsWith('.pdf')) {
+      return Buffer.from('Mock PDF content');
+    }
+    return jest.requireActual('fs').readFileSync(path);
+  }),
+}));
 // To fix 'ReferenceError: TextEncoder is not defined' during tests,
 // we import these utilities from Node.js's 'util' module and assign them to the global scope.
 // This makes them accessible to all test files and the modules they import.

@@ -6,7 +6,7 @@ This document outlines the coding conventions and best practices for the project
 
 ## File structure
 
-```
+```text
 📦 cnc-tools
 ├── app/                      # Main application directory (Next.js App Router)
 │   ├── page.tsx              # Home page with tiles for all tools
@@ -14,8 +14,11 @@ This document outlines the coding conventions and best practices for the project
 │   ├── globals.scss          # Global styles
 │   ├── actions/              # Server actions
 │   │   ├── chat.ts           # Chat functionality actions
-│   │   ├── processInvoice.ts # Invoice processing logic
 │   │   └── mongodb/          # MongoDB database operations
+│   ├── api/                  # API routes
+│   │   ├── box-packing/      # Box packing API
+│   │   ├── invoice-processing/ # Invoice processing API
+│   │   └── mongodb/          # MongoDB API
 │   ├── box-shipping-calculator/  # Box Shipping Calculator tool
 │   ├── cnc-calibration-tool/     # CNC Calibration tool
 │   ├── cnc-technical-ai/         # AI chatbot for CNC technical questions
@@ -41,6 +44,8 @@ This document outlines the coding conventions and best practices for the project
 │   └── types.ts              # Common types
 ├── utils/                    # Utility functions
 │   ├── chatStream.ts         # Chat streaming functionality
+│   ├── invoice-api.ts        # Invoice processing API utilities
+│   ├── mongodb-api.ts        # MongoDB API utilities
 │   └── navigation.tsx        # Navigation helpers
 └── docs/                     # Documentation files
 ```

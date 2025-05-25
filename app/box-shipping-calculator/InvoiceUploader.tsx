@@ -1,6 +1,6 @@
 /**
  * InvoiceUploader
- * Updated: 14/05/2025
+ * Updated: 14/05/25
  * Author: Deej Potter
  * Description: Component for uploading and processing invoice files.
  * Extracts shipping items from invoices and passes them to the parent component.
@@ -11,7 +11,7 @@
 
 import React, { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { processInvoice } from "@/app/actions/processInvoice";
+import { processInvoiceWithAPI } from "@/utils/invoice-api";
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Upload, AlertCircle, FileText, Check } from "lucide-react";
 
@@ -56,7 +56,6 @@ export default function InvoiceUploader({
 	const [fileName, setFileName] = useState<string | null>(null);
 	const [fileSelected, setFileSelected] = useState(false);
 	const formRef = useRef<HTMLFormElement>(null);
-
 	/**
 	 * Handle form submission and invoice processing
 	 * Extracts shipping items from the uploaded invoice
@@ -64,7 +63,13 @@ export default function InvoiceUploader({
 	 */
 	async function handleSubmit(formData: FormData) {
 		try {
-			const items = await processInvoice(formData);
+			const invoiceFile = formData.get("invoice") as File;
+			if (!invoiceFile) {
+				onError("No file provided");
+				return;
+			}
+
+			const items = await processInvoiceWithAPI(invoiceFile);
 			if (items.length === 0) {
 				onError("No items found in invoice");
 				setFileSelected(false);
