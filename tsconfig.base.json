@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    /* Base Options */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ES2020",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "forceConsistentCasingInFileNames": true,
+    /* If your monorepo uses paths to reference other packages */
+    "baseUrl": ".",
+    "paths": {
+      "@types/*": [
+        "types/*"
+      ]
+    }
+  },
+  "exclude": [
+    "**/node_modules",
+    "**/.*"
+  ]
+}

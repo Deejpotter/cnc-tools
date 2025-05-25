@@ -1,0 +1,75 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: Debug Frontend",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "cd frontend && yarn dev",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Backend: Debug",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "--inspect",
+        "--require",
+        "ts-node/register"
+      ],
+      "args": [
+        "${workspaceFolder}/backend/src/app.ts"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/backend/dist/**/*.js"
+      ]
+    },
+    {
+      "name": "Full Stack: Debug",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "yarn dev",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "name": "Jest: Debug Current Test File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": [
+        "${fileBasenameNoExtension}",
+        "--runInBand",
+        "--watchAll=false",
+        "--testTimeout=100000"
+      ],
+      "cwd": "${fileDirname}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "windows": {
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/jest.cmd"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack: Manual Debug",
+      "configurations": [
+        "Next.js: Debug Frontend",
+        "Backend: Debug"
+      ]
+    }
+  ]
+}

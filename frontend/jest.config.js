@@ -12,6 +12,7 @@ const customJestConfig = {
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you when using `next/jest`)
     '^@/(.*)$': '<rootDir>/$1',
+    '^@types/(.*)$': '<rootDir>/../types/$1',
   },
   testMatch: [
     "**/__tests__/**/*.ts?(x)",

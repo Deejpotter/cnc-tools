@@ -11,7 +11,7 @@
 
 import React, { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import type ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
 import { Upload, AlertCircle, FileText, Check } from "lucide-react";
 
 interface InvoiceUploaderProps {
@@ -219,3 +219,5 @@ export default function InvoiceUploader({
 		</form>
 	);
 }
+
+

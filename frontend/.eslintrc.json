@@ -1,8 +1,34 @@
 {
-  "extends": "next/core-web-vitals",
+  "extends": [
+    "../.eslintrc.json",
+    "next/core-web-vitals"
+  ],
   "rules": {
     "react/no-unescaped-entities": "error",
     "react-hooks/exhaustive-deps": "warn",
-    "@next/next/no-img-element": "off"
+    "@next/next/no-img-element": "off",
+    "react/react-in-jsx-scope": "off",
+    "@typescript-eslint/no-explicit-any": "warn",
+    "no-mixed-spaces-and-tabs": "warn",
+    "prefer-const": "warn",
+    "no-console": [
+      "warn",
+      {
+        "allow": [
+          "warn",
+          "error",
+          "info"
+        ]
+      }
+    ],
+    "@typescript-eslint/no-var-requires": "warn",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
   }
 }

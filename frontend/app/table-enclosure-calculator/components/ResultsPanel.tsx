@@ -7,24 +7,30 @@
  */
 
 "use client";
-import React, { useRef } from "react";
-import {
+import React, { useRef, useCallback } from "react";
+import { DoorType, DoorTypeDisplayNames } from "../types";
+import type {
 	Results,
 	TableConfig,
 	MaterialConfig,
-	DoorType,
-	DoorTypeDisplayNames,
-} from "@/app/table-enclosure-calculator/types";
+	Dimensions,
+} from "../types";
+
+interface MaterialType {
+	id: string;
+	name: string;
+	description: string;
+	price: number;
+	unit: string;
+}
 
 interface ResultsPanelProps {
 	results: Results;
 	config: TableConfig;
 	materialConfig: MaterialConfig;
-	tableDimensions: any;
-	enclosureDimensions: any;
-	copyShareableURL: () => void;
-	printBOM: () => void;
-	materialTypesMap: Record<string, any>;
+	tableDimensions: Dimensions;
+	enclosureDimensions: Dimensions;
+	materialTypesMap: Record<string, MaterialType>;
 }
 
 /**
@@ -36,20 +42,39 @@ export function ResultsPanel({
 	materialConfig,
 	tableDimensions,
 	enclosureDimensions,
-	copyShareableURL,
-	printBOM,
 	materialTypesMap,
 }: ResultsPanelProps) {
 	const printRef = useRef<HTMLDivElement>(null);
 
+	const handleShareURL = useCallback(() => {
+		if (typeof window !== "undefined") {
+			const shareableURL = window.location.href;
+			navigator.clipboard
+				.writeText(shareableURL)
+				.then(() => {
+					alert("URL copied to clipboard!");
+				})
+				.catch((error) => {
+					console.error("Failed to copy URL:", error);
+					alert("Failed to copy URL to clipboard");
+				});
+		}
+	}, []);
+
+	const handlePrintBOM = useCallback(() => {
+		if (printRef.current) {
+			window.print();
+		}
+	}, []);
+
 	return (
-		<div className="card mb-4">
+		<div className="card mb-4" ref={printRef}>
 			<div className="card-header d-flex justify-content-between align-items-center">
 				<h2 className="h5 mb-0">Bill of Materials</h2>
 				<div className="d-flex">
 					<button
 						className="btn btn-sm btn-outline-primary me-2"
-						onClick={copyShareableURL}
+						onClick={handleShareURL}
 						disabled={!config.includeTable && !config.includeEnclosure}
 						title="Create a shareable link with your current configuration"
 					>
@@ -57,7 +82,7 @@ export function ResultsPanel({
 					</button>
 					<button
 						className="btn btn-sm btn-outline-secondary"
-						onClick={printBOM}
+						onClick={handlePrintBOM}
 						disabled={!config.includeTable && !config.includeEnclosure}
 						title="Print bill of materials"
 					>
@@ -65,7 +90,7 @@ export function ResultsPanel({
 					</button>
 				</div>
 			</div>
-			<div className="card-body" ref={printRef}>
+			<div className="card-body">
 				{/* Quick Summary */}
 				<div className="alert alert-primary mb-4">
 					<h3 className="h6">Project Summary</h3>

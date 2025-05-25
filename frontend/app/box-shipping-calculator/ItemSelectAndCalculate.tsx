@@ -13,7 +13,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
 
 /**
@@ -728,3 +728,5 @@ const deleteItemFromDatabase = async (itemId: string) => {
 	if (!response.ok) throw new Error("Failed to delete item");
 	return await response.json();
 };
+
+

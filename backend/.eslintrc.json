@@ -1,0 +1,12 @@
+{
+  "extends": [
+    "../.eslintrc.json"
+  ],
+  "env": {
+    "node": true
+  },
+  "rules": {
+    // Add any backend-specific rules here
+    "@typescript-eslint/explicit-module-boundary-types": "warn"
+  }
+}

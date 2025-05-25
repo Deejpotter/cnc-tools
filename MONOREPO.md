@@ -6,17 +6,23 @@ This project follows a monorepo structure using Yarn Workspaces, which means we 
 
 ## Current Structure
 
-```
+```text
 cnc-tools/                  # Root directory
 ├── package.json            # Root package.json with workspaces config
 ├── netlify.toml            # Root Netlify config (controls deployment)
+├── tsconfig.base.json      # Shared TypeScript configuration
+├── jest.config.base.js     # Shared Jest configuration
+├── .eslintrc.json          # Root ESLint configuration
 ├── frontend/               # Next.js frontend application
 │   ├── package.json        # Frontend-specific dependencies
+│   ├── .eslintrc.json      # Frontend-specific ESLint config
 │   └── ...                 # Frontend code
 ├── backend/                # Express.js backend application  
 │   ├── package.json        # Backend-specific dependencies
+│   ├── .eslintrc.json      # Backend-specific ESLint config
 │   └── ...                 # Backend code
 └── types/                  # Shared TypeScript types
+    ├── shared.ts           # Common interfaces used across packages
     └── ...                 # Type definitions
 ```
 
@@ -72,6 +78,12 @@ yarn build
 
 # Run tests for all packages
 yarn test
+
+# Lint all packages
+yarn lint
+
+# Type-check all packages
+yarn type-check
 ```
 
 ### Managing Shared Dependencies
@@ -103,6 +115,28 @@ To run a command in a specific workspace:
 yarn workspace frontend <command>
 yarn workspace backend <command>
 ```
+
+### VS Code Integration
+
+This monorepo includes VS Code configuration files that enhance the development experience:
+
+- Debugging configurations for frontend, backend, and full-stack
+- Task definitions for common operations
+- Settings for consistent code formatting and linting
+
+To run a task in VS Code:
+
+1. Press `Ctrl+Shift+P` to open the command palette
+2. Type "Tasks: Run Task" and select it
+3. Choose from the available tasks
+
+## TypeScript Path Aliases
+
+The monorepo is configured with TypeScript path aliases for easier imports:
+
+- In frontend: `@/*` for frontend root, `@types/*` for shared types
+- In backend: `@/*` for backend src directory
+- In both: `@types/*` for the shared types directory
 
 ## Conclusion
 

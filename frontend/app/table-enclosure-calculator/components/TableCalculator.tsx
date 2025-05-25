@@ -16,14 +16,15 @@ import {
 	calculatePanelMaterials,
 	CONSTANTS,
 } from "../calcUtils";
+import { DoorType, DoorTypeDisplayNames } from "../types";
 import type {
-	Dimensions,
-	DoorConfig,
 	TableConfig,
-	MaterialConfig,
 	Results,
+	Dimensions,
+	MaterialConfig,
+	DoorConfig,
+	MaterialType,
 } from "../types";
-import { DoorType } from "../types";
 import { ConfigPanel } from "./ConfigPanel";
 import { ResultsPanel } from "./ResultsPanel";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -46,17 +47,12 @@ const {
  * @param {number} materialThickness - Fixed material thickness for calculations
  */
 interface TableCalculatorProps {
-	materialTypes: Array<{
-		id: string;
-		name: string;
-	}>;
+	materialTypes: MaterialType[];
 	materialThickness: number;
 }
 
 /**
  * The table calculator component.
- * @param param0 - Props for the TableCalculator component
- * @param materialTypes - Array of material types for selection
  */
 export default function TableCalculator({
 	materialTypes,
@@ -65,18 +61,14 @@ export default function TableCalculator({
 	const printRef = useRef<HTMLDivElement>(null);
 
 	// State for table dimensions
-	const [tableDimensions, setTableDimensions] = useState<
-		Omit<Dimensions, "isOutsideDimension">
-	>({
+	const [tableDimensions, setTableDimensions] = useState<Dimensions>({
 		length: 1000,
 		width: 1000,
 		height: 800,
 	});
 
 	// State for enclosure dimensions
-	const [enclosureDimensions, setEnclosureDimensions] = useState<
-		Omit<Dimensions, "isOutsideDimension">
-	>({
+	const [enclosureDimensions, setEnclosureDimensions] = useState<Dimensions>({
 		length: 1000,
 		width: 1000,
 		height: 1000,
@@ -117,7 +109,7 @@ export default function TableCalculator({
 	const materialTypesMap = materialTypes.reduce((acc, curr) => {
 		acc[curr.id] = curr;
 		return acc;
-	}, {} as Record<string, any>);
+	}, {} as Record<string, MaterialType>);
 
 	const getRecommendedEnclosureSize = useCallback(
 		(
@@ -562,15 +554,13 @@ export default function TableCalculator({
 				handleDoorTypeChange={handleDoorTypeChange}
 				MATERIAL_TYPES={materialTypes}
 				MATERIAL_THICKNESS={materialThickness} // Changed from MATERIAL_THICKNESSES
-			/>
+			/>{" "}
 			<ResultsPanel
 				results={results}
 				config={config}
 				materialConfig={materialConfig}
 				tableDimensions={tableDimensions}
 				enclosureDimensions={enclosureDimensions}
-				copyShareableURL={copyShareableURL}
-				printBOM={printBOM}
 				materialTypesMap={materialTypesMap}
 			/>
 		</div>

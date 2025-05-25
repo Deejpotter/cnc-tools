@@ -9,7 +9,7 @@
 
 "use client";
 import React, { useState } from "react";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
 import { Plus, RotateCcw, PenTool } from "lucide-react"; // Icons for better UX
 
 interface ItemAddFormProps {

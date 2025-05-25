@@ -10,7 +10,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import BoxResultsDisplay from "./BoxResultsDisplay";
@@ -260,3 +260,5 @@ const BoxShippingCalculatorPage: React.FC = () => {
 };
 
 export default BoxShippingCalculatorPage;
+
+
