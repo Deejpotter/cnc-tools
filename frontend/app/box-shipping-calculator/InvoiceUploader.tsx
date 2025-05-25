@@ -11,7 +11,6 @@
 
 import React, { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { processInvoice } from "@/app/actions/processInvoice";
 import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Upload, AlertCircle, FileText, Check } from "lucide-react";
 
@@ -61,11 +60,20 @@ export default function InvoiceUploader({
 	 * Handle form submission and invoice processing
 	 * Extracts shipping items from the uploaded invoice
 	 * @param formData Form data containing the invoice file
+	 *
+	 * Updated: Now sends the invoice to the backend API instead of calling a server action directly.
 	 */
 	async function handleSubmit(formData: FormData) {
 		try {
-			const items = await processInvoice(formData);
-			if (items.length === 0) {
+			// Send the invoice file to the backend API endpoint
+			const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+			const response = await fetch(`${API_BASE_URL}/api/invoice`, {
+				method: "POST",
+				body: formData,
+			});
+			if (!response.ok) throw new Error("Failed to process invoice");
+			const items = await response.json();
+			if (!Array.isArray(items) || items.length === 0) {
 				onError("No items found in invoice");
 				setFileSelected(false);
 				setFileName(null);

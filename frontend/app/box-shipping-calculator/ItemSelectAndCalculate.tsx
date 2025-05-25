@@ -15,10 +15,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
-import {
-	updateItemInDatabase,
-	deleteItemFromDatabase,
-} from "@/app/actions/data-actions";
 
 /**
  * Props interface for ItemSelectAndCalculate component
@@ -704,3 +700,31 @@ export default function ItemSelectAndCalculate({
 		</div>
 	);
 }
+
+/**
+ * Update an item in the database via backend API
+ * @param updatedItem Item with updated values
+ */
+const updateItemInDatabase = async (updatedItem: ShippingItem) => {
+	const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+	const response = await fetch(`${API_BASE_URL}/api/items/${updatedItem._id}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(updatedItem),
+	});
+	if (!response.ok) throw new Error("Failed to update item");
+	return await response.json();
+};
+
+/**
+ * Delete an item from the database via backend API
+ * @param itemId ID of the item to delete
+ */
+const deleteItemFromDatabase = async (itemId: string) => {
+	const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+	const response = await fetch(`${API_BASE_URL}/api/items/${itemId}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) throw new Error("Failed to delete item");
+	return await response.json();
+};
