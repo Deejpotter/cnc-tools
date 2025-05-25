@@ -1,14 +1,16 @@
 # CNC Tools Monorepo
 
-This repository contains both the frontend (Next.js) and backend (Express/Flask/Node) applications for CNC Tools.
+This repository contains both the frontend (Next.js) and backend (Express/TypeScript) applications for CNC Tools.
 
 ## Structure
 
 ```
 frontend/   # Next.js 14 app (deployed to Netlify)
-backend/    # Express/Node/Flask API server (deploy separately)
+backend/    # Express/Node/TypeScript API server (deploy separately)
 types/      # (Optional) Shared TypeScript types/interfaces
 ```
+
+For more details about the monorepo structure and best practices, see [MONOREPO.md](./MONOREPO.md).
 
 ## Development
 
@@ -18,6 +20,9 @@ types/      # (Optional) Shared TypeScript types/interfaces
 - **Backend:**
   - `cd backend && yarn dev` (or `npm run dev` or `npm start`)
   - Runs on [http://localhost:5000](http://localhost:5000) (or your configured port)
+- **Combined Development:**
+  - From the root directory: `npm run dev` (requires concurrently to be installed)
+  - This runs both frontend and backend simultaneously
 
 ## Deployment
 
@@ -33,6 +38,8 @@ types/      # (Optional) Shared TypeScript types/interfaces
 
 - `frontend/.env.local` for frontend secrets and API URLs
 - `backend/.env` for backend secrets (DB, API keys, etc.)
+  - Copy `backend/.env.sample` to `backend/.env` and update with your values
+  - Copy `backend/.env.sample` to `backend/.env` and update with your values
 
 ## Netlify Setup
 

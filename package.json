@@ -1,0 +1,41 @@
+{
+  "name": "cnc-tools-monorepo",
+  "version": "1.0.0",
+  "description": "Monorepo for CNC Tools application containing both frontend and backend projects",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\"",
+    "start:backend": "cd backend && yarn start",
+    "start:frontend": "cd frontend && yarn start",
+    "dev": "concurrently \"yarn dev:backend\" \"yarn dev:frontend\"",
+    "dev:backend": "cd backend && yarn dev:win",
+    "dev:frontend": "cd frontend && yarn dev",
+    "build": "yarn build:backend && yarn build:frontend",
+    "build:backend": "cd backend && yarn build",
+    "build:frontend": "cd frontend && yarn build",
+    "test": "yarn test:backend && yarn test:frontend",
+    "test:backend": "cd backend && yarn test",
+    "test:frontend": "cd frontend && yarn test",
+    "clean": "rimraf frontend/node_modules backend/node_modules node_modules",
+    "install:all": "yarn install && yarn workspace frontend install && yarn workspace backend install",
+    "update:deps": "yarn upgrade-interactive --latest"
+  },
+  "keywords": [
+    "cnc",
+    "tools",
+    "maker",
+    "nextjs",
+    "express",
+    "typescript"
+  ],
+  "author": "Deej Potter <deejpotter@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5"
+  }
+}

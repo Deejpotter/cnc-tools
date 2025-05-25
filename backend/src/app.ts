@@ -57,7 +57,7 @@ const swaggerOptions = {
 			description: "API for CNC Technical Support Chatbot",
 		},
 	},
-	apis: ["./src/routes.ts"], // Updated path for TypeScript files
+	apis: [path.resolve(__dirname, "./routes/*.ts")], // Updated path for TypeScript files
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);

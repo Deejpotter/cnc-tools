@@ -1,0 +1,24 @@
+# Netlify configuration file for CNC Tools monorepo
+# Updated: 25/05/2025
+# Author: Deej Potter
+
+# Important: This root netlify.toml controls the build settings for the monorepo
+# Only the frontend directory is built and deployed to Netlify
+
+[build]
+# Build and deploy only the frontend
+base = "frontend"
+command = "yarn build"
+publish = ".next"
+
+# Configure Netlify build environment
+[build.environment]
+# Next.js 14 recommends node 20 lts.
+NODE_VERSION = "20"
+
+# Redirect all 404s to index.html for SPA routing
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+force = false
