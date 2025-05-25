@@ -1,9 +1,13 @@
 /**
  * chatStream
- * Updated: 05/13/2025
+ * Updated: 25/05/2025
  * Author: Deej Potter
  * Description: Stream handling utility for OpenAI chat completions API.
  * Simplified implementation for development purposes.
+ *
+ * CONSOLIDATION NOTE: This file is maintained for backward compatibility.
+ * It supports the Chat API route and should not be deleted at this time.
+ *
  * TODO: Implement proper streaming functionality in a future update.
  */
 

@@ -20,11 +20,7 @@ import {
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
-import {
-	getAvailableItems,
-	addItemToDatabase,
-	syncWithRemoteDatabase,
-} from "@/app/actions/data-actions";
+import { dataAPI } from "@/utils/data-api";
 
 /**
  * Box Shipping Calculator Page Component
@@ -58,17 +54,11 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * Handles loading/reloading items from the database
 	 * Used when items are updated, deleted, or added
 	 * Shows loading state during fetch and handles errors
-	 */
-	const loadItems = async () => {
+	 */ const loadItems = async () => {
 		setIsLoading(true);
 		try {
-			const response = await getAvailableItems();
-			if (response.success && response.data) {
-				setItems(response.data);
-			} else {
-				setImportError(response.error || "Failed to load items");
-				setItems([]); // Clear items on error
-			}
+			const items = await dataAPI.shippingItems.getAvailable();
+			setItems(items);
 		} catch (error) {
 			console.error("Failed to load items:", error);
 			setImportError("Error loading items from database.");
@@ -77,20 +67,15 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			setIsLoading(false);
 		}
 	};
-
 	/**
 	 * Handler for adding new items to the available items list
 	 * @param item New item to be added to the database
 	 */
 	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
 		try {
-			const response = await addItemToDatabase(item);
-			if (response.success && response.data) {
-				setItems((prevItems) => [...prevItems, response.data]);
-				setImportError(null);
-			} else {
-				setImportError(response.error || "Failed to add item");
-			}
+			const newItem = await dataAPI.shippingItems.add(item);
+			setItems((prevItems) => [...prevItems, newItem]);
+			setImportError(null);
 		} catch (error) {
 			console.error("Failed to add item:", error);
 			setImportError("Failed to add new item");
@@ -169,23 +154,41 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			);
 		}
 	};
-
 	/**
 	 * Handler for calculating the optimal box size
 	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
-	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
-		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
-		setPackingResult(result);
-	};
+	const handleCalculateBox = async (itemsToCalculate: ShippingItem[]) => {
+		try {
+			// Call the API route for box packing calculations
+			const response = await fetch("/api/box-packing", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({ items: itemsToCalculate }),
+			});
 
+			if (!response.ok) {
+				throw new Error("Failed to calculate box size");
+			}
+
+			const result = await response.json();
+			setPackingResult(result);
+		} catch (error) {
+			console.error("Error calculating box size:", error);
+			// Fallback to client-side calculation if API fails
+			const result = packItemsIntoMultipleBoxes(itemsToCalculate);
+			setPackingResult(result);
+		}
+	};
 	/**
 	 * Handler for manually triggering a sync with the remote database
 	 */
 	const handleSync = async () => {
 		try {
 			setIsSyncing(true);
-			const response = await syncWithRemoteDatabase();
+			const response = await dataAPI.sync.sync();
 			if (response.success) {
 				await loadItems(); // Reload items after successful sync
 				setImportError(null);

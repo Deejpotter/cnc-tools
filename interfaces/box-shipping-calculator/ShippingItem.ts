@@ -7,7 +7,7 @@
  */
 
 import { ObjectId } from "mongodb";
-import { MongoDocument } from "@/app/actions/mongodb/types";
+import { MongoDocument } from "@/app/api/mongodb/types";
 
 /**
  * ShippingItem interface represents an item that can be shipped.

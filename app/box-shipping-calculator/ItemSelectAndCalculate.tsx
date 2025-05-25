@@ -15,10 +15,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
-import {
-	updateItemInDatabase,
-	deleteItemFromDatabase,
-} from "@/app/actions/data-actions";
+import { dataAPI } from "@/utils/data-api";
 
 /**
  * Props interface for ItemSelectAndCalculate component
@@ -257,7 +254,8 @@ export default function ItemSelectAndCalculate({
 			setEditingItemId(null);
 			setEditingItemData(null); // Update the database in the background without awaiting completion
 			// This prevents UI lag while still ensuring data persistence
-			updateItemInDatabase(processedItem)
+			dataAPI.shippingItems
+				.update(processedItem)
 				.then(() => {
 					// Silently remove from pending updates when complete
 					setPendingUpdates((prev) =>
@@ -300,11 +298,10 @@ export default function ItemSelectAndCalculate({
 				onSelectedItemsChange(
 					selectedItems.filter((item) => String(item._id) !== itemId)
 				);
-			}
-
-			// Update the database in the background without awaiting completion
+			} // Update the database in the background without awaiting completion
 			// This prevents UI lag while still ensuring data persistence
-			deleteItemFromDatabase(itemId)
+			dataAPI.shippingItems
+				.delete(itemId)
 				.then(() => {
 					// Background processing complete
 					// No need to update the UI further since the item is already filtered out by deletedItemIds

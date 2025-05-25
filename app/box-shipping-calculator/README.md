@@ -4,8 +4,10 @@
 
 The Box Shipping Calculator is a sophisticated tool designed to optimize packaging for shipping by determining the most efficient box configuration for a set of items. It uses an Extreme Point-based 3D bin packing algorithm to calculate the optimal packing arrangement for items of various shapes and sizes.
 
-Last Updated: May 13, 2025  
+Last Updated: May 25, 2025  
 Author: Deej Potter
+
+> **Note**: This calculator now uses the `/api/box-packing` API route for server-side box packing calculations and the `/api/invoice-processing` API route for invoice processing.
 
 ## Features
 
@@ -84,6 +86,21 @@ The calculator uses the following key data structures:
 - **PackingBox**: Represents a box with its packed items and remaining space.
 
 ## Technical Architecture
+
+### API Integration
+
+The Box Shipping Calculator integrates with two primary API endpoints:
+
+1. **Box Packing API** (`/api/box-packing`)
+   - Handles the calculation of optimal box configurations using the 3D bin packing algorithm
+   - Accessed via the client using a fetch API call from `page.tsx`
+   - Falls back to client-side calculation if the API request fails
+
+2. **Invoice Processing API** (`/api/invoice-processing`)
+   - Processes invoice files (PDF/text) to extract item information
+   - Uses OpenAI for intelligent item extraction and dimension estimation
+   - Integrated with MongoDB for item data persistence
+   - Used by the `InvoiceUploader` component through utility functions in `invoice-api.ts`
 
 ### Data Models
 
