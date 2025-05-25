@@ -30,6 +30,10 @@ import { MongoDocument } from "@/app/actions/mongodb/types";
  */
 export default interface ShippingItem extends MongoDocument {
 	/**
+	 * MongoDB ObjectId as string (optional, for compatibility with backend and UI)
+	 */
+	_id?: string;
+	/**
 	 * The user-friendly name of the item.
 	 * @example "V-Slot Extrusion 2020 - 1.5m"
 	 */

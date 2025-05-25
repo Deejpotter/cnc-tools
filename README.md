@@ -1,137 +1,95 @@
-# CNC Tools
+# CNC Tools Monorepo
 
-A comprehensive collection of mini-applications designed to assist with CNC machining, 3D printing, and related tasks. This Next.js-powered application serves as a central hub for various specialized tools used in professional and hobby settings.
+This repository contains both the frontend (Next.js) and backend (Express/Flask/Node) applications for CNC Tools.
 
-## Features
+## Structure
 
-This application contains several mini-apps:
-
-- **CNC Calibration Tool** - Calibrate your 3D printer or CNC machine with tools for:
-  - Steps per millimeter calculation
-  - Flow compensation
-  - Startup G-code generator
-
-- **Box Shipping Calculator** - Optimize box shipping configurations and costs using an advanced 3D bin packing algorithm:
-  - Intelligent multi-box packing
-  - Weight and volume optimization
-  - Visual packing results
-  - Item database management
-
-- **CNC Technical AI** - AI chatbot for assisting with CNC-related technical queries:
-  - Context-aware responses to technical questions
-  - File upload support for project-specific assistance
-  - Conversation history tracking
-
-- **Extrusion Resources**
-  - 20-Series Extrusions guide and calculator - Pricing and specifications for 20-series aluminum extrusions
-  - 40-Series Extrusions guide and calculator - Pricing and specifications for 40-series aluminum extrusions
-
-- **Enclosure Calculator** - Calculate dimensions and specifications for enclosures made from 20-Series and 40-Series extrusions:
-  - **Box Dimensions** - Calculate box dimensions based on volume and weight
-  - **Material Selection** - Choose materials for the enclosure
-  - **Assembly Instructions** - Generate assembly instructions for the enclosure
-
-- **Price Difference Tool** - Compare prices and calculate differences between products or services
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-## Technology Stack
-
-This project is built with:
-
-- [Next.js](https://nextjs.org/) - React framework with server actions for backend functionality
-- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
-- Custom Bootstrap implementation for responsive design
-- MongoDB - Database for storing application data
-- Jest and React Testing Library - For comprehensive test coverage
+frontend/   # Next.js 14 app (deployed to Netlify)
+backend/    # Express/Node/Flask API server (deploy separately)
+types/      # (Optional) Shared TypeScript types/interfaces
+```
 
 ## Development
 
-### Prerequisites
-
-- Node.js 18.x or higher
-- npm 9.x or higher
-- MongoDB database (local or cloud instance)
-
-### Environment Setup
-
-1. Clone the repository
-2. Create a `.env.local` file with the following variables:
-
-   ``` bash
-   MONGODB_URI=your_mongodb_connection_string
-   OPENAI_API_KEY=your_openai_api_key (for CNC Technical AI)
-   ```
-
-3. Install dependencies with `npm install`
-4. Run the development server with `npm run dev`
-
-### Testing
-
-Run the test suite with:
-
-```bash
-npm test
-```
-
-For test coverage reporting:
-
-```bash
-npm run test:coverage
-```
+- **Frontend:**
+  - `cd frontend && yarn dev` (or `npm run dev`)
+  - Runs on [http://localhost:3000](http://localhost:3000)
+- **Backend:**
+  - `cd backend && yarn dev` (or `npm run dev` or `npm start`)
+  - Runs on [http://localhost:5000](http://localhost:5000) (or your configured port)
 
 ## Deployment
 
-The application is deployed on Netlify for production use. The deployment process includes:
+- **Frontend:**
+  - Deployed via Netlify. See the root `netlify.toml` for build settings.
+  - **Important:** Only the `frontend/` directory is built and published by Netlify. The root `netlify.toml` controls this. Do not add a `netlify.toml` to the `frontend/` directory—Netlify will ignore it.
+  - If you see build errors about missing `package.json`, make sure your build command is `cd frontend && yarn build` and your publish directory is `frontend/.next`.
+- **Backend:**
+  - Deploy to your preferred service (Render, Railway, Heroku, VPS, etc.).
+  - Make sure to set the correct API URL in `frontend/.env.local` (e.g., `NEXT_PUBLIC_API_URL`).
 
-- Automatic deployment from the main branch
-- Build-time TypeScript and ESLint checks
-- Environment variable configuration for API keys and database connections
-- NextJS-specific optimizations for static pages and server components
-- Comprehensive testing before production deployment
+## Environment Variables
 
-## Project Structure
+- `frontend/.env.local` for frontend secrets and API URLs
+- `backend/.env` for backend secrets (DB, API keys, etc.)
 
-The project follows a Next.js App Router structure:
+## Netlify Setup
 
-- `app/` - Main application pages and mini-apps
-  - `box-shipping-calculator/` - Box Shipping Calculator tool
-  - `cnc-calibration-tool/` - CNC Calibration tool
-  - `cnc-technical-ai/` - AI chatbot for CNC technical questions
-  - `20-series-extrusions/` - 20-Series Extrusions calculator
-  - `40-series-extrusions/` - 40-Series Extrusions calculator
-  - `enclosure-calculator/` - Enclosure calculator
-  - `price-difference-tool/` - Price comparison tool
-- `app/actions/` - Server actions for backend functionality
-- `components/` - Reusable UI components
-- `interfaces/` - TypeScript interfaces
-- `contexts/` - React context providers
-- `utils/` - Utility functions
-- `styles/` - CSS and SCSS files
-- `public/` - Static assets
-- `types/` - TypeScript type definitions
+- The root `netlify.toml` configures Netlify to build and publish the frontend only.
+- **Do not add a `netlify.toml` to the `frontend/` directory.** Netlify will only use the root config.
+- Set environment variables for the frontend in the Netlify dashboard or in `frontend/.env.local`.
+- **Troubleshooting:** If Netlify fails to build, double-check that your build command and publish directory are correct in the root `netlify.toml`. Also ensure there is no conflicting `netlify.toml` in the `frontend/` directory.
 
-## Learn More
+## GitHub Setup
 
-To learn more about Next.js, check out the following resources:
+- The root `.gitignore` ignores `node_modules` and build artifacts in both `frontend/` and `backend/`.
+- You can add workflows in `.github/workflows/` for CI/CD for both apps (see below for a sample).
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Learn Next.js](https://nextjs.org/learn)
+## Sample GitHub Actions Workflow (Optional)
 
-## License
+```yaml
+# .github/workflows/ci.yml
+name: Monorepo CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint
+      - run: yarn test
+      - run: yarn build
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: yarn install --frozen-lockfile
+      - run: yarn lint || true # If you have linting
+      - run: yarn test || true # If you have tests
+      - run: yarn build || true # If you have a build step
+```
 
-See the [LICENSE](LICENSE) file for details.
+## Notes
+
+- Keep shared types/interfaces in `types/` or `interfaces/` and import from both apps.
+- Each app manages its own dependencies and scripts.
+- **Keep all config files (like `netlify.toml`, `.gitignore`, etc.) at the root of the repo for clarity and to avoid conflicts.**
+- For more details, see the `README.md` in each subfolder.

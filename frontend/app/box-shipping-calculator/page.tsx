@@ -20,11 +20,6 @@ import {
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
 import InvoiceUploader from "./InvoiceUploader";
-import {
-	getAvailableItems,
-	addItemToDatabase,
-	syncWithRemoteDatabase,
-} from "@/app/actions/data-actions";
 
 /**
  * Box Shipping Calculator Page Component
@@ -45,6 +40,30 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSyncing, setIsSyncing] = useState(false);
 
+	// Define API base URL (can be set via env or hardcoded for now)
+	const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+
+	// useEffect: use a stable callback for loadItems to avoid dependency warning
+	const loadItems = React.useCallback(async () => {
+		setIsLoading(true);
+		try {
+			const res = await fetch(`${API_BASE_URL}/api/items`);
+			const response = await res.json();
+			if (response.success && response.data) {
+				setItems(response.data);
+			} else {
+				setImportError(response.error || "Failed to load items");
+				setItems([]);
+			}
+		} catch (error) {
+			console.error("Failed to load items:", error);
+			setImportError("Error loading items from backend API.");
+			setItems([]);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [API_BASE_URL]); // Add API_BASE_URL to dependencies
+
 	/**
 	 * Effect hook to load initial items and initialize sample data if needed
 	 */
@@ -52,39 +71,20 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		// Load items from the database when the component mounts
 		loadItems();
 		// });
-	}, []);
+	}, [loadItems]);
 
 	/**
-	 * Handles loading/reloading items from the database
-	 * Used when items are updated, deleted, or added
-	 * Shows loading state during fetch and handles errors
-	 */
-	const loadItems = async () => {
-		setIsLoading(true);
-		try {
-			const response = await getAvailableItems();
-			if (response.success && response.data) {
-				setItems(response.data);
-			} else {
-				setImportError(response.error || "Failed to load items");
-				setItems([]); // Clear items on error
-			}
-		} catch (error) {
-			console.error("Failed to load items:", error);
-			setImportError("Error loading items from database.");
-			setItems([]); // Clear items on error
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	/**
-	 * Handler for adding new items to the available items list
+	 * Handler for adding new items to the available items list via backend API
 	 * @param item New item to be added to the database
 	 */
 	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
 		try {
-			const response = await addItemToDatabase(item);
+			const res = await fetch(`${API_BASE_URL}/api/items`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(item),
+			});
+			const response = await res.json();
 			if (response.success && response.data) {
 				setItems((prevItems) => [...prevItems, response.data]);
 				setImportError(null);
@@ -179,27 +179,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		setPackingResult(result);
 	};
 
-	/**
-	 * Handler for manually triggering a sync with the remote database
-	 */
-	const handleSync = async () => {
-		try {
-			setIsSyncing(true);
-			const response = await syncWithRemoteDatabase();
-			if (response.success) {
-				await loadItems(); // Reload items after successful sync
-				setImportError(null);
-			} else {
-				setImportError(response.message || "Sync failed");
-			}
-		} catch (error) {
-			console.error("Failed to sync with remote database:", error);
-			setImportError("Failed to sync with remote database");
-		} finally {
-			setIsSyncing(false);
-		}
-	};
-
 	// Render loading state while fetching initial data
 	if (isLoading) {
 		return (
@@ -221,24 +200,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			<div className="container pb-5">
 				<div className="d-flex justify-content-between align-items-center mb-4">
 					<h1>Box Shipping Calculator</h1>
-					<button
-						className="btn btn-outline-primary"
-						onClick={handleSync}
-						disabled={isSyncing}
-					>
-						{isSyncing ? (
-							<>
-								<span
-									className="spinner-border spinner-border-sm me-2"
-									role="status"
-									aria-hidden="true"
-								></span>
-								Syncing...
-							</>
-						) : (
-							"Sync Data"
-						)}
-					</button>
 				</div>
 
 				<div className="row">
