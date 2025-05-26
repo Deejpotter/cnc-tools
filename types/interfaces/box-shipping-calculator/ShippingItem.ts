@@ -6,8 +6,15 @@
  * This interface extends the MongoDocument interface to include standard MongoDB fields.
  */
 
-import { ObjectId } from "mongodb";
-import { MongoDocument } from "@/app/actions/mongodb/types";
+/**
+ * Base interface for MongoDB documents
+ */
+export interface MongoDocument {
+	_id?: string;
+	createdAt?: string | Date;
+	updatedAt?: string | Date;
+	deletedAt?: string | Date | null;
+}
 
 /**
  * ShippingItem interface represents an item that can be shipped.

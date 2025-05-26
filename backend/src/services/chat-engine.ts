@@ -5,21 +5,18 @@
  * Description: Handles chat interactions and responses using AI
  */
 
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 import { ChatMessage } from '../types/chat';
 import { MongoDBProvider } from '../data/MongoDBProvider';
 import { logger } from '../app';
 
 export class ChatEngine {
-    private openai: OpenAIApi;
+    private openai: OpenAI;
     private dataProvider: MongoDBProvider;
-    private readonly collectionName = 'chat_history';
-
-    constructor() {
-        const configuration = new Configuration({
+    private readonly collectionName = 'chat_history';    constructor() {
+        this.openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY
         });
-        this.openai = new OpenAIApi(configuration);
         this.dataProvider = new MongoDBProvider();
     }
 
@@ -28,7 +25,7 @@ export class ChatEngine {
      */
     async processUserInput(userMessage: string): Promise<string> {
         try {
-            const completion = await this.openai.createChatCompletion({
+            const completion = await this.openai.chat.completions.create({
                 model: process.env.GPT_MODEL || 'gpt-3.5-turbo',
                 messages: [
                     {
@@ -39,10 +36,9 @@ export class ChatEngine {
                         role: 'user',
                         content: userMessage
                     }
-                ]
-            });
+                ]            });
 
-            const botResponse = completion.data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+            const botResponse = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
             // Store the conversation in chat history
             await this.storeConversation(userMessage, botResponse);

@@ -9,23 +9,25 @@
   ],
   "scripts": {
     "start": "concurrently \"yarn start:backend\" \"yarn start:frontend\"",
-    "start:backend": "cd backend && yarn start",
-    "start:frontend": "cd frontend && yarn start",
+    "start:backend": "yarn workspace @cnc-tools/backend start",
+    "start:frontend": "yarn workspace @cnc-tools/frontend dev",
     "dev": "concurrently \"yarn dev:backend\" \"yarn dev:frontend\"",
-    "dev:backend": "cd backend && yarn dev:win",
-    "dev:frontend": "cd frontend && yarn dev",
+    "dev:backend": "yarn workspace @cnc-tools/backend dev:win",
+    "dev:frontend": "yarn workspace @cnc-tools/frontend dev",
     "build": "yarn build:backend && yarn build:frontend",
-    "build:backend": "cd backend && yarn build",
-    "build:frontend": "cd frontend && yarn build",
+    "build:backend": "yarn workspace @cnc-tools/backend build",
+    "build:frontend": "yarn workspace @cnc-tools/frontend build",
     "test": "yarn test:backend && yarn test:frontend",
-    "test:backend": "cd backend && yarn test",
-    "test:frontend": "cd frontend && yarn test",
+    "test:backend": "yarn workspace @cnc-tools/backend test",
+    "test:frontend": "yarn workspace @cnc-tools/frontend test",
     "clean": "rimraf frontend/node_modules backend/node_modules node_modules",
-    "install:all": "yarn install && yarn workspace frontend install && yarn workspace backend install",
+    "reset": "yarn clean && yarn install:all",
+    "install:all": "yarn install && yarn workspace @cnc-tools/frontend install && yarn workspace @cnc-tools/backend install",
     "update:deps": "yarn upgrade-interactive --latest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "type-check": "yarn workspaces run tsc --noEmit"
+    "type-check": "yarn workspaces run tsc --noEmit",
+    "predev": "yarn install:all"
   },
   "keywords": [
     "cnc",
@@ -38,6 +40,8 @@
   "author": "Deej Potter <deejpotter@gmail.com>",
   "license": "ISC",
   "devDependencies": {
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
     "concurrently": "^8.2.2",
@@ -48,5 +52,10 @@
   "resolutions": {
     "typescript": "^5.2.2",
     "eslint": "^8.49.0"
+  },
+  "dependencies": {
+    "@popperjs/core": "2.11.8",
+    "prop-types": "15.7.2",
+    "zod": "3.23.8"
   }
 }

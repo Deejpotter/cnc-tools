@@ -10,8 +10,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
-import ItemAddForm from "./ItemAddForm";
+import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import ItemAddFormClient from "./ItemAddFormClient";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import BoxResultsDisplay from "./BoxResultsDisplay";
 import LayoutContainer from "@/components/LayoutContainer";
@@ -38,7 +38,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		useState<MultiBoxPackingResult | null>(null);
 	const [importError, setImportError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
-	const [isSyncing, setIsSyncing] = useState(false);
 
 	// Define API base URL (can be set via env or hardcoded for now)
 	const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -72,30 +71,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		loadItems();
 		// });
 	}, [loadItems]);
-
-	/**
-	 * Handler for adding new items to the available items list via backend API
-	 * @param item New item to be added to the database
-	 */
-	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
-		try {
-			const res = await fetch(`${API_BASE_URL}/api/items`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(item),
-			});
-			const response = await res.json();
-			if (response.success && response.data) {
-				setItems((prevItems) => [...prevItems, response.data]);
-				setImportError(null);
-			} else {
-				setImportError(response.error || "Failed to add item");
-			}
-		} catch (error) {
-			console.error("Failed to add item:", error);
-			setImportError("Failed to add new item");
-		}
-	};
 
 	/**
 	 * Handler for importing items from a Maker Store invoice
@@ -168,14 +143,16 @@ const BoxShippingCalculatorPage: React.FC = () => {
 					: "Failed to update item list and selection after invoice processing."
 			);
 		}
-	};
-
-	/**
+	};	/**
 	 * Handler for calculating the optimal box size
-	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
-	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
-		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
+	const handleCalculateBox = () => {
+		if (selectedItems.length === 0) {
+			setPackingResult(null);
+			return;
+		}
+
+		const result = packItemsIntoMultipleBoxes(selectedItems);
 		setPackingResult(result);
 	};
 
@@ -243,13 +220,12 @@ const BoxShippingCalculatorPage: React.FC = () => {
 								</div>
 							</div>
 						</div>
-					)}
-					{/* Manual Item Addition Form */}
+					)}					{/* Manual Item Addition Form */}
 					<div className="col-12 mb-4">
 						<div className="card h-100 shadow bg-light">
 							<div className="card-body">
 								<h2 className="card-title mb-3">Manually Add New Item</h2>
-								<ItemAddForm onAddItem={handleAddItem} />
+								<ItemAddFormClient />
 							</div>
 						</div>
 					</div>

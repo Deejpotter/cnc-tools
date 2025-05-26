@@ -6,7 +6,7 @@
  * Handles all interactions with MongoDB database
  */
 
-import { ObjectId } from "mongodb";
+import { ObjectId, MongoClient } from "mongodb";
 import { getCollection } from "./mongodb";
 import { DatabaseResponse, MongoDocument } from "../types/mongodb";
 import {
@@ -92,11 +92,11 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocuments(documents as any),
+				data: this.serializeDocuments(documents) as unknown as T[],
 				status: 200,
 				message: "Documents retrieved successfully",
 			};
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error("Error fetching documents:", error);
 			return {
 				success: false,
@@ -107,13 +107,12 @@ export class MongoDBProvider implements DataProvider {
 			};
 		}
 	}
-
 	/**
 	 * Get documents from a collection based on a filter
 	 */
 	async getDocuments<T>(
 		collection: string,
-		filter: Record<string, any>,
+		filter: Record<string, unknown>,
 		options?: DataProviderOptions
 	): Promise<DatabaseResponse<T[]>> {
 		try {
@@ -123,11 +122,11 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocuments(documents as any),
+				data: this.serializeDocuments(documents) as unknown as T[],
 				status: 200,
 				message: "Documents retrieved successfully",
 			};
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error("Error fetching documents with filter:", error);
 			return {
 				success: false,
@@ -158,15 +157,15 @@ export class MongoDBProvider implements DataProvider {
 			};
 
 			const result = await coll.insertOne(docToInsert);
-			const insertedDoc = { ...docToInsert, _id: result.insertedId } as any;
+			const insertedDoc = { ...docToInsert, _id: result.insertedId } as T & MongoDocument;
 
 			return {
 				success: true,
-				data: this.serializeDocument(insertedDoc),
+				data: this.serializeDocument(insertedDoc) as unknown as T,
 				status: 201,
 				message: "Document created successfully",
 			};
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error("Error creating document:", error);
 			return {
 				success: false,
@@ -214,11 +213,11 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocument(result as any),
+				data: this.serializeDocument(result as T & MongoDocument) as unknown as T,
 				status: 200,
 				message: "Document updated successfully",
 			};
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error("Error updating document:", error);
 			return {
 				success: false,
@@ -265,11 +264,11 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocument(result as any),
+				data: this.serializeDocument(result as T & MongoDocument) as unknown as T,
 				status: 200,
 				message: "Document deleted successfully",
 			};
-		} catch (error) {
+		} catch (error: unknown) {
 			console.error("Error deleting document:", error);
 			return {
 				success: false,
@@ -286,35 +285,25 @@ export class MongoDBProvider implements DataProvider {
 	 */
 	async ping(): Promise<DatabaseResponse<{ ok: number }>> {
 		try {
-			const collection = await getCollection("admin");
-			const db = collection.db;
-			const result = await db.admin().ping();
-
-			if (result && result.ok === 1) {
-				return {
-					success: true,
-					data: result,
-					status: 200,
-					message: "MongoDB ping successful",
-				};
-			} else {
-				return {
-					success: false,
-					error: "MongoDB ping failed - result not OK",
-					status: 500,
-					message: "Ping result was not { ok: 1 }",
-				};
-			}
-		} catch (error) {
+			// Connect directly to MongoDB and ping
+			const client = await MongoClient.connect(process.env.MONGODB_URI || "");
+			const db = client.db();
+			await db.admin().ping();
+			await client.close();
+			
+			return {
+				success: true,
+				data: { ok: 1 },
+				status: 200,
+				message: "MongoDB ping successful"
+			};
+		} catch (error: unknown) {
 			console.error("Error pinging MongoDB:", error);
 			return {
 				success: false,
 				error: "Failed to ping MongoDB",
 				status: 500,
-				message:
-					error instanceof Error
-						? error.message
-						: "Unknown error occurred during ping",
+				message: error instanceof Error ? error.message : "Unknown error occurred during ping"
 			};
 		}
 	}

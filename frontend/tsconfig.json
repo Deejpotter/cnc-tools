@@ -5,9 +5,8 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
-    ],
-    "strict": false, /* Next.js projects often start with strict mode off */
+      "esnext"    ],
+    "strict": false, 
     "noEmit": true,
     "module": "esnext",
     "moduleResolution": "bundler",

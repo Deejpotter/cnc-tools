@@ -37,18 +37,21 @@ const chatEngine = new ChatEngine();
  *       200:
  *         description: Returns the bot's response
  */
-router.post('/ask', async (req: Request<any, any, { user_message: string }>, res: Response<ChatResponse>) => {
+router.post('/ask', async (req: Request<Record<string, never>, unknown, { user_message: string }>, res: Response<ChatResponse>) => {
     try {
         const { user_message } = req.body;
         const botResponse = await chatEngine.processUserInput(user_message);
         res.status(200).json({ bot_response: botResponse });
-    } catch (error) {
-        if (error instanceof TypeError || error.name === 'KeyError') {
-            logger.error(`KeyError occurred: ${error.message}`);
-            res.status(400).json({ bot_response: `Error: ${error.message}` });
+    } catch (error: unknown) {
+        if (error instanceof TypeError || (error instanceof Error && error.name === 'KeyError')) {
+            logger.error(`KeyError occurred: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            res.status(400).json({ bot_response: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` });
         } else if (error instanceof Error) {
             logger.error(`An unexpected error occurred: ${error.message}`);
             res.status(500).json({ bot_response: error.message });
+        } else {
+            logger.error('An unknown error occurred');
+            res.status(500).json({ bot_response: 'An unexpected error occurred' });
         }
     }
 });
@@ -73,7 +76,7 @@ router.post('/ask', async (req: Request<any, any, { user_message: string }>, res
  *       200:
  *         description: Success status
  */
-router.post('/add_qa', async (req: Request<any, any, Partial<QAPair>>, res: Response) => {
+router.post('/add_qa', async (req: Request<Record<string, never>, unknown, Partial<QAPair>>, res: Response) => {
     const { question = '', answer = '' } = req.body;
     const data = { question, answer };
     await dataManager.create(data);
@@ -126,7 +129,7 @@ router.get('/get_qa/:questionId', async (req: Request<{ questionId: string }>, r
  *       200:
  *         description: Success status
  */
-router.put('/update_qa/:questionId', async (req: Request<{ questionId: string }, any, Partial<QAPair>>, res: Response) => {
+router.put('/update_qa/:questionId', async (req: Request<{ questionId: string }, unknown, Partial<QAPair>>, res: Response) => {
     const { question = '', answer = '' } = req.body;
     await dataManager.updateQaPair(req.params.questionId, question, answer);
     res.json({ status: 'success' });
