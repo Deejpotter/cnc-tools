@@ -14,8 +14,8 @@ import {
 	BoxResultsDisplay,
 } from "./BoxResultsDisplay";
 import type { MultiBoxPackingResult } from "./BoxCalculations";
-import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
-import type ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
+import type ShippingItem from "@/types/interfaces/box-shipping-calculator/ShippingItem";
+import type ShippingBox from "@/types/interfaces/box-shipping-calculator/ShippingBox";
 
 // Sample data for testing
 const mockBox: ShippingBox = {

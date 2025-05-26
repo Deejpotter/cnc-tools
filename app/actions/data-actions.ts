@@ -10,7 +10,7 @@
 
 import { DatabaseResponse } from "./mongodb/types";
 import DataService from "@/utils/data/DataService";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/interfaces/box-shipping-calculator/ShippingItem";
 
 /**
  * Get all available shipping items

@@ -11,7 +11,7 @@
 import { ObjectId } from "mongodb";
 import { getCollection } from "./client";
 import { DatabaseResponse, MongoDocument, MongoDocumentWithId } from "./types";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/interfaces/box-shipping-calculator/ShippingItem";
 
 /**
  * Serializes MongoDB documents for client-side use
