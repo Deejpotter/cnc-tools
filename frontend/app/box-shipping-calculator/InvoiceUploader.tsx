@@ -222,5 +222,3 @@ export default function InvoiceUploader({
 		</form>
 	);
 }
-
-

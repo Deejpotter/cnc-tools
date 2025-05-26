@@ -4,11 +4,9 @@ This repository contains both the frontend (Next.js) and backend (Express/TypeSc
 
 ## Structure
 
-```
 frontend/   # Next.js 14 app (deployed to Netlify)
 backend/    # Express/Node/TypeScript API server (deploy separately)
 types/      # (Optional) Shared TypeScript types/interfaces
-```
 
 For more details about the monorepo structure and best practices, see [MONOREPO.md](./MONOREPO.md).
 

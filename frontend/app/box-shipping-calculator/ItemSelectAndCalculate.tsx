@@ -10,7 +10,13 @@
  * Database operations are handled through server actions to maintain proper separation of concerns.
  */
 
-import React, { useState, useMemo, useRef, useEffect, useTransition } from "react";
+import React, {
+	useState,
+	useMemo,
+	useRef,
+	useEffect,
+	useTransition,
+} from "react";
 import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
 
@@ -727,5 +733,3 @@ const deleteItemFromDatabase = async (itemId: string) => {
 	if (!response.ok) throw new Error("Failed to delete item");
 	return await response.json();
 };
-
-
