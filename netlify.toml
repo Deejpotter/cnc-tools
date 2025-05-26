@@ -3,21 +3,10 @@
 # Author: Deej Potter
 
 [build]
-command = "npm run build"
+command = "yarn build"
 publish = ".next"
 
 # Configure Netlify build environment
 [build.environment]
 # Updated to match Next.js 14.x requirements
 NODE_VERSION = "20"
-NPM_FLAGS = "--legacy-peer-deps"
-
-# Configure Next.js build cache
-[[plugins]]
-package = "@netlify/plugin-nextjs"
-
-# Add cache configuration for faster builds
-[[plugins]]
-package = "netlify-plugin-cache"
-[plugins.inputs]
-paths = [".next/cache", "node_modules/.cache"]
