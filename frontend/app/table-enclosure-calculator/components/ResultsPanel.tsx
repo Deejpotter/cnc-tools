@@ -19,9 +19,11 @@ import type {
 interface MaterialType {
 	id: string;
 	name: string;
-	description: string;
-	price: number;
-	unit: string;
+	sku: string;
+	// Optional fields
+	description?: string;
+	price?: number;
+	unit?: string;
 }
 
 interface ResultsPanelProps {

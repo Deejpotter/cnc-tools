@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from "react";
-import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
 
 interface ItemEditModalProps {
 	item: ShippingItem;
@@ -225,5 +225,3 @@ const ItemEditModal: React.FC<ItemEditModalProps> = ({
 };
 
 export default ItemEditModal;
-
-

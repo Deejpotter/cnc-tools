@@ -143,7 +143,8 @@ const BoxShippingCalculatorPage: React.FC = () => {
 					: "Failed to update item list and selection after invoice processing."
 			);
 		}
-	};	/**
+	};
+	/**
 	 * Handler for calculating the optimal box size
 	 */
 	const handleCalculateBox = () => {
@@ -220,7 +221,8 @@ const BoxShippingCalculatorPage: React.FC = () => {
 								</div>
 							</div>
 						</div>
-					)}					{/* Manual Item Addition Form */}
+					)}{" "}
+					{/* Manual Item Addition Form */}
 					<div className="col-12 mb-4">
 						<div className="card h-100 shadow bg-light">
 							<div className="card-body">
@@ -236,5 +238,3 @@ const BoxShippingCalculatorPage: React.FC = () => {
 };
 
 export default BoxShippingCalculatorPage;
-
-

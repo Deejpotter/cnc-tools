@@ -15,7 +15,7 @@ import { Plus, RotateCcw, PenTool } from "lucide-react"; // Icons for better UX
 // Type only used on the client side
 type ItemAddFormProps = {
 	onAddItem: (item: ShippingItem) => void;
-}
+};
 
 export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 	// State for form fields
@@ -411,5 +411,3 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 		</form>
 	);
 }
-
-

@@ -7,9 +7,10 @@ export enum DoorType {
 export interface MaterialType {
 	id: string;
 	name: string;
-	description: string;
-	price: number;
-	unit: string;
+	sku: string;
+	description?: string;
+	price?: number;
+	unit?: string;
 }
 
 export interface Dimensions {

@@ -9,7 +9,8 @@
 
 "use client";
 import React, { useState } from "react";
-import ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
+// Import ShippingItem from the workspace root types directory
+import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
 import { Plus, RotateCcw, PenTool } from "lucide-react"; // Icons for better UX
 
 interface ItemAddFormProps {

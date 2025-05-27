@@ -126,22 +126,22 @@ export default function ItemAddFormClient() {
 		};
 
 		// Send the item to the backend API
-		fetch('/api/items', {
-			method: 'POST',
+		fetch("/api/items", {
+			method: "POST",
 			headers: {
-				'Content-Type': 'application/json',
+				"Content-Type": "application/json",
 			},
 			body: JSON.stringify(newItem),
 		})
-			.then(response => response.json())
+			.then((response) => response.json())
 			.then(() => {
 				// Reset form after successful submission
 				resetForm();
 				// Simulate a refresh of items list by reloading the page
 				window.location.reload();
 			})
-			.catch(error => {
-				console.error('Error adding item:', error);
+			.catch((error) => {
+				console.error("Error adding item:", error);
 			})
 			.finally(() => {
 				setIsSubmitting(false);

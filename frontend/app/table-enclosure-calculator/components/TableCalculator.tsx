@@ -23,8 +23,18 @@ import type {
 	Dimensions,
 	MaterialConfig,
 	DoorConfig,
-	MaterialType,
 } from "../types";
+
+// Define MaterialType interface for this component
+interface MaterialType {
+	id: string;
+	name: string;
+	sku: string;
+	// Optional fields
+	description?: string;
+	price?: number;
+	unit?: string;
+}
 import { ConfigPanel } from "./ConfigPanel";
 import { ResultsPanel } from "./ResultsPanel";
 import { useSearchParams, useRouter } from "next/navigation";

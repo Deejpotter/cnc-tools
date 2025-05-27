@@ -1,17 +1,13 @@
 /**
  * ItemAddFormWrapper
- * This is a server component that wraps the client ItemAddForm component
- * and handles the item addition logic
+ * This is a server component that wraps the client ItemAddFormClient component
+ * Provides a consistent interface for adding items
  */
 
-import React from 'react';
-import ItemAddForm from './ItemAddFormClient';
-import ShippingItem from '../../../types/interfaces/box-shipping-calculator/ShippingItem';
+import React from "react";
+import ItemAddFormClient from "./ItemAddFormClient";
 
-type ItemAddFormWrapperProps = {
-  onAddItem: (item: ShippingItem) => void;
-};
-
-export default function ItemAddFormWrapper({ onAddItem }: ItemAddFormWrapperProps) {
-  return <ItemAddForm onAddItemSubmit={onAddItem} />;
+// No props needed as ItemAddFormClient handles submission internally
+export default function ItemAddFormWrapper() {
+	return <ItemAddFormClient />;
 }

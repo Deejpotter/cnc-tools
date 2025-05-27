@@ -157,7 +157,8 @@ export class MongoDBProvider implements DataProvider {
 			};
 
 			const result = await coll.insertOne(docToInsert);
-			const insertedDoc = { ...docToInsert, _id: result.insertedId } as T & MongoDocument;
+			const insertedDoc = { ...docToInsert, _id: result.insertedId } as T &
+				MongoDocument;
 
 			return {
 				success: true,
@@ -213,7 +214,9 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocument(result as T & MongoDocument) as unknown as T,
+				data: this.serializeDocument(
+					result as T & MongoDocument
+				) as unknown as T,
 				status: 200,
 				message: "Document updated successfully",
 			};
@@ -264,7 +267,9 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocument(result as T & MongoDocument) as unknown as T,
+				data: this.serializeDocument(
+					result as T & MongoDocument
+				) as unknown as T,
 				status: 200,
 				message: "Document deleted successfully",
 			};
@@ -290,12 +295,12 @@ export class MongoDBProvider implements DataProvider {
 			const db = client.db();
 			await db.admin().ping();
 			await client.close();
-			
+
 			return {
 				success: true,
 				data: { ok: 1 },
 				status: 200,
-				message: "MongoDB ping successful"
+				message: "MongoDB ping successful",
 			};
 		} catch (error: unknown) {
 			console.error("Error pinging MongoDB:", error);
@@ -303,7 +308,10 @@ export class MongoDBProvider implements DataProvider {
 				success: false,
 				error: "Failed to ping MongoDB",
 				status: 500,
-				message: error instanceof Error ? error.message : "Unknown error occurred during ping"
+				message:
+					error instanceof Error
+						? error.message
+						: "Unknown error occurred during ping",
 			};
 		}
 	}
