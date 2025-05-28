@@ -27,7 +27,7 @@ export interface DataProvider {
 	 */
 	getDocuments: <T>(
 		collection: string,
-		filter: Record<string, any>,
+		filter: Record<string, unknown>, // Stricter type for filter
 		options?: DataProviderOptions
 	) => Promise<DatabaseResponse<T[]>>;
 

@@ -3,6 +3,7 @@
  * Updated: 25/05/2025
  * Author: Deej Potter
  */
+/* eslint-env node */
 
 module.exports = {
   preset: 'ts-jest',

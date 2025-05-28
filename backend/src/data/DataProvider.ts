@@ -6,7 +6,7 @@
  * This abstraction allows us to switch between data sources transparently.
  */
 
-import { DatabaseResponse } from "../../../types/mongodb";
+import type { DatabaseResponse } from "../../../types/mongodb/mongodb";
 
 /**
  * Options for data provider operations
@@ -44,7 +44,7 @@ export interface DataProvider {
 	 */
 	getDocuments: <T>(
 		collection: string,
-		filter: Record<string, any>,
+		filter: Record<string, unknown>, // Stricter type for filter
 		options?: DataProviderOptions
 	) => Promise<DatabaseResponse<T[]>>;
 

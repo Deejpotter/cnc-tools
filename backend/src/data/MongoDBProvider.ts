@@ -81,7 +81,7 @@ export class MongoDBProvider implements DataProvider {
 	/**
 	 * Get all documents from a collection
 	 */
-	async getAllDocuments<T>(
+	async getAllDocuments<T extends MongoDocument>(
 		collection: string,
 		options?: DataProviderOptions
 	): Promise<DatabaseResponse<T[]>> {
@@ -92,7 +92,7 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocuments(documents) as unknown as T[],
+				data: this.serializeDocuments(documents as T[]),
 				status: 200,
 				message: "Documents retrieved successfully",
 			};
@@ -110,7 +110,7 @@ export class MongoDBProvider implements DataProvider {
 	/**
 	 * Get documents from a collection based on a filter
 	 */
-	async getDocuments<T>(
+	async getDocuments<T extends MongoDocument>(
 		collection: string,
 		filter: Record<string, unknown>,
 		options?: DataProviderOptions
@@ -122,7 +122,7 @@ export class MongoDBProvider implements DataProvider {
 
 			return {
 				success: true,
-				data: this.serializeDocuments(documents) as unknown as T[],
+				data: this.serializeDocuments(documents as T[]),
 				status: 200,
 				message: "Documents retrieved successfully",
 			};
@@ -141,7 +141,7 @@ export class MongoDBProvider implements DataProvider {
 	/**
 	 * Create a new document in a collection
 	 */
-	async createDocument<T>(
+	async createDocument<T extends MongoDocument>(
 		collection: string,
 		document: Omit<T, "_id">,
 		options?: DataProviderOptions
@@ -181,7 +181,7 @@ export class MongoDBProvider implements DataProvider {
 	/**
 	 * Update a document in a collection
 	 */
-	async updateDocument<T>(
+	async updateDocument<T extends MongoDocument>(
 		collection: string,
 		id: string,
 		update: Partial<T>,
@@ -235,7 +235,7 @@ export class MongoDBProvider implements DataProvider {
 	/**
 	 * Delete a document from a collection (soft delete)
 	 */
-	async deleteDocument<T>(
+	async deleteDocument<T extends MongoDocument>(
 		collection: string,
 		id: string,
 		options?: DataProviderOptions
