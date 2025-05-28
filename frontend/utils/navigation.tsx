@@ -6,7 +6,7 @@ export const findCurrentRoute = (
 	routes: IRoute[],
 	pathname: string
 ): IRoute | undefined => {
-	for (let route of routes) {
+	for (const route of routes) {
 		if (route.items) {
 			const found = findCurrentRoute(route.items, pathname);
 			if (found) return found;

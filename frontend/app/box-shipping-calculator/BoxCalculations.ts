@@ -9,7 +9,7 @@
  */
 
 import type ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
-import type ShippingBox from "../../../types/interfaces/box-shipping-calculator/ShippingBox";
+import type ShippingBox from "../../../types/mongo/box-shipping-calculator/ShippingBox";
 
 // Define the interface for multi-box packing results
 export interface MultiBoxPackingResult {
@@ -578,7 +578,7 @@ function groupPackedItemsByOriginal(
  */
 function itemsAreUniform(items: ShippingItem[]): boolean {
 	// Extract lengths of all items, considering quantity
-	let lengthsArray: number[] = [];
+	const lengthsArray: number[] = [];
 	items.forEach((item) => {
 		const qty = item.quantity || 1;
 		for (let i = 0; i < qty; i++) {

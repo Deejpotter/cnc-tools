@@ -31,10 +31,10 @@ const CuttingCalculator = () => {
 		// This approach helps in fitting longer parts first, potentially reducing waste.
 		const sortedParts = [...parts].sort((a, b) => b.length - a.length);
 
-		let newCutList = [];
+		const newCutList = [];
 
 		// Iterate over each part in the sorted list
-		for (let part of sortedParts) {
+		for (const part of sortedParts) {
 			// For each part, account for its quantity
 			for (let i = 0; i < part.quantity; i++) {
 				let fitted = false;
@@ -47,7 +47,7 @@ const CuttingCalculator = () => {
 				);
 
 				// Attempt to fit the part in an existing stock length in the newCutList.
-				for (let cut of newCutList) {
+				for (const cut of newCutList) {
 					// Check if the current cut's stock length matches the suitable stock length
 					// and it has enough unused length to accommodate the part.
 					if (
@@ -65,7 +65,7 @@ const CuttingCalculator = () => {
 
 				// If the part did not fit in any existing cuts, create a new cut.
 				if (!fitted) {
-					let newCut = {
+					const newCut = {
 						// Use the suitable stock length for this new cut.
 						stockLength: suitableStockLength,
 						// The used length is initially the length of the part.

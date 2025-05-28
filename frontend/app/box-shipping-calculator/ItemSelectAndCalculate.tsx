@@ -89,7 +89,7 @@ export default function ItemSelectAndCalculate({
 	 * Uses useMemo to cache the processed items until dependencies change
 	 */ const processedItems = useMemo(() => {
 		// First filter items based on search term, weight filter, and deleted status
-		let filtered = availableItems.filter((item) => {
+		const filtered = availableItems.filter((item) => {
 			// Skip deleted items
 			if (deletedItemIds.includes(String(item._id))) {
 				return false;

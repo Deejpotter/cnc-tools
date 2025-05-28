@@ -14,17 +14,8 @@ import type {
 	TableConfig,
 	MaterialConfig,
 	Dimensions,
-} from "../types";
-
-interface MaterialType {
-	id: string;
-	name: string;
-	sku: string;
-	// Optional fields
-	description?: string;
-	price?: number;
-	unit?: string;
-}
+	MaterialType,
+} from "../../../../types/index";
 
 interface ResultsPanelProps {
 	results: Results;
@@ -137,285 +128,292 @@ export function ResultsPanel({
 					</div>
 				</div>
 				{/* Table Results */}
-				{results.table && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Machine Table Components</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td>1</td>
-										<td>
-											2060 Linear Rail -{" "}
-											{results.table.extrusions.rail2060Length}mm (Length)
-										</td>
-										<td>LR-2060-{results.table.extrusions.rail2060Length}</td>
-										<td>{results.table.extrusions.qtyRail2060Length}</td>
-									</tr>
-									<tr>
-										<td>2</td>
-										<td>
-											2060 Linear Rail -{" "}
-											{results.table.extrusions.rail2060Width}mm (Width)
-										</td>
-										<td>LR-2060-{results.table.extrusions.rail2060Width}</td>
-										<td>{results.table.extrusions.qtyRail2060Width}</td>
-									</tr>
-									<tr>
-										<td>3</td>
-										<td>
-											4040 Linear Rail - {results.table.extrusions.rail4040Legs}
-											mm (Legs)
-										</td>
-										<td>LR-4040-{results.table.extrusions.rail4040Legs}</td>
-										<td>{results.table.extrusions.qtyRail4040Legs}</td>
-									</tr>
-									<tr>
-										<td>4</td>
-										<td>In-Out Corner Bracket – 60mm</td>
-										<td>BRAC-IOCNR-60</td>
-										<td>{results.table.hardware.IOCNR_60}</td>
-									</tr>
-									<tr>
-										<td>5</td>
-										<td>Universal L Brackets – Triple</td>
-										<td>BRAC-L3</td>
-										<td>{results.table.hardware.L_BRACKET_TRIPLE}</td>
-									</tr>
-									<tr>
-										<td>6</td>
-										<td>Sliding T-Nut</td>
-										<td>HARD-TNUT-SLIDING-M5</td>
-										<td>{results.table.hardware.T_NUT_SLIDING}</td>
-									</tr>
-									<tr>
-										<td>7</td>
-										<td>M5 Cap Head Bolts – 8MM</td>
-										<td>BOLT-M5-CAP-008-1PC</td>
-										<td>{results.table.hardware.CAP_HEAD_M5_8MM}</td>
-									</tr>
-									<tr>
-										<td>8</td>
-										<td>M5 Button Head Screws – 8MM</td>
-										<td>SCREWS-M5-BH-8-1</td>
-										<td>{results.table.hardware.BUTTON_HEAD_M5_8MM}</td>
-									</tr>
-									<tr>
-										<td>9</td>
-										<td>M5 Low Profile Screws – 25MM</td>
-										<td>SCREWS-M5-LP-25-1</td>
-										<td>{results.table.hardware.LOW_PROFILE_M5_25MM}</td>
-									</tr>
-									<tr>
-										<td>10</td>
-										<td>Foot Mounting Brackets</td>
-										<td>BRAC-FOOT</td>
-										<td>{results.table.hardware.FOOT_BRACKETS}</td>
-									</tr>
-									<tr>
-										<td>11</td>
-										<td>Wheels or Adjustable Feet</td>
-										<td>BUN-FOOT</td>
-										<td>{results.table.hardware.FEET}</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-						<p className="text-muted small">
-							Total 2060 Extrusion: {results.table.totalLengths.rail2060}mm
-							<br />
-							Total 4040 Extrusion: {results.table.totalLengths.rail4040}mm
-						</p>
-					</div>
-				)}
-				{/* Enclosure Results */}
-				{results.enclosure && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Enclosure Components</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td>1</td>
-										<td>In-Out Corner Bracket – 20mm</td>
-										<td>BRAC-IOCNR-20</td>
-										<td>{results.enclosure.hardware.IOCNR_20}</td>
-									</tr>
-									<tr>
-										<td>2</td>
-										<td>In-Out Corner Bracket – 40mm</td>
-										<td>BRAC-IOCNR-40</td>
-										<td>{results.enclosure.hardware.IOCNR_40}</td>
-									</tr>
-									<tr>
-										<td>3</td>
-										<td>In-Out Corner Bracket – 60mm</td>
-										<td>BRAC-IOCNR-60</td>
-										<td>{results.enclosure.hardware.IOCNR_60}</td>
-									</tr>
-									<tr>
-										<td>4</td>
-										<td>90 degree Angle Corner Connector (V-Slot)</td>
-										<td>BRAC-90ANG</td>
-										<td>{results.enclosure.hardware.ANGLE_CORNER_90}</td>
-									</tr>
-									<tr>
-										<td>5</td>
-										<td>Sliding T-Nut</td>
-										<td>HARD-TNUT-SLIDING-M5</td>
-										<td>{results.enclosure.hardware.T_NUT_SLIDING}</td>
-									</tr>
-									<tr>
-										<td>6</td>
-										<td>M5 Cap Head Bolts – 8MM</td>
-										<td>BOLT-M5-CAP-008-1PC</td>
-										<td>{results.enclosure.hardware.CAP_HEAD_M5_8MM}</td>
-									</tr>
-									<tr>
-										<td>7</td>
-										<td>
-											{results.enclosure.extrusions.horizontal.length.type}{" "}
-											Linear Rail -{" "}
-											{results.enclosure.extrusions.horizontal.length.size}
-											mm (Length)
-										</td>
-										<td>
-											LR-
-											{results.enclosure.extrusions.horizontal.length.type}-
-											{results.enclosure.extrusions.horizontal.length.size}
-										</td>
-										<td>4</td>
-									</tr>
-									<tr>
-										<td>8</td>
-										<td>
-											{results.enclosure.extrusions.horizontal.width.type}{" "}
-											Linear Rail -{" "}
-											{results.enclosure.extrusions.horizontal.width.size}mm
-											(Width)
-										</td>
-										<td>
-											LR-
-											{results.enclosure.extrusions.horizontal.width.type}-
-											{results.enclosure.extrusions.horizontal.width.size}
-										</td>
-										<td>4</td>
-									</tr>
-									<tr>
-										<td>9</td>
-										<td>
-											2020 Linear Rail -{" "}
-											{results.enclosure.extrusions.vertical2020.size}mm
-											(Height)
-										</td>
-										<td>
-											LR-2020-
-											{results.enclosure.extrusions.vertical2020.size}
-										</td>
-										<td>{results.enclosure.extrusions.vertical2020.qty}</td>
-									</tr>
-									<tr>
-										<td>10</td>
-										<td>M5 Button Head Bolts – 8MM</td>
-										<td>SCREWS-M5-BH-008-1</td>
-										<td>{results.enclosure.hardware.BUTTON_HEAD_M5_8MM}</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>{" "}
-						<p className="text-muted small">
-							{results.enclosure.totalLengths.rail2020 > 0 && (
-								<>
-									Total 2020 Extrusion (Length):{" "}
-									{results.enclosure.totalLengths.rail2020}mm
-									<br />
-								</>
-							)}
-							{results.enclosure.totalLengths.rail2040 > 0 && (
-								<>
-									Total 2040 Extrusion (Length):{" "}
-									{results.enclosure.totalLengths.rail2040}mm
-									<br />
-								</>
-							)}
-							{results.enclosure.totalLengths.railWidth2020 > 0 && (
-								<>
-									Total 2020 Extrusion (Width):{" "}
-									{results.enclosure.totalLengths.railWidth2020}mm
-									<br />
-								</>
-							)}
-							{results.enclosure.totalLengths.railWidth2040 > 0 && (
-								<>
-									Total 2040 Extrusion (Width):{" "}
-									{results.enclosure.totalLengths.railWidth2040}mm
-									<br />
-								</>
-							)}
-							Total 2020 Extrusion (Vertical):{" "}
-							{results.enclosure.totalLengths.verticalRail2020}mm
-						</p>
-					</div>
-				)}
-				{/* Mounting Hardware */}
-				{results.mounting && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Enclosure Mounting Hardware</h3>
-						<div className="alert alert-info">
-							<p className="mb-0 small">
-								<strong>Note:</strong> {results.mounting.instructions}
+				{results.table &&
+					typeof results.table === "object" &&
+					"extrusions" in results.table && (
+						<div className="mb-4">
+							<h3 className="h6 mb-3">Machine Table Components</h3>
+							<div className="table-responsive">
+								<table className="table table-striped table-bordered">
+									<thead>
+										<tr>
+											<th>Item</th>
+											<th>Description</th>
+											<th>SKU</th>
+											<th>QTY</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>1</td>
+											<td>
+												2060 Linear Rail -{" "}
+												{results.table.extrusions.rail2060Length}mm (Length)
+											</td>
+											<td>LR-2060-{results.table.extrusions.rail2060Length}</td>
+											<td>{results.table.extrusions.qtyRail2060Length}</td>
+										</tr>
+										<tr>
+											<td>2</td>
+											<td>
+												2060 Linear Rail -{" "}
+												{results.table.extrusions.rail2060Width}mm (Width)
+											</td>
+											<td>LR-2060-{results.table.extrusions.rail2060Width}</td>
+											<td>{results.table.extrusions.qtyRail2060Width}</td>
+										</tr>
+										<tr>
+											<td>3</td>
+											<td>
+												4040 Linear Rail -{" "}
+												{results.table.extrusions.rail4040Legs}
+												mm (Legs)
+											</td>
+											<td>LR-4040-{results.table.extrusions.rail4040Legs}</td>
+											<td>{results.table.extrusions.qtyRail4040Legs}</td>
+										</tr>
+										<tr>
+											<td>4</td>
+											<td>In-Out Corner Bracket – 60mm</td>
+											<td>BRAC-IOCNR-60</td>
+											<td>{results.table.hardware.IOCNR_60}</td>
+										</tr>
+										<tr>
+											<td>5</td>
+											<td>Universal L Brackets – Triple</td>
+											<td>BRAC-L3</td>
+											<td>{results.table.hardware.L_BRACKET_TRIPLE}</td>
+										</tr>
+										<tr>
+											<td>6</td>
+											<td>Sliding T-Nut</td>
+											<td>HARD-TNUT-SLIDING-M5</td>
+											<td>{results.table.hardware.T_NUT_SLIDING}</td>
+										</tr>
+										<tr>
+											<td>7</td>
+											<td>M5 Cap Head Bolts – 8MM</td>
+											<td>BOLT-M5-CAP-008-1PC</td>
+											<td>{results.table.hardware.CAP_HEAD_M5_8MM}</td>
+										</tr>
+										<tr>
+											<td>8</td>
+											<td>M5 Button Head Screws – 8MM</td>
+											<td>SCREWS-M5-BH-8-1</td>
+											<td>{results.table.hardware.BUTTON_HEAD_M5_8MM}</td>
+										</tr>
+										<tr>
+											<td>9</td>
+											<td>M5 Low Profile Screws – 25MM</td>
+											<td>SCREWS-M5-LP-25-1</td>
+											<td>{results.table.hardware.LOW_PROFILE_M5_25MM}</td>
+										</tr>
+										<tr>
+											<td>10</td>
+											<td>Foot Mounting Brackets</td>
+											<td>BRAC-FOOT</td>
+											<td>{results.table.hardware.FOOT_BRACKETS}</td>
+										</tr>
+										<tr>
+											<td>11</td>
+											<td>Wheels or Adjustable Feet</td>
+											<td>BUN-FOOT</td>
+											<td>{results.table.hardware.FEET}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<p className="text-muted small">
+								Total 2060 Extrusion: {results.table.totalLengths.rail2060}mm
+								<br />
+								Total 4040 Extrusion: {results.table.totalLengths.rail4040}mm
 							</p>
 						</div>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td>1</td>
-										<td>In-Out Corner Bracket – 40mm</td>
-										<td>BRAC-IOCNR-40</td>
-										<td>{results.mounting.hardware.IOCNR_40}</td>
-									</tr>
-									<tr>
-										<td>2</td>
-										<td>Sliding T-Nut</td>
-										<td>HARD-TNUT-SLIDING-M5</td>
-										<td>{results.mounting.hardware.T_NUT_SLIDING}</td>
-									</tr>
-									<tr>
-										<td>3</td>
-										<td>M5 Cap Head Bolts – 8MM</td>
-										<td>BOLT-M5-CAP-008-1PC</td>
-										<td>{results.mounting.hardware.CAP_HEAD_M5_8MM}</td>
-									</tr>
-								</tbody>
-							</table>
+					)}
+				{/* Enclosure Results */}
+				{results.enclosure &&
+					typeof results.enclosure === "object" &&
+					"hardware" in results.enclosure && (
+						<div className="mb-4">
+							<h3 className="h6 mb-3">Enclosure Components</h3>
+							<div className="table-responsive">
+								<table className="table table-striped table-bordered">
+									<thead>
+										<tr>
+											<th>Item</th>
+											<th>Description</th>
+											<th>SKU</th>
+											<th>QTY</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>1</td>
+											<td>In-Out Corner Bracket – 20mm</td>
+											<td>BRAC-IOCNR-20</td>
+											<td>{results.enclosure.hardware.IOCNR_20}</td>
+										</tr>
+										<tr>
+											<td>2</td>
+											<td>In-Out Corner Bracket – 40mm</td>
+											<td>BRAC-IOCNR-40</td>
+											<td>{results.enclosure.hardware.IOCNR_40}</td>
+										</tr>
+										<tr>
+											<td>3</td>
+											<td>In-Out Corner Bracket – 60mm</td>
+											<td>BRAC-IOCNR-60</td>
+											<td>{results.enclosure.hardware.IOCNR_60}</td>
+										</tr>
+										<tr>
+											<td>4</td>
+											<td>90 degree Angle Corner Connector (V-Slot)</td>
+											<td>BRAC-90ANG</td>
+											<td>{results.enclosure.hardware.ANGLE_CORNER_90}</td>
+										</tr>
+										<tr>
+											<td>5</td>
+											<td>Sliding T-Nut</td>
+											<td>HARD-TNUT-SLIDING-M5</td>
+											<td>{results.enclosure.hardware.T_NUT_SLIDING}</td>
+										</tr>
+										<tr>
+											<td>6</td>
+											<td>M5 Cap Head Bolts – 8MM</td>
+											<td>BOLT-M5-CAP-008-1PC</td>
+											<td>{results.enclosure.hardware.CAP_HEAD_M5_8MM}</td>
+										</tr>
+										<tr>
+											<td>7</td>
+											<td>
+												{results.enclosure.extrusions.horizontal.length.type}{" "}
+												Linear Rail -{" "}
+												{results.enclosure.extrusions.horizontal.length.size}
+												mm (Length)
+											</td>
+											<td>
+												LR-
+												{results.enclosure.extrusions.horizontal.length.type}-
+												{results.enclosure.extrusions.horizontal.length.size}
+											</td>
+											<td>4</td>
+										</tr>
+										<tr>
+											<td>8</td>
+											<td>
+												{results.enclosure.extrusions.horizontal.width.type}{" "}
+												Linear Rail -{" "}
+												{results.enclosure.extrusions.horizontal.width.size}mm
+												(Width)
+											</td>
+											<td>
+												LR-
+												{results.enclosure.extrusions.horizontal.width.type}-
+												{results.enclosure.extrusions.horizontal.width.size}
+											</td>
+											<td>4</td>
+										</tr>
+										<tr>
+											<td>9</td>
+											<td>
+												2020 Linear Rail -{" "}
+												{results.enclosure.extrusions.vertical2020.size}mm
+												(Height)
+											</td>
+											<td>
+												LR-2020-
+												{results.enclosure.extrusions.vertical2020.size}
+											</td>
+											<td>{results.enclosure.extrusions.vertical2020.qty}</td>
+										</tr>
+										<tr>
+											<td>10</td>
+											<td>M5 Button Head Bolts – 8MM</td>
+											<td>SCREWS-M5-BH-008-1</td>
+											<td>{results.enclosure.hardware.BUTTON_HEAD_M5_8MM}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>{" "}
+							<p className="text-muted small">
+								{results.enclosure.totalLengths.rail2020 > 0 && (
+									<>
+										Total 2020 Extrusion (Length):{" "}
+										{results.enclosure.totalLengths.rail2020}mm
+										<br />
+									</>
+								)}
+								{results.enclosure.totalLengths.rail2040 > 0 && (
+									<>
+										Total 2040 Extrusion (Length):{" "}
+										{results.enclosure.totalLengths.rail2040}mm
+										<br />
+									</>
+								)}
+								{results.enclosure.totalLengths.railWidth2020 > 0 && (
+									<>
+										Total 2020 Extrusion (Width):{" "}
+										{results.enclosure.totalLengths.railWidth2020}mm
+										<br />
+									</>
+								)}
+								{results.enclosure.totalLengths.railWidth2040 > 0 && (
+									<>
+										Total 2040 Extrusion (Width):{" "}
+										{results.enclosure.totalLengths.railWidth2040}mm
+										<br />
+									</>
+								)}
+								Total 2020 Extrusion (Vertical):{" "}
+								{results.enclosure.totalLengths.verticalRail2020}mm
+							</p>
 						</div>
-					</div>
-				)}{" "}
+					)}
+				{/* Mounting Hardware */}
+				{results.mounting &&
+					typeof results.mounting === "object" &&
+					"hardware" in results.mounting && (
+						<div className="mb-4">
+							<h3 className="h6 mb-3">Enclosure Mounting Hardware</h3>
+							<div className="alert alert-info">
+								<p className="mb-0 small">
+									<strong>Note:</strong> {results.mounting.instructions}
+								</p>
+							</div>
+							<div className="table-responsive">
+								<table className="table table-striped table-bordered">
+									<thead>
+										<tr>
+											<th>Item</th>
+											<th>Description</th>
+											<th>SKU</th>
+											<th>QTY</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>1</td>
+											<td>In-Out Corner Bracket – 40mm</td>
+											<td>BRAC-IOCNR-40</td>
+											<td>{results.mounting.hardware.IOCNR_40}</td>
+										</tr>
+										<tr>
+											<td>2</td>
+											<td>Sliding T-Nut</td>
+											<td>HARD-TNUT-SLIDING-M5</td>
+											<td>{results.mounting.hardware.T_NUT_SLIDING}</td>
+										</tr>
+										<tr>
+											<td>3</td>
+											<td>M5 Cap Head Bolts – 8MM</td>
+											<td>BOLT-M5-CAP-008-1PC</td>
+											<td>{results.mounting.hardware.CAP_HEAD_M5_8MM}</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					)}{" "}
 				{/* Door Components */}
 				{results.doors &&
 					results.doors.panels &&
@@ -507,7 +505,7 @@ export function ResultsPanel({
 													{((panel.width * panel.height) / 1000000).toFixed(3)}{" "}
 													m²)
 												</td>
-												<td className="small">{(panel as any).notes || ""}</td>
+												<td className="small">{panel.notes || ""}</td>
 											</tr>
 										))}
 									</tbody>

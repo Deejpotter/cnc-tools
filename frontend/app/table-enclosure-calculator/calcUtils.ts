@@ -304,7 +304,7 @@ export const calculateDoorMaterials = (
 	let handleCount = DOOR_HARDWARE.HANDLE * doorCount;
 	let tnutCount = DOOR_HARDWARE.T_NUT_SLIDING * doorCount;
 	let buttonHeadCount = DOOR_HARDWARE.BUTTON_HEAD_M5_8MM * doorCount;
-	let cornerBracketCount = DOOR_HARDWARE.CORNER_BRACKET * doorCount;
+	const cornerBracketCount = DOOR_HARDWARE.CORNER_BRACKET * doorCount;
 
 	// Adjust hardware counts based on door type
 	if (doorConfig.doorType === "BFLD") {

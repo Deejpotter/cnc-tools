@@ -9,7 +9,7 @@ import express, { Request, Response } from "express";
 import { logger } from "../app";
 import { ChatEngine } from "../services/chat-engine";
 import { QAManager } from "../services/qa-manager";
-import { ChatResponse, QAPair } from "../types/chat";
+import { ChatResponse, QAPair } from "../../../types/mongo/chat";
 
 const router = express.Router();
 
@@ -57,13 +57,11 @@ router.post(
 						error instanceof Error ? error.message : "Unknown error"
 					}`
 				);
-				res
-					.status(400)
-					.json({
-						bot_response: `Error: ${
-							error instanceof Error ? error.message : "Unknown error"
-						}`,
-					});
+				res.status(400).json({
+					bot_response: `Error: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				});
 			} else if (error instanceof Error) {
 				logger.error(`An unexpected error occurred: ${error.message}`);
 				res.status(500).json({ bot_response: error.message });

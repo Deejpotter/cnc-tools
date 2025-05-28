@@ -1,4 +1,4 @@
-# CNC Tools
+# CNC Tools Frontend
 
 A comprehensive collection of mini-applications designed to assist with CNC machining, 3D printing, and related tasks. This Next.js-powered application serves as a central hub for various specialized tools used in professional and hobby settings.
 
@@ -10,27 +10,20 @@ This application contains several mini-apps:
   - Steps per millimeter calculation
   - Flow compensation
   - Startup G-code generator
-
 - **Box Shipping Calculator** - Optimize box shipping configurations and costs using an advanced 3D bin packing algorithm:
   - Intelligent multi-box packing
   - Weight and volume optimization
   - Visual packing results
   - Item database management
-
 - **CNC Technical AI** - AI chatbot for assisting with CNC-related technical queries:
   - Context-aware responses to technical questions
   - File upload support for project-specific assistance
   - Conversation history tracking
-
 - **Extrusion Resources**
   - 20-Series Extrusions guide and calculator - Pricing and specifications for 20-series aluminum extrusions
   - 40-Series Extrusions guide and calculator - Pricing and specifications for 40-series aluminum extrusions
-
 - **Enclosure Calculator** - Calculate dimensions and specifications for enclosures made from 20-Series and 40-Series extrusions:
-  - **Box Dimensions** - Calculate box dimensions based on volume and weight
-  - **Material Selection** - Choose materials for the enclosure
-  - **Assembly Instructions** - Generate assembly instructions for the enclosure
-
+  - Box Dimensions, Material Selection, Assembly Instructions
 - **Price Difference Tool** - Compare prices and calculate differences between products or services
 
 ## Getting Started
@@ -51,8 +44,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ## Technology Stack
 
-This project is built with:
-
 - [Next.js](https://nextjs.org/) - React framework with server actions for backend functionality
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
 - Custom Bootstrap implementation for responsive design
@@ -72,7 +63,7 @@ This project is built with:
 1. Clone the repository
 2. Create a `.env.local` file with the following variables:
 
-   ``` bash
+   ```bash
    MONGODB_URI=your_mongodb_connection_string
    OPENAI_API_KEY=your_openai_api_key (for CNC Technical AI)
    ```
@@ -109,13 +100,6 @@ The application is deployed on Netlify for production use. The deployment proces
 The project follows a Next.js App Router structure:
 
 - `app/` - Main application pages and mini-apps
-  - `box-shipping-calculator/` - Box Shipping Calculator tool
-  - `cnc-calibration-tool/` - CNC Calibration tool
-  - `cnc-technical-ai/` - AI chatbot for CNC technical questions
-  - `20-series-extrusions/` - 20-Series Extrusions calculator
-  - `40-series-extrusions/` - 40-Series Extrusions calculator
-  - `enclosure-calculator/` - Enclosure calculator
-  - `price-difference-tool/` - Price comparison tool
 - `app/actions/` - Server actions for backend functionality
 - `components/` - Reusable UI components
 - `interfaces/` - TypeScript interfaces
@@ -134,4 +118,4 @@ To learn more about Next.js, check out the following resources:
 
 ## License
 
-See the [LICENSE](LICENSE) file for details.
+See root LICENSE file.

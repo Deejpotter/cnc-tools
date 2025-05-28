@@ -1,4 +1,13 @@
 // jest.setup.js
+//
+// This file is run before every test suite. It sets up the testing environment for the CNC Tools frontend.
+//
+// - Extends Jest matchers with DOM-specific assertions (via @testing-library/jest-dom)
+// - Polyfills TextEncoder/TextDecoder for libraries that require them (e.g., MongoDB driver)
+// - Place any additional global setup or mocks here.
+//
+// Updated: 2025-05-28
+// Maintainer: Deej Potter
 
 // Import Jest DOM library to extend Jest matchers with DOM-specific assertions.
 // This is useful for testing React components and other DOM manipulations.

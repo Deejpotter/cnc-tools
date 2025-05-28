@@ -9,40 +9,9 @@
 
 "use client";
 import React from "react";
-import type {
-	Dimensions,
-	TableConfig,
-	MaterialConfig,
-	DoorConfig,
-} from "../types";
-import { DoorType, DoorTypeDisplayNames } from "../types";
-
-/**
- * The props for the ConfigPanel component.
- * @property {TableConfig} config - The configuration object for the table and enclosure.
- * @property {Omit<Dimensions, "isOutsideDimension">} tableDimensions - The dimensions of the table.
- * @property {Omit<Dimensions, "isOutsideDimension">} enclosureDimensions - The dimensions of the enclosure.
- * @property {MaterialConfig} materialConfig - The material configuration object.
- * @property {function} handleConfigChange - Function to handle changes in the configuration.
- * @property {function} handleTableDimensionChange - Function to handle changes in table dimensions.
- * @property {function} handleEnclosureDimensionChange - Function to handle changes in enclosure dimensions.
- */
-interface ConfigPanelProps {
-	config: TableConfig;
-	tableDimensions: Omit<Dimensions, "isOutsideDimension">;
-	enclosureDimensions: Omit<Dimensions, "isOutsideDimension">;
-	materialConfig: MaterialConfig;
-	handleConfigChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	handleTableDimensionChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	handleEnclosureDimensionChange: (
-		e: React.ChangeEvent<HTMLInputElement>
-	) => void;
-	handlePanelConfigChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	handleMaterialTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-	handleDoorTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-	MATERIAL_TYPES: Array<{ id: string; name: string }>;
-	MATERIAL_THICKNESS: number;
-}
+import type { ConfigPanelProps, DoorConfig } from "../../../../types/index";
+import type { MaterialConfig } from "../../../../types/index";
+import { DoorType, DoorTypeDisplayNames } from "../../../../types/index";
 
 /**
  * Client component for configuration options
@@ -185,16 +154,17 @@ export function ConfigPanel({
 										{(Object.keys(config.doorConfig) as Array<keyof DoorConfig>)
 											.filter((key) => key !== "doorType") // Exclude doorType from checkboxes
 											.map((key) => {
-												const pos = key.replace("Door", ""); // e.g. frontDoor -> front
+												const keyStr = key as string;
+												const pos = keyStr.replace("Door", ""); // e.g. frontDoor -> front
 												const capitalizedPos =
 													pos.charAt(0).toUpperCase() + pos.slice(1);
 												return (
-													<div className="form-check me-3" key={key}>
+													<div className="form-check me-3" key={keyStr}>
 														<input
 															className="form-check-input"
 															type="checkbox"
 															id={`doorConfig${capitalizedPos}Door`}
-															name={`doorConfig.${key}`} // e.g., doorConfig.frontDoor
+															name={`doorConfig.${keyStr}`} // e.g., doorConfig.frontDoor
 															checked={config.doorConfig[key] as boolean} // Assert as boolean
 															onChange={handleConfigChange} // General handler should work for doorConfig.key
 														/>
@@ -371,19 +341,21 @@ export function ConfigPanel({
 											keyof MaterialConfig["panelConfig"]
 										>
 									).map((key) => {
-										const pos = key.charAt(0).toUpperCase() + key.slice(1);
+										const keyStr = key as string;
+										const pos =
+											keyStr.charAt(0).toUpperCase() + keyStr.slice(1);
 										return (
-											<div className="form-check me-3" key={key}>
+											<div className="form-check me-3" key={keyStr}>
 												<input
 													className="form-check-input"
 													type="checkbox"
 													id={`panelConfig${pos}`}
-													name={key} // e.g. top, bottom, left - handled by handlePanelConfigChange
+													name={keyStr} // e.g. top, bottom, left - handled by handlePanelConfigChange
 													checked={materialConfig.panelConfig[key]}
 													onChange={handlePanelConfigChange}
 													// Disable front panel if front door is included
 													disabled={
-														key === "front" &&
+														keyStr === "front" &&
 														config.includeDoors &&
 														config.doorConfig.frontDoor
 													}
@@ -393,7 +365,7 @@ export function ConfigPanel({
 													htmlFor={`panelConfig${pos}`}
 												>
 													{pos}
-													{key === "front" &&
+													{keyStr === "front" &&
 														config.includeDoors &&
 														config.doorConfig.frontDoor &&
 														" (Door)"}

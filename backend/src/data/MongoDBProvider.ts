@@ -8,7 +8,7 @@
 
 import { ObjectId, MongoClient } from "mongodb";
 import { getCollection } from "./mongodb";
-import { DatabaseResponse, MongoDocument } from "../types/mongodb";
+import { DatabaseResponse, MongoDocument } from "@types/mongodb/mongodb";
 import {
 	DataProvider,
 	DataProviderOptions,

@@ -1,11 +1,12 @@
 /**
  * Shared types between frontend and backend
- * Updated: 25/05/25
- * Author: Deej Potter
+ * Updated: 2025-05-28
+ * Maintainer: Deej Potter
  */
 
 /**
  * CNC Tool data interface
+ * Used for representing a CNC tool in the database and UI.
  */
 export interface CNCTool {
 	id: string;
@@ -13,11 +14,15 @@ export interface CNCTool {
 	description?: string;
 	price?: number;
 	category?: string;
-	metadata?: Record<string, any>;
+	/**
+	 * Arbitrary metadata for extensibility. Use a stricter type if possible.
+	 */
+	metadata?: Record<string, unknown>;
 }
 
 /**
  * Chat message interface
+ * Used for chat history and AI assistant features.
  */
 export interface ChatMessage {
 	id: string;
@@ -28,6 +33,7 @@ export interface ChatMessage {
 
 /**
  * Chat session interface
+ * Represents a chat session with a user and the AI assistant.
  */
 export interface ChatSession {
 	id: string;
@@ -35,11 +41,15 @@ export interface ChatSession {
 	createdAt: string;
 	updatedAt: string;
 	userId?: string;
-	metadata?: Record<string, any>;
+	/**
+	 * Arbitrary metadata for extensibility. Use a stricter type if possible.
+	 */
+	metadata?: Record<string, unknown>;
 }
 
 /**
  * API response interface
+ * Used for standardizing API responses across the app.
  */
 export interface ApiResponse<T> {
 	success: boolean;
@@ -50,11 +60,15 @@ export interface ApiResponse<T> {
 
 /**
  * User profile interface
+ * Used for authentication and user management.
  */
 export interface UserProfile {
 	id: string;
 	email: string;
 	name?: string;
 	role: "user" | "admin";
-	metadata?: Record<string, any>;
+	/**
+	 * Arbitrary metadata for extensibility. Use a stricter type if possible.
+	 */
+	metadata?: Record<string, unknown>;
 }

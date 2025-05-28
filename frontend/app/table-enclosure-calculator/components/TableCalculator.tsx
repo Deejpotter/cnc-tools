@@ -24,17 +24,7 @@ import type {
 	MaterialConfig,
 	DoorConfig,
 } from "../types";
-
-// Define MaterialType interface for this component
-interface MaterialType {
-	id: string;
-	name: string;
-	sku: string;
-	// Optional fields
-	description?: string;
-	price?: number;
-	unit?: string;
-}
+import type { MaterialType } from "../../../../types/index";
 import { ConfigPanel } from "./ConfigPanel";
 import { ResultsPanel } from "./ResultsPanel";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -56,18 +46,13 @@ const {
  * @param {Array} materialTypes - Array of material types for selection
  * @param {number} materialThickness - Fixed material thickness for calculations
  */
-interface TableCalculatorProps {
-	materialTypes: MaterialType[];
-	materialThickness: number;
-}
-
-/**
- * The table calculator component.
- */
 export default function TableCalculator({
 	materialTypes,
 	materialThickness,
-}: TableCalculatorProps) {
+}: {
+	materialTypes: MaterialType[];
+	materialThickness: number;
+}) {
 	const printRef = useRef<HTMLDivElement>(null);
 
 	// State for table dimensions

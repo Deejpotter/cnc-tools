@@ -5,28 +5,28 @@
  * Description: Types for chat and QA management functionality
  */
 
-import { MongoDocument } from './mongodb';
+import { MongoDocument } from "@types/mongodb";
 
 /**
  * ChatResponse interface for bot responses
  */
 export interface ChatResponse {
-    bot_response: string;
+	bot_response: string;
 }
 
 /**
  * QAPair interface for question-answer data
  */
 export interface QAPair extends MongoDocument {
-    question: string;
-    answer: string;
+	question: string;
+	answer: string;
 }
 
 /**
  * ChatMessage interface for chat history
  */
 export interface ChatMessage extends MongoDocument {
-    user_message: string;
-    bot_response: string;
-    timestamp: Date;
+	user_message: string;
+	bot_response: string;
+	timestamp: Date;
 }

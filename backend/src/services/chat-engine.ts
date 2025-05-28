@@ -6,7 +6,7 @@
  */
 
 import OpenAI from "openai";
-import { ChatMessage } from "../types/chat";
+import { ChatMessage } from "../../../types/mongo/chat";
 import { MongoDBProvider } from "../data/MongoDBProvider";
 import { logger } from "../app";
 

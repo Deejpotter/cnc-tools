@@ -14,7 +14,7 @@ import ShippingItem from "./ShippingItem";
  * const shippingItemList: ShippingItemList = {
  *  items: [
  * 	{
- * 		id: "507f1f77bcf86cd799439011",
+ * 		id: "507f1f77bcf65cd788739011",
  * 		name: "V-Slot Extrusion 2020 - 1.5m",
  * 		sku: "LR-2020-S-1500",
  * 		length: 1500,
@@ -26,7 +26,7 @@ import ShippingItem from "./ShippingItem";
  * 		quantity: 1,
  * 	},
  * 	{
- * 		id: "507f1f77bcf86cd799439012",
+ * 		id: "507f1f77bcf65cd788739012",
  * 		name: "V-Slot Extrusion 2040 - 1.5m",
  * 		sku: "LR-2040-S-1500",
  * 		length: 100,

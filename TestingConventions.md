@@ -1,3 +1,9 @@
+// --- CNC Tools Testing Conventions ---
+// This document outlines the testing conventions and best practices for the CNC Tools project.
+//
+// Updated: 2025-05-28
+// Maintainer: Deej Potter
+
 # Testing Conventions
 
 ## Overview

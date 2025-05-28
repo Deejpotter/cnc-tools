@@ -6,7 +6,7 @@
  * This abstraction allows us to switch between data sources transparently.
  */
 
-import { DatabaseResponse } from "../types/mongodb";
+import { DatabaseResponse } from "../../../types/mongodb";
 
 /**
  * Options for data provider operations

@@ -17,7 +17,9 @@
     ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../types/mongo/chat.ts",
+    "../types/mongodb.ts"
   ],
   "exclude": [
     "node_modules",
