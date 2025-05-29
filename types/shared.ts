@@ -1,7 +1,9 @@
 /**
- * Shared types between frontend and backend
- * Updated: 2025-05-28
+ * Shared Types - Common Interfaces & Types
+ * Updated: 29/05/2025
  * Maintainer: Deej Potter
+ * Description: Contains type definitions used across multiple modules in both frontend and backend.
+ * These types don't belong to any specific calculator or feature and are shared across the application.
  */
 
 /**

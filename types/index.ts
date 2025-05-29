@@ -1,6 +1,28 @@
+/**
+ * CNC Tools - Centralized Type Definitions
+ * Updated: 29/05/2025
+ * Author: Deej Potter
+ * Description: Main type index that exports all type definitions used across the CNC Tools application.
+ * This serves as the single source of truth for importing types throughout the frontend and backend.
+ * 
+ * Organization:
+ * - Table & Enclosure Calculator Types (lines ~20-180)
+ * - Box Shipping Calculator Types (imported from ./box-shipping-calculator)
+ * - Shared/Common Types (imported from ./shared)
+ * - MongoDB Types (imported via box-shipping-calculator module)
+ */
+
+// =============================================================================
+// TABLE & ENCLOSURE CALCULATOR TYPES
+// =============================================================================
+
+/**
+ * Door types available for enclosures
+ * Used in the table enclosure calculator for door configuration
+ */
 export enum DoorType {
 	STANDARD = "STND",
-	BIFOLD = "BFLD",
+	BIFOLD = "BFLD", 
 	AWNING = "AWNG",
 }
 
@@ -185,10 +207,25 @@ export interface ConfigPanelProps {
 	MATERIAL_THICKNESS: number;
 }
 
-// Box Shipping Calculator Types
+// =============================================================================
+// BOX SHIPPING CALCULATOR TYPES
+// =============================================================================
+
+/**
+ * Re-export all box shipping calculator types from their dedicated module.
+ * This includes both algorithm types (Point3D, PackedItem, etc.) and 
+ * MongoDB database types (ShippingBox, ShippingItem).
+ * 
+ * For detailed documentation of each type, see:
+ * - ./box-shipping-calculator/ (algorithm types)
+ * - ./mongodb/box-shipping-calculator/ (database types)
+ */
 export type {
+	// Database/MongoDB Types
 	ShippingBox,
 	ShippingItem,
+	
+	// Algorithm/Calculation Types  
 	Point3D,
 	PackedItem,
 	PackingBox,
@@ -198,5 +235,12 @@ export type {
 	MultiBoxPackingResult,
 } from "./box-shipping-calculator";
 
-// Shared Types
+// =============================================================================
+// SHARED/COMMON TYPES
+// =============================================================================
+
+/**
+ * Re-export shared types used across multiple modules.
+ * These are common interfaces and types that don't belong to a specific calculator.
+ */
 export type { IRoute } from "./shared";

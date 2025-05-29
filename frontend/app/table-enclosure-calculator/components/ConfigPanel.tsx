@@ -8,10 +8,11 @@
  */
 
 "use client";
+
 import React from "react";
-import type { ConfigPanelProps, DoorConfig } from "../../../../types/index";
-import type { MaterialConfig } from "../../../../types/index";
-import { DoorType, DoorTypeDisplayNames } from "../../../../types/index";
+import type { ConfigPanelProps, DoorConfig } from "types/index";
+import type { MaterialConfig } from "types/index";
+import { DoorType, DoorTypeDisplayNames } from "types/index";
 
 /**
  * Client component for configuration options
