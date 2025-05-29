@@ -6,9 +6,9 @@
  * Makes it easy to access data with the appropriate provider and options
  */
 
-import ShippingItem from '../../types/mongodb/box-shipping-calculator/ShippingItem'; // Use canonical type
-import { DatabaseResponse } from '../../types/mongodb/mongodb';
-import { MongoDBProvider } from '../src/data/MongoDBProvider'; // Use canonical provider
+import ShippingItem from "../../types/mongodb/box-shipping-calculator/ShippingItem"; // Use canonical type
+import { DatabaseResponse } from "../../types/mongodb/mongodb";
+import { MongoDBProvider } from "../src/data/MongoDBProvider"; // Use canonical provider
 
 // Singleton instance of the hybrid provider
 const dataProvider = new MongoDBProvider(); // Changed to MongoDBProvider
@@ -69,9 +69,9 @@ export const DataService = {
 			if (!_id) {
 				return Promise.reject({
 					success: false,
-					error: 'Cannot update item: _id is undefined',
+					error: "Cannot update item: _id is undefined",
 					status: 400,
-					message: 'Item _id is required for update.'
+					message: "Item _id is required for update.",
 				});
 			}
 			// MongoDBProvider's updateDocument handles updating updatedAt
