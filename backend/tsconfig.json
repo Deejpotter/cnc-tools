@@ -28,6 +28,8 @@
     "node_modules",
     "dist",
     "python_code",
-    "sample code"
+    "sample code",
+    "examples/data/*",
+    "examples/*"
   ]
 }

@@ -1,10 +1,14 @@
-const express = require('express');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const express = require('express'); // CommonJS require for legacy compatibility
 const router = express.Router();
-const winston = require('winston');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const winston = require('winston'); // CommonJS require for legacy compatibility
 
 // Import chat engine and QA manager (these will need to be converted to JS as well)
-const { ChatEngine } = require('./chat_engine');
-const { QAManager } = require('./qa_manager');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { ChatEngine } = require('./chat_engine'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { QAManager } = require('./qa_manager'); // CommonJS require for legacy compatibility
 
 // Initialize logger
 const logger = winston.createLogger({

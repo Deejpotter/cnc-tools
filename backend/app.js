@@ -1,12 +1,20 @@
 // Import necessary modules
-const express = require('express');
-const cors = require('cors');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsDoc = require('swagger-jsdoc');
-const rateLimit = require('express-rate-limit');
-const winston = require('winston');
-const dotenv = require('dotenv');
-const path = require('path');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const express = require('express'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const cors = require('cors'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const swaggerUi = require('swagger-ui-express'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const swaggerJsDoc = require('swagger-jsdoc'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const rateLimit = require('express-rate-limit'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const winston = require('winston'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const dotenv = require('dotenv'); // CommonJS require for legacy compatibility
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// const path = require('path'); // Reserved for future use, commented out to avoid lint error
 
 // Load environment variables
 dotenv.config();
@@ -57,7 +65,8 @@ const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/swagger', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Import routes
-const routes = require('./routesc-technical-ai/routes');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const routes = require('./routesc-technical-ai/routes'); // CommonJS require for legacy compatibility
 app.use('/', routes);
 
 // Redirect root to Swagger UI
