@@ -8,25 +8,15 @@
 
 "use client";
 import React, { useMemo } from "react";
-import type { MultiBoxPackingResult } from "./BoxCalculations";
-import type ShippingBox from "../../../types/mongo/box-shipping-calculator/ShippingBox";
-import type ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
-import { Package2, Scale, Maximize, Ruler, AlertCircle } from "lucide-react";
-
-interface BoxUtilizationMetrics {
-	volumePercentage: number;
-	weightPercentage: number;
-	totalVolume: number;
-	totalWeight: number;
-	boxVolume: number;
-}
-
-interface BoxDimensions {
-	totalLength: number;
-	totalWidth: number;
-	totalHeight: number;
-	totalVolume: number;
-}
+import type {
+	MultiBoxPackingResult,
+	ShippingBox,
+	ShippingItem,
+	BoxUtilizationMetrics,
+	BoxDimensions,
+	Shipment,
+} from "../../../types/box-shipping-calculator";
+import { Package2, Scale, Ruler, AlertCircle } from "lucide-react";
 
 interface BoxResultsDisplayProps {
 	packingResult: MultiBoxPackingResult | null;
@@ -184,15 +174,20 @@ export function BoxResultsDisplay({ packingResult }: BoxResultsDisplayProps) {
 /**
  * Card component that displays information about a single shipment (box and its contents)
  */
-function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
+function ShipmentCard({
+	shipment,
+	index,
+}: {
+	shipment: Shipment;
+	index: number;
+}) {
 	const metrics = useMemo(() => {
 		return calculateBoxUtilization(shipment.box, shipment.packedItems);
 	}, [shipment]);
 
-	// useMemo s
-	const dimensions = useMemo(() => {
-		return calculateBoxDimensions(shipment.packedItems);
-	}, [shipment.packedItems]);
+	// const dimensions = useMemo(() => {
+	// 	return calculateBoxDimensions(shipment.packedItems);
+	// }, [shipment.packedItems]); // Unused, commented out for lint compliance
 
 	const getVolumeUtilizationColorClass = (percentage: number) => {
 		if (percentage < 40) return "bg-success";
@@ -205,12 +200,12 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 		return "bg-danger";
 	};
 
-	const getDimensionUtilizationClass = (percentage: number) => {
-		if (percentage < 40) return "bg-success";
-		if (percentage < 70) return "bg-info";
-		if (percentage < 90) return "bg-warning";
-		return "bg-danger";
-	};
+	// const getDimensionUtilizationClass = (percentage: number) => {
+	// 	if (percentage < 40) return "bg-success";
+	// 	if (percentage < 70) return "bg-info";
+	// 	if (percentage < 90) return "bg-warning";
+	// 	return "bg-danger";
+	// }; // Unused, commented out for lint compliance
 
 	return (
 		<div className="card h-100 shadow-sm">

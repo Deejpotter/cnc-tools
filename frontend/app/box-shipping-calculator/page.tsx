@@ -10,15 +10,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import type { ShippingItem } from "../../../types/box-shipping-calculator";
 import ItemAddFormClient from "./ItemAddFormClient";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import BoxResultsDisplay from "./BoxResultsDisplay";
 import LayoutContainer from "@/components/LayoutContainer";
-import {
-	packItemsIntoMultipleBoxes,
-	MultiBoxPackingResult,
-} from "@/app/box-shipping-calculator/BoxCalculations";
+import { packItemsIntoMultipleBoxes } from "@/app/box-shipping-calculator/BoxCalculations";
+import type { MultiBoxPackingResult } from "../../../types/box-shipping-calculator";
 import InvoiceUploader from "./InvoiceUploader";
 
 /**

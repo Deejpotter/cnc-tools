@@ -16,14 +16,14 @@ import {
 	calculatePanelMaterials,
 	CONSTANTS,
 } from "../calcUtils";
-import { DoorType, DoorTypeDisplayNames } from "../types";
+import { DoorType, DoorTypeDisplayNames } from "../../../../types";
 import type {
 	TableConfig,
 	Results,
 	Dimensions,
 	MaterialConfig,
 	DoorConfig,
-} from "../types";
+} from "../../../../types";
 import type { MaterialType } from "../../../../types/index";
 import { ConfigPanel } from "./ConfigPanel";
 import { ResultsPanel } from "./ResultsPanel";

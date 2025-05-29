@@ -17,7 +17,7 @@ import React, {
 	useEffect,
 	useTransition,
 } from "react";
-import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import type { ShippingItem } from "../../../types/box-shipping-calculator";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
 
 /**

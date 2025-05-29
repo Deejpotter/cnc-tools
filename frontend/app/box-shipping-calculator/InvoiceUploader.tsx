@@ -9,7 +9,7 @@
 
 import React, { useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import type ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import type { ShippingItem } from "../../../types/box-shipping-calculator";
 import { Upload, FileText, Check } from "lucide-react";
 
 interface InvoiceUploaderProps {

@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from "react";
-import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import type { ShippingItem } from "../../../types/box-shipping-calculator";
 
 interface ItemEditModalProps {
 	item: ShippingItem;

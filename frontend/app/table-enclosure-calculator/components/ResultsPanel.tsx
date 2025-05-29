@@ -8,7 +8,7 @@
 
 "use client";
 import React, { useRef, useCallback } from "react";
-import { DoorType, DoorTypeDisplayNames } from "../types";
+import { DoorType, DoorTypeDisplayNames } from "../../../../types";
 import type {
 	Results,
 	TableConfig,

@@ -119,6 +119,7 @@ export interface DoorPanel {
 	position: string;
 	width: number;
 	height: number;
+	notes?: string;
 }
 
 export interface DoorResults {
@@ -167,8 +168,6 @@ export const DoorTypeDisplayNames: Record<DoorType, string> = {
 	[DoorType.AWNING]: "Awning Door",
 };
 
-import type { TableConfig, MaterialConfig, Dimensions } from "@/types";
-
 export interface ConfigPanelProps {
 	config: TableConfig;
 	tableDimensions: Omit<Dimensions, "isOutsideDimension">;
@@ -185,3 +184,19 @@ export interface ConfigPanelProps {
 	MATERIAL_TYPES: Array<{ id: string; name: string }>;
 	MATERIAL_THICKNESS: number;
 }
+
+// Box Shipping Calculator Types
+export type {
+	ShippingBox,
+	ShippingItem,
+	Point3D,
+	PackedItem,
+	PackingBox,
+	BoxDimensions,
+	BoxUtilizationMetrics,
+	Shipment,
+	MultiBoxPackingResult,
+} from "./box-shipping-calculator";
+
+// Shared Types
+export type { IRoute } from "./shared";

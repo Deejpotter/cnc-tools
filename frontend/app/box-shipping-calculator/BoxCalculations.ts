@@ -5,21 +5,16 @@
  * Description: Helper functions for calculating the best box size for shipping items.
  * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
  * Extreme Point-based 3D bin packing algorithm is a heuristic approach to efficiently pack items into boxes.
- * That means it
  */
 
-import type ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
-import type ShippingBox from "../../../types/mongo/box-shipping-calculator/ShippingBox";
-
-// Define the interface for multi-box packing results
-export interface MultiBoxPackingResult {
-	success: boolean;
-	shipments: Array<{
-		box: ShippingBox;
-		packedItems: ShippingItem[];
-	}>;
-	unfitItems: ShippingItem[];
-}
+import type {
+	ShippingItem,
+	ShippingBox,
+	MultiBoxPackingResult,
+	Point3D,
+	PackedItem,
+	PackingBox,
+} from "../../../types/box-shipping-calculator";
 
 // Constants for box preference calculation
 // These constants control how we select boxes for shipping
@@ -27,41 +22,7 @@ const MAX_PREFERRED_LENGTH = 1200; // mm - boxes longer than this will be penali
 const LENGTH_PENALTY_FACTOR = 1.5; // Higher values penalize length more
 const EXTREME_LENGTH_THRESHOLD = 1500; // mm - boxes longer than this receive extreme penalties
 const EXTREME_LENGTH_PENALTY_FACTOR = 10.0; // Very high penalty for extremely long boxes
-const VOLUME_THRESHOLD = 30000000; // 30 million cubic mm (~30L) threshold for trying single-box packing
-
-/**
- * 3D position to represent points in space
- */
-interface Point3D {
-	x: number;
-	y: number;
-	z: number;
-}
-
-/**
- * Represents a packed item in 3D space
- */
-interface PackedItem {
-	item: ShippingItem; // The original item
-	position: Point3D; // Position of the item within the box (bottom-left-back corner)
-	rotation: number; // Rotation index (0-5) representing one of the six possible orientations
-	dimensions: {
-		// Dimensions after rotation
-		width: number;
-		height: number;
-		depth: number;
-	};
-}
-
-/**
- * Represents a box with packed items and remaining space
- */
-interface PackingBox {
-	box: ShippingBox; // The box being used
-	packedItems: PackedItem[]; // Items packed in the box with their positions
-	extremePoints: Point3D[]; // Possible positions for placing new items (extreme points)
-	remainingWeight: number; // Remaining weight capacity
-}
+const _VOLUME_THRESHOLD = 30000000; // 30 million cubic mm (~30L) threshold for trying single-box packing
 
 /**
  * Standard box sizes available for shipping
@@ -614,15 +575,14 @@ export function packItemsIntoMultipleBoxes(
 		};
 	}
 
-	console.log("[BoxCalc] Starting Extreme Point-based packing algorithm");
 	// We always first attempt to pack everything in a single box
 	// This is the most efficient solution if possible and avoids extra shipments
-	const totalVolume = itemsToPack.reduce((sum, item) => {
+	const _totalVolume = itemsToPack.reduce((sum, item) => {
 		const qty = item.quantity || 1;
 		return sum + item.length * item.width * item.height * qty;
 	}, 0);
 
-	const uniformItems = itemsAreUniform(itemsToPack); // Always try single box packing first, regardless of volume or uniformity
+	const _uniformItems = itemsAreUniform(itemsToPack); // Always try single box packing first, regardless of volume or uniformity
 	// Tests expect us to use a single box whenever possible
 	{
 		try {
@@ -747,8 +707,6 @@ export function packItemsIntoMultipleBoxes(
 		const volB = b.length * b.width * b.height;
 		return volB - volA;
 	});
-
-	console.log(`[BoxCalc] Processing ${expandedItems.length} individual items`);
 
 	// Create array of boxes and unfittable items
 	const boxes: PackingBox[] = [];

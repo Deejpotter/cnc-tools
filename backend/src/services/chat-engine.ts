@@ -1,14 +1,14 @@
 /**
  * Chat Engine Service
- * Updated: 25/05/25
+ * Updated: 29/05/25
  * Author: Deej Potter
  * Description: Handles chat interactions and responses using AI
  */
 
 import OpenAI from "openai";
-import { ChatMessage } from "../../../types/mongo/chat";
 import { MongoDBProvider } from "../data/MongoDBProvider";
-import { logger } from "../app";
+import { logger } from "../utils/logger";
+import type { ChatMessage } from "../../../types/mongodb/chat";
 
 export class ChatEngine {
 	private openai: OpenAI;

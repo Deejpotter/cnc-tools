@@ -17,7 +17,7 @@ import {
 import "@testing-library/jest-dom";
 import TableEnclosureCalculatorPage from "./page";
 import { MATERIAL_TYPES, MATERIAL_THICKNESS } from "./constants";
-import { DoorType } from "./types";
+import { DoorType } from "../../../types";
 
 // Mock window.history.pushState for URL update tests
 const mockPushState = jest.fn();

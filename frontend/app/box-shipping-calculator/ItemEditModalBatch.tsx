@@ -7,8 +7,8 @@
  */
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
-import { Check, ChevronUp, ChevronRight, ChevronDown } from "lucide-react";
+import type ShippingItem from "../../../types/mongodb/box-shipping-calculator/ShippingItem";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 interface ItemEditModalBatchProps {
 	items: ShippingItem[];
@@ -120,7 +120,11 @@ const ItemEditModalBatch: React.FC<ItemEditModalBatchProps> = ({
 	/**
 	 * Handle individual item field change
 	 */
-	const handleItemChange = (itemId: string, fieldName: string, value: any) => {
+	const handleItemChange = (
+		itemId: string,
+		fieldName: string,
+		value: string | number | boolean
+	) => {
 		setEditedItems((prev) =>
 			prev.map((item) =>
 				String(item._id) === itemId ? { ...item, [fieldName]: value } : item
@@ -290,7 +294,7 @@ const ItemEditModalBatch: React.FC<ItemEditModalBatchProps> = ({
 										</tr>
 									</thead>
 									<tbody>
-										{editedItems.map((item, index) => (
+										{editedItems.map((item) => (
 											<tr key={String(item._id)}>
 												<td>
 													<div className="form-check">

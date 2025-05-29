@@ -1,15 +1,15 @@
 /**
  * API Routes
- * Updated: 25/05/25
+ * Updated: 29/05/25
  * Author: Deej Potter
  * Description: Express routes for the CNC Technical Support Chatbot API
  */
 
 import express, { Request, Response } from "express";
-import { logger } from "../app";
+import { logger } from "../utils/logger";
 import { ChatEngine } from "../services/chat-engine";
 import { QAManager } from "../services/qa-manager";
-import { ChatResponse, QAPair } from "../../../types/mongo/chat";
+import type { ChatResponse, QAPair } from "../../../types/mongodb/chat";
 
 const router = express.Router();
 

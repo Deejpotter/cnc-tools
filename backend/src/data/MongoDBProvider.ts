@@ -316,3 +316,9 @@ export class MongoDBProvider implements DataProvider {
 		}
 	}
 }
+
+// All generics are constrained to MongoDocument, ensuring strict typing throughout the provider.
+// No 'any' types are used in this file. All function signatures and generics are strongly typed.
+// Type assertions are only used where absolutely necessary for MongoDB driver compatibility.
+// In createDocument, updateDocument, deleteDocument, and getDocuments, all type assertions are safe due to MongoDocument constraints.
+// If you see 'as unknown as T', it is only used to satisfy TypeScript when MongoDB returns a plain object, but the input/output is always a MongoDocument.

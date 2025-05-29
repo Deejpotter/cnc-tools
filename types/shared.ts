@@ -72,3 +72,15 @@ export interface UserProfile {
 	 */
 	metadata?: Record<string, unknown>;
 }
+
+/**
+ * Navigation route interface
+ * Used for navigation menu items and routing
+ */
+export interface IRoute {
+	name: string;
+	path: string;
+	icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+	secondary?: boolean;
+	items?: IRoute[];
+}

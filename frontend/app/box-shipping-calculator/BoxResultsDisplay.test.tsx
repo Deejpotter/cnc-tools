@@ -13,9 +13,11 @@ import {
 	calculateBoxDimensions,
 	BoxResultsDisplay,
 } from "./BoxResultsDisplay";
-import type { MultiBoxPackingResult } from "./BoxCalculations";
-import type ShippingItem from "/interfaces/box-shipping-calculator/ShippingItem";
-import type ShippingBox from "/interfaces/box-shipping-calculator/ShippingBox";
+import type {
+	MultiBoxPackingResult,
+	ShippingItem,
+	ShippingBox,
+} from "../../../types/box-shipping-calculator";
 
 // Sample data for testing
 const mockBox: ShippingBox = {
@@ -161,5 +163,3 @@ describe("BoxResultsDisplay", () => {
 		});
 	});
 });
-
-

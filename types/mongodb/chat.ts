@@ -5,7 +5,7 @@
  * Description: Types for chat and QA management functionality
  */
 
-import { MongoDocument } from "@types/mongodb";
+import { MongoDocument } from "./mongodb";
 
 /**
  * ChatResponse interface for bot responses

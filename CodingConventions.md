@@ -6,8 +6,7 @@ This document outlines the coding conventions and best practices for the project
 
 ## File structure
 
-```
-📦 cnc-tools
+cnc-tools
 ├── app/                      # Main application directory (Next.js App Router)
 │   ├── page.tsx              # Home page with tiles for all tools
 │   ├── layout.tsx            # Root layout for all pages
@@ -43,7 +42,6 @@ This document outlines the coding conventions and best practices for the project
 │   ├── chatStream.ts         # Chat streaming functionality
 │   └── navigation.tsx        # Navigation helpers
 └── docs/                     # Documentation files
-```
 
 ## Naming conventions
 
@@ -130,7 +128,11 @@ Each mini-app in the `/app` directory should follow this structure:
 2. **Shared state**: Use context providers in `/contexts` folder
 3. **Data fetching**: Use server actions in `/app/actions` for data operations
 
-## Testing
+## Testing Conventions
+
+### Testing Overview
+
+This document outlines the testing conventions and best practices for the CNC Tools project. Following these guidelines will ensure consistency in how we test our code and make it easier for team members to understand and contribute to tests.
 
 ### Test File Structure
 
@@ -138,10 +140,8 @@ Each mini-app in the `/app` directory should follow this structure:
 
 1. **Unit Tests**: Place unit tests next to the file they're testing with a `.test.ts` or `.test.tsx` suffix
    - Example: `BoxCalculations.ts` → `BoxCalculations.test.ts`
-
 2. **Integration Tests**: Create a `__tests__` folder within the feature directory
    - Example: `app/box-shipping-calculator/__tests__/integration.test.ts`
-
 3. **E2E Tests**: Store in a top-level `e2e` directory (if implemented later)
 
 ### Testing Approaches
@@ -173,21 +173,16 @@ Use the following structure for your tests:
 // Import dependencies
 import { functionToTest } from './path-to-function';
 
-// Describe block for the component/function
 describe('FunctionName or ComponentName', () => {
-  // Setup that runs before each test
   beforeEach(() => {
     // Setup code
   });
 
-  // Individual test cases
   it('should do something specific', () => {
     // Arrange
     const input = 'test';
-    
     // Act
     const result = functionToTest(input);
-    
     // Assert
     expect(result).toBe('expected output');
   });
@@ -205,14 +200,6 @@ describe('FunctionName or ComponentName', () => {
 - Aim for at least 80% code coverage for critical business logic
 - Focus on meaningful tests rather than hitting coverage numbers
 - Always test edge cases and error handling
-
-### Running Tests
-
-Use these npm scripts to run tests:
-
-1. `npm test`: Run all tests once
-2. `npm run test:watch`: Run tests in watch mode (rerun on file changes)
-3. `npm run test:coverage`: Run tests with coverage report
 
 ### Continuous Integration
 
