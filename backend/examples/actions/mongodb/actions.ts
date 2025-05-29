@@ -13,7 +13,7 @@ import { getCollection } from "./client";
 import {
 	DatabaseResponse,
 	MongoDocument,
-	MongoDocumentWithId,
+	// MongoDocumentWithId, // Removed as unused. Add back if needed for future use.
 } from "@types/mongodb/mongodb";
 import ShippingItem from "@types/mongodb/box-shipping-calculator/ShippingItem";
 

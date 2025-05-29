@@ -93,6 +93,8 @@ jobs:
 
 ## Notes
 
+- You may see a TypeScript version warning during lint/type-check. The codebase uses TypeScript 5.8.x, which is newer than the officially supported version for some tools. This is expected and does not affect production builds.
+- Example files in `backend/examples/` are for reference only, are not maintained, and are excluded from type-checking. All canonical backend logic is in `backend/src/`.
 - Keep shared types/interfaces in `types/` or `interfaces/` and import from both apps.
 - Each app manages its own dependencies and scripts.
 - **Keep all config files (like `netlify.toml`, `.gitignore`, etc.) at the root of the repo for clarity and to avoid conflicts.**

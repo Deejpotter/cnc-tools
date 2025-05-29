@@ -11,7 +11,7 @@ import {
 	packItemsIntoMultipleBoxes,
 	standardBoxes,
 } from "./BoxCalculations";
-import type ShippingItem from "../../../types/interfaces/box-shipping-calculator/ShippingItem";
+import type ShippingItem from "../../../types/mongodb/box-shipping-calculator/ShippingItem"; // Canonical type import
 
 // Helper to create a mock ShippingItem
 const createMockShippingItem = (
@@ -52,14 +52,14 @@ const create20x40x1000mmExtrusions = (quantity: number): ShippingItem[] => {
 describe("BoxCalculations", () => {
 	// Sample shipping items for testing, matching ShippingItem interface
 	const itemSmallLight = createMockShippingItem("itemSL", 10, 10, 10, 50, 1); // Fits Padded Satchel
-	const itemMediumHeavy = createMockShippingItem(
-		"itemMH",
-		100,
-		100,
-		50,
-		2000,
-		1
-	); // Fits Small Satchel by dims, but weight might be an issue for Padded Satchel
+	// const itemMediumHeavy = createMockShippingItem(
+	// 	"itemMH",
+	// 	100,
+	// 	100,
+	// 	50,
+	// 	2000,
+	// 	1
+	// ); // Fits Small Satchel by dims, but weight might be an issue for Padded Satchel
 	const itemLong = createMockShippingItem("itemLong", 1000, 5, 5, 10, 1); // Needs Extra Large Box or XXL Box for length
 	const itemTooLarge = createMockShippingItem(
 		"itemTooLarge",
