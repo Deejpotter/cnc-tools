@@ -126,7 +126,7 @@ const Navbar = ({
 				{item.path ? (
 					<Link href={item.path} onClick={handleLinkClick}>
 						<span
-							className={`nav-link px-3 py-2 mx-1 ${
+							className={`nav-link px-1 py-1 mx-1 ${
 								isActive(item.path) ? "active-link" : ""
 							}`}
 						>
