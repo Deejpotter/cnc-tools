@@ -13,7 +13,7 @@ import {
 	DataProvider,
 	DataProviderOptions,
 	DEFAULT_OPTIONS,
-} from "./DataProvider";
+} from "../../types/DataProvider";
 
 /**
  * MongoDB Data Provider

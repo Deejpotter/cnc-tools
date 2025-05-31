@@ -69,8 +69,8 @@ This project is built with:
 
 ### Prerequisites
 
-- Node.js 18.x or higher
-- npm 9.x or higher
+- Node.js 22.x or higher (recommended LTS 22.16.0)
+- npm 10.x or higher (recommended 10.5.0)
 - MongoDB database (local or cloud instance)
 
 ### Environment Setup
@@ -85,6 +85,9 @@ This project is built with:
 
 3. Install dependencies with `npm install`
 4. Run the development server with `npm run dev`
+
+The app uses server actions and pulls the variables from the environment process, so they won't be available in the browser.
+Make sure to set them in your environment in Netlify/Vercel or your local `.env` file.
 
 ### Testing
 
