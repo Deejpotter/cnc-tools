@@ -8,7 +8,7 @@
 
 import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import { DatabaseResponse } from "@/types/mongodb/mongo-types";
-import { DataProviderOptions } from "../../types/DataProvider";
+import { DataProviderOptions } from "../../types/mongodb/DataProvider";
 import { MongoDBProvider } from "./MongoDBProvider"; // Added
 
 // Singleton instance of the hybrid provider
