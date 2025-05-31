@@ -1,11 +1,27 @@
 "use client";
 import React, { useState } from "react";
+import { calculateOptimalCuts } from "@/utils/20-series-extrusions/cutting-algorithms";
+import ExtrusionConfigPanel from "@/components/extrusions/ExtrusionConfigPanel";
+import CuttingListTable from "@/components/extrusions/CuttingListTable";
+import PriceCalculator from "@/components/extrusions/PriceCalculator";
+import ImportParts from "@/components/extrusions/ImportParts";
+import { Container } from "@/components/shared";
+import type {
+	Part,
+	Profile,
+	Color,
+	CutList,
+	CuttingResult,
+} from "@/types/20-series-extrusions/cutting-types";
 
 const CuttingCalculator = () => {
-	const [parts, setParts] = useState([]);
-	const [cutList, setCutList] = useState([]);
-	const [color, setColor] = useState("S"); // Default color silver
-	const [profile, setProfile] = useState("20x20"); // Default profile
+	const [parts, setParts] = useState<Part[]>([]);
+	const [cuttingResult, setCuttingResult] = useState<CuttingResult | null>(
+		null
+	);
+	const [color, setColor] = useState<Color>("S"); // Default color silver
+	const [profile, setProfile] = useState<Profile>("20x20"); // Default profile
+	const [algorithm, setAlgorithm] = useState<"linear" | "binPacking">("linear");
 
 	// Standard stock lengths for 20 Series Extrusions
 	const standardStockLengths = [500, 1000, 1500, 3000];
@@ -16,135 +32,212 @@ const CuttingCalculator = () => {
 	};
 
 	// Updates part requirement details
-	const updatePart = (index, field, value) => {
+	const updatePart = (index: number, field: keyof Part, value: number) => {
 		const updatedParts = parts.map((part, i) =>
-			i === index ? { ...part, [field]: parseInt(value, 10) } : part
+			i === index ? { ...part, [field]: value } : part
 		);
 		setParts(updatedParts);
 	};
 
-	/**
-	 * Optimizes and calculates the cut list
-	 */
-	const calculateCutList = () => {
-		// Sort parts in decreasing order of length.
-		// This approach helps in fitting longer parts first, potentially reducing waste.
-		const sortedParts = [...parts].sort((a, b) => b.length - a.length);
-
-		let newCutList = [];
-
-		// Iterate over each part in the sorted list
-		for (let part of sortedParts) {
-			// For each part, account for its quantity
-			for (let i = 0; i < part.quantity; i++) {
-				let fitted = false;
-
-				// Find the shortest stock length that can accommodate the part.
-				// We use Array.find to iterate over the standardStockLengths array and return
-				// the first length that is greater than or equal to the part's length.
-				const suitableStockLength = standardStockLengths.find(
-					(length) => length >= part.length
-				);
-
-				// Attempt to fit the part in an existing stock length in the newCutList.
-				for (let cut of newCutList) {
-					// Check if the current cut's stock length matches the suitable stock length
-					// and it has enough unused length to accommodate the part.
-					if (
-						cut.stockLength === suitableStockLength &&
-						cut.stockLength - cut.usedLength >= part.length
-					) {
-						// If it fits, increase the used length of the stock
-						cut.usedLength += part.length;
-						// Add the part to the cuts array of this stock length
-						cut.cuts.push({ length: part.length, quantity: 1 });
-						fitted = true;
-						break;
-					}
-				}
-
-				// If the part did not fit in any existing cuts, create a new cut.
-				if (!fitted) {
-					let newCut = {
-						// Use the suitable stock length for this new cut.
-						stockLength: suitableStockLength,
-						// The used length is initially the length of the part.
-						usedLength: part.length,
-						// Initialize cuts with this part.
-						cuts: [{ length: part.length, quantity: 1 }],
-					};
-					// Add this new cut to the newCutList.
-					newCutList.push(newCut);
-				}
-			}
-		}
-
-		// Update the state with the new calculated cut list.
-		setCutList(newCutList);
+	// Deletes a part from the list
+	const deletePart = (index: number) => {
+		setParts(parts.filter((_, i) => i !== index));
 	};
 
-	// Renders the component UI
+	/**
+	 * Calculates the optimal cutting pattern
+	 */ /**
+	 * Calculates the optimal cutting pattern and updates the result
+	 */
+	const calculateCutList = () => {
+		if (parts.length === 0) return;
+
+		try {
+			const pricingConfig = {
+				basePrice: basePrice[profile],
+				customLengthFee: 3, // $3 per custom length
+				cutFee: 2, // $2 per cut
+				profile,
+				color,
+			};
+
+			const result = calculateOptimalCuts(
+				parts,
+				standardStockLengths,
+				algorithm,
+				pricingConfig
+			);
+			setCuttingResult(result);
+		} catch (error) {
+			alert(error instanceof Error ? error.message : "An error occurred");
+		}
+	};
+
+	// Price per meter for each profile
+	const basePrice: { [key in Profile]: number } = {
+		"20x20": 19.8,
+		"20x40": 28.6,
+		"20x60": 37.4,
+		"20x80": 46.2,
+		"C-beam": 24.2,
+		"C-beam HEAVY": 35.2,
+	};
+	// UI Rendering
 	return (
-		<div>
-			<h2>20 Series Extrusion Cutting Calculator</h2>
+		<Container maxWidth="xl" className="my-4">
+			<h2 className="mb-4">20 Series Extrusion Cutting Calculator</h2>
+			{/* Configuration Section */}{" "}
+			<ExtrusionConfigPanel
+				profile={profile}
+				color={color}
+				onProfileChange={(value) => setProfile(value as Profile)}
+				onColorChange={(value) => setColor(value as Color)}
+				profiles={[
+					{ value: "20x20", label: "20x20" },
+					{ value: "20x40", label: "20x40" },
+					{ value: "20x60", label: "20x60" },
+					{ value: "20x80", label: "20x80" },
+					{ value: "C-beam", label: "C-beam" },
+					{ value: "C-beam HEAVY", label: "C-beam HEAVY" },
+				]}
+				colors={[
+					{ value: "S", label: "Silver" },
+					{ value: "B", label: "Black" },
+				]}
+			/>
+			{/* Import from Invoice */}
+			<ImportParts
+				onPartsImported={(items) => {
+					// Update profile and color from first item if available
+					if (items.length > 0) {
+						setProfile(items[0].profile as Profile);
+						setColor(items[0].color as Color);
+					}
 
-			{/* Profile and Color selection */}
-			<div>
-				<label>Profile: </label>
-				<select value={profile} onChange={(e) => setProfile(e.target.value)}>
-					<option value="20x20">20x20</option>
-					<option value="20x40">20x40</option>
-					<option value="20x60">20x60</option>
-					<option value="20x80">20x80</option>
-					<option value="C-beam">C-beam</option>
-				</select>
-			</div>
-			<div>
-				<label>Color: </label>
-				<select value={color} onChange={(e) => setColor(e.target.value)}>
-					<option value="S">Silver</option>
-					<option value="B">Black</option>
-				</select>
-			</div>
+					// Convert invoice items to parts
+					const newParts = items.map((item) => ({
+						length: item.length,
+						quantity: item.quantity,
+					}));
 
-			{/* Parts input form */}
-			{parts.map((part, index) => (
-				<div key={index}>
-					<input
-						type="number"
-						value={part.length}
-						onChange={(e) => updatePart(index, "length", e.target.value)}
-						placeholder="Length (mm)"
-					/>
-					<input
-						type="number"
-						value={part.quantity}
-						onChange={(e) => updatePart(index, "quantity", e.target.value)}
-						placeholder="Quantity"
-					/>
+					setParts(newParts);
+				}}
+			/>
+			{/* Algorithm Selection */}
+			<div className="card mb-4">
+				<div className="card-body">
+					<label className="form-label">Cutting Algorithm</label>
+					<select
+						className="form-select"
+						value={algorithm}
+						onChange={(e) =>
+							setAlgorithm(e.target.value as "linear" | "binPacking")
+						}
+					>
+						<option value="linear">Linear Cutting</option>
+						<option value="binPacking">Bin Packing (Beta)</option>
+					</select>
+					<small className="form-text text-muted">
+						Linear cutting optimizes for minimum waste. Bin packing tries to use
+						the least number of stock lengths.
+					</small>
 				</div>
-			))}
-			<button onClick={addPart}>Add Part</button>
-			<button onClick={calculateCutList}>Calculate Cut List</button>
-
-			{/* Displaying the optimized cut list */}
-			<h2>Cut List and Stock Extrusions</h2>
-			{cutList.map((cutItem, index) => (
-				<div key={index}>
-					<p>
-						Extrusion added to invoice: LR-{profile}-{color}-
-						{cutItem.stockLength}
-					</p>
-					{cutItem.cuts.map((cut, cutIndex) => (
-						<p key={cutIndex}>
-							Cutting fee: {cut.quantity} x LR-{profile}-{color}-
-							{cutItem.stockLength} cut to {cut.quantity} x LR-{profile}-{color}
-							-{cut.length}
-						</p>
+			</div>
+			{/* Parts List */}
+			<div className="card mb-4">
+				<div className="card-body">
+					<h5 className="card-title mb-3">Parts List</h5>
+					{parts.map((part, index) => (
+						<div key={index} className="row g-3 mb-3 align-items-center">
+							<div className="col-md-5">
+								<label className="form-label">Length (mm)</label>
+								<input
+									type="number"
+									className="form-control"
+									value={part.length || ""}
+									onChange={(e) =>
+										updatePart(index, "length", parseInt(e.target.value))
+									}
+									min="1"
+								/>
+							</div>
+							<div className="col-md-5">
+								<label className="form-label">Quantity</label>
+								<input
+									type="number"
+									className="form-control"
+									value={part.quantity}
+									onChange={(e) =>
+										updatePart(index, "quantity", parseInt(e.target.value))
+									}
+									min="1"
+								/>
+							</div>
+							<div className="col-md-2">
+								<button
+									className="btn btn-danger mt-4"
+									onClick={() => deletePart(index)}
+								>
+									Remove
+								</button>
+							</div>
+						</div>
 					))}
+					<button className="btn btn-secondary" onClick={addPart}>
+						Add Part
+					</button>
 				</div>
-			))}
-		</div>
+			</div>
+			<button
+				className="btn btn-primary mb-4"
+				onClick={calculateCutList}
+				disabled={parts.length === 0}
+			>
+				Calculate Cuts
+			</button>
+			{/* Results Section */}
+			{cuttingResult && (
+				<>
+					{/* Summary */}
+					<div className="alert alert-info mb-4">
+						<strong>Summary:</strong>
+						<ul className="mb-0">
+							{cuttingResult.sku && (
+								<li>
+									<strong>SKU:</strong> {cuttingResult.sku}
+								</li>
+							)}
+							<li>Total Length Required: {cuttingResult.totalLength}mm</li>
+							<li>
+								Total Waste: {cuttingResult.totalWaste}mm (
+								{(
+									(cuttingResult.totalWaste / cuttingResult.totalLength) *
+									100
+								).toFixed(1)}
+								%)
+							</li>
+							<li>
+								Stock Lengths Used:{" "}
+								{Object.entries(cuttingResult.stockLengthsUsed)
+									.map(([length, count]) => `${count}x ${length}mm`)
+									.join(", ")}
+							</li>
+						</ul>
+					</div>
+
+					{/* Cutting List Table */}
+					<CuttingListTable cutList={cuttingResult.cutList} />
+
+					{/* Price Calculator */}
+					<PriceCalculator
+						cuttingResult={cuttingResult}
+						customLengthFee={3}
+						cutFee={2}
+						basePrice={basePrice[profile]}
+					/>
+				</>
+			)}{" "}
+		</Container>
 	);
 };
 

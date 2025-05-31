@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import LayoutContainer from "@/components/LayoutContainer";
+import { Container } from "@/components/shared";
 import TileSection from "@/components/tiles/TileSection";
 import { TileProps } from "@/components/tiles/Tile";
 
@@ -65,7 +65,6 @@ export default function Home() {
 		},
 		// More tiles can be added here
 	];
-
 	return (
 		<>
 			{/* Hero Section: Full-width section to welcome users */}
@@ -77,11 +76,11 @@ export default function Home() {
 				</p>
 			</section>
 
-			{/* Features Section: Utilizing the LayoutContainer for consistent styling */}
-			<LayoutContainer>
+			{/* Features Section: Using the Container component from our shared library */}
+			<Container margin="my-4" padding="p-4">
 				{/* TileSection: Displays a collection of tiles based on the tilesData array */}
 				<TileSection title="Our Tools" tiles={tilesData} />
-			</LayoutContainer>
+			</Container>
 		</>
 	);
 }
