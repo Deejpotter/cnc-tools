@@ -8,8 +8,8 @@
 
 import React from "react";
 import LayoutContainer from "@/components/LayoutContainer";
-import TileSection from "@/components/TileSection";
-import { TileProps } from "@/components/Tile";
+import TileSection from "@/components/tiles/TileSection";
+import { TileProps } from "@/components/tiles/Tile";
 
 export default function Home() {
 	// Defining tile data using the TileProps interface for TypeScript type checking

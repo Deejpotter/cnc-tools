@@ -12,11 +12,6 @@ Author: Deej Potter
 
 This application contains several mini-apps:
 
-- **CNC Calibration Tool** - Calibrate your 3D printer or CNC machine with tools for:
-  - Steps per millimeter calculation
-  - Flow compensation
-  - Startup G-code generator
-
 - **Box Shipping Calculator** - Optimize box shipping configurations and costs using an advanced 3D bin packing algorithm:
   - Intelligent multi-box packing
   - Weight and volume optimization
@@ -37,6 +32,10 @@ This application contains several mini-apps:
   - **Material Selection** - Choose materials for the enclosure
   - **Assembly Instructions** - Generate assembly instructions for the enclosure
 
+- **CNC Calibration Tool** - Calibrate your 3D printer or CNC machine with tools for:
+  - Steps per millimeter calculation
+  - Flow compensation
+
 - **Price Difference Tool** - Compare prices and calculate differences between products or services
 
 ## Getting Started
@@ -53,7 +52,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the result.
 
 ## Technology Stack
 
@@ -113,24 +112,13 @@ The application is deployed on Netlify for production use. The deployment proces
 - NextJS-specific optimizations for static pages and server components
 - Comprehensive testing before production deployment
 
-## Netlify Build & Deployment
+### Netlify Build & Deployment
 
 This project is designed to deploy seamlessly on Netlify using Next.js SSR (Server-Side Rendering).
 
 - **Build Command:**
-  - Netlify runs `yarn build` (or `npm run build`) as defined in `netlify.toml` and `package.json`.
+  - Netlify runs `yarn build` (or `npm run build`) as defined in `netlify.toml`.
   - This executes `next build` to prepare the app for production.
-- **Publish Directory:**
-  - Set to `.next` for SSR (see `netlify.toml`).
-  - Do **not** use `out` unless you are exporting a static site.
-- **Node Version:**
-  - Set in `netlify.toml` to match your local development environment (e.g., `NODE_VERSION = "22"`).
-- **Environment Variables:**
-  - Set in the Netlify dashboard or in your `.env` files as needed.
-- **Troubleshooting:**
-  - If you see errors about missing `package.json` or build failures, ensure your build command and publish directory are correct in `netlify.toml`.
-  - Make sure you are not using a monorepo structure unless you have configured Netlify for it.
-  - If you change the structure, update `netlify.toml` and scripts accordingly.
 
 ### Example Netlify Build Process
 
@@ -147,20 +135,25 @@ The project follows a Next.js App Router structure:
 
 - `app/` - Main application pages and mini-apps
   - `box-shipping-calculator/` - Box Shipping Calculator tool
-  - `cnc-calibration-tool/` - CNC Calibration tool
   - `cnc-technical-ai/` - AI chatbot for CNC technical questions
   - `20-series-extrusions/` - 20-Series Extrusions calculator
   - `40-series-extrusions/` - 40-Series Extrusions calculator
   - `enclosure-calculator/` - Enclosure calculator
+  - `cnc-calibration-tool/` - CNC Calibration tool
   - `price-difference-tool/` - Price comparison tool
-- `app/actions/` - Server actions for backend functionality
-- `components/` - Reusable UI components
-- `interfaces/` - TypeScript interfaces
-- `contexts/` - React context providers
+- `app/actions/` - Server actions for backend functionality. Safe server actions are used for database operations and API calls.
+- `components/` - Reusable UI components. Should be abstracted because I use them in multiple apps.
+- `contexts/` - React context providers. Mostly used for authentication and other global state management.
 - `utils/` - Utility functions
 - `styles/` - CSS and SCSS files
 - `public/` - Static assets
-- `types/` - TypeScript type definitions
+- `types/` - TypeScript type definitions and interfaces for components and utilities.
+
+## Navigation and Portability
+
+- All internal navigation uses Next.js's `Link` component (`import Link from "next/link"`) for optimal routing and prefetching.
+- If you use components outside Next.js, replace `Link` with your router's link component.
+- See `CodingConventions.md` for more details on navigation best practices and portability.
 
 ## Learn More
 

@@ -13,7 +13,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { ItemProvider } from "../contexts/ItemContext";
 import Navbar from "@/components/navbar/Navbar";
-import Footer from "@/components/Footer";
+import Footer from "@/components/footer/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 // Uses next/font to load the Nunito Sans font from Google Fonts.
@@ -24,6 +24,25 @@ export const metadata: Metadata = {
 	title: "CNC Calculations",
 	description: "Calculation tool for CNC stuff.",
 };
+
+// Define the navigation structure for the Navbar. This array can be moved to a config or utils file for reuse.
+// Each item should have a 'name' and optional 'path' and 'items' (for dropdowns).
+const navItems = [
+	{ name: "Home", path: "/" },
+	{ name: "Box Shipping Calculator", path: "/box-shipping-calculator" },
+	{ name: "CNC Technical AI", path: "/cnc-technical-ai" },
+	{
+		name: "Extrusion Resources",
+		items: [
+			{ name: "20-Series Extrusions", path: "/20-series-extrusions" },
+			{ name: "40-Series Extrusions", path: "/40-series-extrusions" },
+		],
+	},
+	{ name: "Enclosure Calculator", path: "/table-enclosure-calculator" },
+	{ name: "CNC Calibration Tool", path: "/cnc-calibration-tool" },
+	{ name: "Price Difference Tool", path: "/price-difference-tool" },
+	{ name: "Table & Enclosure Calculator", path: "/table-enclosure-calculator" },
+];
 
 // The RootLayout component is the root component that is used to wrap the pages.
 // It takes the children prop which is the child components that will be wrapped by the context provider.
@@ -42,7 +61,10 @@ export default function RootLayout({
 				<ItemProvider>
 					<body className={nunito.className}>
 						{/* Render the Navbar component then render the children components. */}
-						<Navbar />
+						<Navbar
+							brand={"CNC Tools"}
+							navItems={navItems} // Pass the navigation array to the Navbar
+						/>
 						<main>{children}</main>
 						{/* Add Footer component at the bottom of the page */}
 						<Footer />

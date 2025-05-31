@@ -6,7 +6,6 @@ This document outlines the coding conventions and best practices for the project
 
 ## File structure
 
-```
 📦 cnc-tools
 ├── app/                      # Main application directory (Next.js App Router)
 │   ├── page.tsx              # Home page with tiles for all tools
@@ -43,7 +42,6 @@ This document outlines the coding conventions and best practices for the project
 │   ├── chatStream.ts         # Chat streaming functionality
 │   └── navigation.tsx        # Navigation helpers
 └── docs/                     # Documentation files
-```
 
 ## Naming conventions
 
@@ -244,6 +242,12 @@ Example:
  * Implements the Extreme Point-based 3D bin packing algorithm for optimal packing.
  */
 ```
+
+## Navigation and Routing
+
+- **Internal navigation:** Always use Next.js's `Link` component (`import Link from "next/link"`) for all internal navigation in shared and feature components. This ensures optimal routing, prefetching, and compatibility with Next.js best practices.
+- **Portability:** If you intend to use a component outside of Next.js, replace the `Link` component with your router's link component (e.g., React Router's `Link`).
+- **External links:** Use a standard `<a>` tag with `target="_blank"` and `rel="noreferrer"` for external URLs.
 
 ## Best practices
 
