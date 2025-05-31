@@ -28,9 +28,9 @@ export const metadata: Metadata = {
 // Define the navigation structure for the Navbar. This array can be moved to a config or utils file for reuse.
 // Each item should have a 'name' and optional 'path' and 'items' (for dropdowns).
 const navItems = [
-	{ name: "Home", path: "/" },
 	{ name: "Box Shipping Calculator", path: "/box-shipping-calculator" },
 	{ name: "CNC Technical AI", path: "/cnc-technical-ai" },
+	{ name: "Table & Enclosure Calculator", path: "/table-enclosure-calculator" },
 	{
 		name: "Extrusion Resources",
 		items: [
@@ -38,10 +38,8 @@ const navItems = [
 			{ name: "40-Series Extrusions", path: "/40-series-extrusions" },
 		],
 	},
-	{ name: "Enclosure Calculator", path: "/table-enclosure-calculator" },
 	{ name: "CNC Calibration Tool", path: "/cnc-calibration-tool" },
 	{ name: "Price Difference Tool", path: "/price-difference-tool" },
-	{ name: "Table & Enclosure Calculator", path: "/table-enclosure-calculator" },
 ];
 
 // The RootLayout component is the root component that is used to wrap the pages.
