@@ -8,9 +8,9 @@
 
 "use server";
 
-import { DatabaseResponse } from "./mongodb/types";
+import { DatabaseResponse } from "../../types/mongodb/mongo-types";
 import DataService from "@/utils/data/DataService";
-import ShippingItem from "@/types/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 
 /**
  * Get all available shipping items

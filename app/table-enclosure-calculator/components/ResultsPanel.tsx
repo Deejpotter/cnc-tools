@@ -14,7 +14,7 @@ import {
 	MaterialConfig,
 	DoorType,
 	DoorTypeDisplayNames,
-} from "@/app/table-enclosure-calculator/types";
+} from "@/types/box-shipping-calculator/box-shipping-types";
 
 interface ResultsPanelProps {
 	results: Results;

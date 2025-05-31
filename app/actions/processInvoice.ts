@@ -11,7 +11,7 @@
 import { OpenAI } from "openai";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
-import ShippingItem from "@/types/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
 	updateItemInDatabase,

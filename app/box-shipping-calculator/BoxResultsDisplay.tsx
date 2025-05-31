@@ -9,8 +9,8 @@
 "use client";
 import React, { useMemo } from "react";
 import type { MultiBoxPackingResult } from "./BoxCalculations";
-import type ShippingBox from "@/types/interfaces/box-shipping-calculator/ShippingBox";
-import type ShippingItem from "@/types/interfaces/box-shipping-calculator/ShippingItem";
+import type ShippingBox from "@/types/box-shipping-calculator/ShippingBox";
+import type ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import { Package2, Scale, Maximize, Ruler, AlertCircle } from "lucide-react";
 
 interface BoxUtilizationMetrics {

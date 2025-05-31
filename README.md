@@ -78,9 +78,9 @@ This project is built with:
 1. Clone the repository
 2. Create a `.env` file with the following variables:
 
-   ```
+   ``` bash
    MONGODB_URI=your_mongodb_connection_string
-   OPENAI_API_KEY=your_openai_api_key (for CNC Technical AI)
+   OPENAI_API_KEY=your_openai_api_key
    ```
 
 3. Install dependencies with `npm install`
