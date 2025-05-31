@@ -3,7 +3,7 @@
  * Updated: 14/05/2025
  * Author: Deej Potter
  * Description: This is the root layout component for the Next.js application.
- * This component wraps the entire application and provides a consistent layout and styling. 
+ * This component wraps the entire application and provides a consistent layout and styling.
  * It can be overridden by creating a new layout file in the relevant directory.
  */
 import type { Metadata } from "next";
@@ -12,8 +12,8 @@ import "./globals.scss";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { ItemProvider } from "../contexts/ItemContext";
-import Navbar from "../components/navbar/Navbar";
-import Footer from "../components/Footer";
+import Navbar from "@/components/navbar/Navbar";
+import Footer from "@/components/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
 
 // Uses next/font to load the Nunito Sans font from Google Fonts.
