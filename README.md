@@ -76,7 +76,7 @@ This project is built with:
 ### Environment Setup
 
 1. Clone the repository
-2. Create a `.env.local` file with the following variables:
+2. Create a `.env` file with the following variables:
 
    ```
    MONGODB_URI=your_mongodb_connection_string
@@ -109,6 +109,34 @@ The application is deployed on Netlify for production use. The deployment proces
 - Environment variable configuration for API keys and database connections
 - NextJS-specific optimizations for static pages and server components
 - Comprehensive testing before production deployment
+
+## Netlify Build & Deployment
+
+This project is designed to deploy seamlessly on Netlify using Next.js SSR (Server-Side Rendering).
+
+- **Build Command:**
+  - Netlify runs `yarn build` (or `npm run build`) as defined in `netlify.toml` and `package.json`.
+  - This executes `next build` to prepare the app for production.
+- **Publish Directory:**
+  - Set to `.next` for SSR (see `netlify.toml`).
+  - Do **not** use `out` unless you are exporting a static site.
+- **Node Version:**
+  - Set in `netlify.toml` to match your local development environment (e.g., `NODE_VERSION = "22"`).
+- **Environment Variables:**
+  - Set in the Netlify dashboard or in your `.env` files as needed.
+- **Troubleshooting:**
+  - If you see errors about missing `package.json` or build failures, ensure your build command and publish directory are correct in `netlify.toml`.
+  - Make sure you are not using a monorepo structure unless you have configured Netlify for it.
+  - If you change the structure, update `netlify.toml` and scripts accordingly.
+
+### Example Netlify Build Process
+
+1. Netlify installs dependencies using Yarn or npm.
+2. Runs `yarn build` (or `npm run build`).
+3. Publishes the `.next` directory for SSR.
+4. Sets environment variables as needed.
+
+For more details, see the comments in `netlify.toml` and the scripts in `package.json`.
 
 ## Project Structure
 

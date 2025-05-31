@@ -1,12 +1,22 @@
 # Netlify configuration file for CNC Tools
-# Updated: 17/05/2025
+# Updated: 31/05/2025
 # Author: Deej Potter
+#
+# This file tells Netlify how to build and deploy the Next.js app.
+# The build command should match your package.json scripts.
+# The publish directory should be .next for Next.js SSR (not out/).
 
 [build]
-command = "yarn build"
+# Use yarn or npm as you prefer. This runs 'next build' for production.
+command = "yarn build" # or "npm run build"
 publish = ".next"
 
-# Configure Netlify build environment
 [build.environment]
-# Updated to match Next.js 14.x requirements
+# Set the Node version to match your local/dev environment and Next.js requirements.
 NODE_VERSION = "22"
+
+# You can add more environment variables here if needed.
+# For example:
+# NEXT_PUBLIC_API_URL = "https://api.example.com"
+
+# End of Netlify config
