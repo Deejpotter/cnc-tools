@@ -14,11 +14,11 @@ import type {
 	TableConfig,
 	MaterialConfig,
 	DoorConfig,
-} from "../../../types/box-shipping-calculator/box-shipping-types";
+} from "@/types/box-shipping-calculator/box-shipping-types";
 import {
 	DoorType,
 	DoorTypeDisplayNames,
-} from "../../../types/box-shipping-calculator/box-shipping-types";
+} from "@/types/box-shipping-calculator/box-shipping-types";
 
 /**
  * The props for the ConfigPanel component.
