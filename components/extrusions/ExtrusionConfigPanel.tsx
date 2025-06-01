@@ -23,9 +23,8 @@ const ExtrusionConfigPanel: React.FC<ExtrusionConfigPanelProps> = ({
 	profiles,
 	colors,
 	tappingOptions,
-}) => {
-	return (
-		<div className="card mb-4">
+}) => {	return (
+		<div className="card mb-4" data-testid="extrusion-config-panel">
 			<div className="card-body">
 				<div className="row g-3">
 					<div className="col-md-4">

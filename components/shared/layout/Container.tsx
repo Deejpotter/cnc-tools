@@ -18,7 +18,7 @@ import React from "react";
  * @property {boolean} [border=false] - Whether to add a border to the container
  * @property {boolean} [rounded=false] - Whether to add rounded corners to the container
  */
-interface ContainerProps {
+export interface ContainerProps {
 	children: React.ReactNode;
 	className?: string;
 	fluid?: boolean;

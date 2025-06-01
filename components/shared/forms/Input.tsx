@@ -19,7 +19,7 @@ import React from "react";
  * @property {boolean} [disabled=false] - Whether the input is disabled
  * @property {React.ReactNode} [helpText] - Optional help text to display below the input
  */
-interface InputProps {
+export interface InputProps {
 	id?: string;
 	name?: string;
 	label?: string;

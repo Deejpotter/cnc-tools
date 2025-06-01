@@ -10,9 +10,8 @@ interface CuttingListTableProps {
 const CuttingListTable: React.FC<CuttingListTableProps> = ({
 	cutList,
 	showStockLengths = true,
-}) => {
-	return (
-		<div className="card mb-4">
+}) => {	return (
+		<div className="card mb-4" data-testid="cutting-list-table">
 			<div className="card-header">
 				<h5 className="mb-0">Cutting List</h5>
 			</div>

@@ -25,7 +25,7 @@ import React from "react";
  * @property {string} [imagePosition="top"] - Position of the image
  * @property {string} [theme="light"] - Card theme
  */
-interface CardProps {
+export interface CardProps {
 	children: React.ReactNode;
 	title?: string | React.ReactNode;
 	subtitle?: React.ReactNode;

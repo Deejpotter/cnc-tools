@@ -1,0 +1,258 @@
+/**
+ * Tests for ItemEditModal Component
+ */
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import ItemEditModal from "../ItemEditModal";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+
+const mockItem: ShippingItem = {
+	_id: "test-item-1",
+	name: "Test Item",
+	sku: "TEST123",
+	length: 100,
+	width: 80,
+	height: 30,
+	weight: 250,
+	quantity: 1,
+	createdAt: new Date(),
+	updatedAt: new Date(),
+	deletedAt: null,
+};
+
+describe("ItemEditModal", () => {
+	const mockOnClose = jest.fn();
+	const mockOnSave = jest.fn();
+
+	beforeEach(() => {
+		mockOnClose.mockClear();
+		mockOnSave.mockClear();
+	});
+
+	it("does not render when isOpen is false", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={false}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		expect(screen.queryByText("Edit Item")).not.toBeInTheDocument();
+	});
+
+	it("renders the modal with item data when isOpen is true", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		// Check modal title
+		expect(screen.getByText("Edit Item")).toBeInTheDocument();
+
+		// Check form fields are populated with item data
+		expect(screen.getByDisplayValue("Test Item")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("TEST123")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("100")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("80")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("30")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("250")).toBeInTheDocument();
+
+		// Check buttons are present
+		expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: /Save Changes/i })
+		).toBeInTheDocument();
+	});
+
+	it("handles input changes correctly", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		const nameInput = screen.getByLabelText(/Name/i);
+		const lengthInput = screen.getByLabelText(/Length/i);
+
+		// Change name
+		fireEvent.change(nameInput, { target: { value: "Updated Item" } });
+		expect(nameInput).toHaveValue("Updated Item");
+
+		// Change length
+		fireEvent.change(lengthInput, { target: { value: "120" } });
+		expect(lengthInput).toHaveValue(120);
+	});
+
+	it("closes modal when close button is clicked", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Cancel/i }));
+		expect(mockOnClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("closes modal when X button is clicked", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: "" })); // X button
+		expect(mockOnClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("submits form with updated data", async () => {
+		mockOnSave.mockResolvedValue(undefined);
+
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		// Update form fields
+		fireEvent.change(screen.getByLabelText(/Name/i), {
+			target: { value: "Updated Item" },
+		});
+		fireEvent.change(screen.getByLabelText(/Length/i), {
+			target: { value: "120" },
+		});
+
+		// Submit form
+		fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+
+		await waitFor(() => {
+			expect(mockOnSave).toHaveBeenCalledWith({
+				...mockItem,
+				name: "Updated Item",
+				length: 120,
+			});
+		});
+	});
+
+	it("shows loading state while saving", async () => {
+		mockOnSave.mockImplementation(
+			() => new Promise((resolve) => setTimeout(resolve, 100))
+		);
+
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+
+		// Check loading state
+		expect(screen.getByText("Saving...")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: /Cancel/i })).toBeDisabled();
+
+		await waitFor(() => {
+			expect(screen.queryByText("Saving...")).not.toBeInTheDocument();
+		});
+	});
+
+	it("shows error message when save fails", async () => {
+		mockOnSave.mockRejectedValue(new Error("Save failed"));
+
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		fireEvent.click(screen.getByRole("button", { name: /Save Changes/i }));
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Failed to save changes. Please try again.")
+			).toBeInTheDocument();
+		});
+	});
+
+	it("validates required fields", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		// Check required attributes on form fields
+		expect(screen.getByLabelText(/Name/i)).toBeRequired();
+		expect(screen.getByLabelText(/Length/i)).toBeRequired();
+		expect(screen.getByLabelText(/Width/i)).toBeRequired();
+		expect(screen.getByLabelText(/Height/i)).toBeRequired();
+		expect(screen.getByLabelText(/Weight/i)).toBeRequired();
+
+		// SKU should not be required
+		expect(screen.getByLabelText(/SKU/i)).not.toBeRequired();
+	});
+
+	it("handles numeric fields correctly", () => {
+		render(
+			<ItemEditModal
+				item={mockItem}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		// Check that numeric fields have correct attributes
+		const lengthInput = screen.getByLabelText(/Length/i);
+		const weightInput = screen.getByLabelText(/Weight/i);
+
+		expect(lengthInput).toHaveAttribute("type", "number");
+		expect(lengthInput).toHaveAttribute("min", "1");
+		expect(weightInput).toHaveAttribute("type", "number");
+		expect(weightInput).toHaveAttribute("min", "1");
+	});
+
+	it("handles item with missing SKU", () => {
+		const itemWithoutSku = { ...mockItem, sku: undefined };
+
+		render(
+			<ItemEditModal
+				item={itemWithoutSku}
+				isOpen={true}
+				onClose={mockOnClose}
+				onSave={mockOnSave}
+			/>
+		);
+
+		// SKU field should be empty
+		expect(screen.getByLabelText(/SKU/i)).toHaveValue("");
+	});
+});

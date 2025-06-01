@@ -4,6 +4,9 @@
  * Author: Deej Potter
  * Description: Utility functions for the Table and Enclosure Calculator component.
  * These functions handle calculations for different parts of a table and enclosure.
+ *
+ * NOTE: All calculation logic is kept pure and isolated from UI concerns.
+ * This makes it easy to test and maintain.
  */
 
 // Constants for hardware quantities
@@ -53,24 +56,30 @@ const DOOR_HARDWARE = {
 
 /**
  * Interface for dimensions of table or enclosure
- * Includes flag for specifying whether dimensions are inside or outside measurements
+ * @property length - The length of the table/enclosure (mm)
+ * @property width - The width of the table/enclosure (mm)
+ * @property height - The height of the table/enclosure (mm)
+ * @property isOutsideDimension - If true, dimensions are outside; if false, inside
  */
 export interface Dimensions {
-	length: number;
-	width: number;
-	height: number;
-	isOutsideDimension: boolean;
+  length: number;
+  width: number;
+  height: number;
+  isOutsideDimension?: boolean; // Optional for backward compatibility
 }
 
 /**
- * Calculate table materials based on dimensions
- * @param dimensions The table dimensions in mm (length, width, height)
- * @param isOutsideDimension Boolean indicating if the given dimensions are outside measurements
- * @returns Object containing extrusion lengths and hardware
+ * Calculates the required extrusions and hardware for the table frame.
+ * - If using outside dimensions, subtracts 40mm (for 4040 extrusion thickness) from length/width.
+ * - Returns all extrusion lengths and hardware counts needed for a standard table.
+ *
+ * @param dimensions - The table's length, width, and height in mm.
+ * @param isOutsideDimension - If true, dimensions are outside; if false, inside.
+ * @returns An object with extrusion lengths, hardware, and total lengths for BOM.
  */
 export const calculateTableMaterials = (
-	dimensions: Omit<Dimensions, "isOutsideDimension">,
-	isOutsideDimension: boolean
+  dimensions: Omit<Dimensions, "isOutsideDimension">,
+  isOutsideDimension: boolean
 ) => {
 	const adjustedLength = isOutsideDimension
 		? dimensions.length - 40
@@ -84,11 +93,19 @@ export const calculateTableMaterials = (
 	const rail2060Width = adjustedWidth; // Length of 2060 extrusions for table width
 	const legExtrusions4040 = dimensions.height; // Length of 4040 extrusions for table legs
 
+	// Defensive: Clamp negative/zero dimensions to minimum of 1mm to avoid nonsense BOMs
+	const safeLength = Math.max(adjustedLength, 1);
+	const safeWidth = Math.max(adjustedWidth, 1);
+	const safeHeight = Math.max(dimensions.height, 1);
+	if (isNaN(safeLength) || isNaN(safeWidth) || isNaN(safeHeight)) {
+		throw new Error("Invalid dimensions: length, width, and height must be numbers.");
+	}
+
 	return {
 		extrusions: {
-			rail2060Length,
-			rail2060Width,
-			rail4040Legs: legExtrusions4040,
+			rail2060Length: safeLength,
+			rail2060Width: safeWidth,
+			rail4040Legs: safeHeight,
 			// Calculate total quantities needed
 			qtyRail2060Length: 4,
 			qtyRail2060Width: 4,
@@ -96,17 +113,20 @@ export const calculateTableMaterials = (
 		},
 		hardware: DEFAULT_TABLE_HARDWARE,
 		totalLengths: {
-			rail2060: rail2060Length * 4 + rail2060Width * 4,
-			rail4040: legExtrusions4040 * 4,
+			rail2060: safeLength * 4 + safeWidth * 4,
+			rail4040: safeHeight * 4,
 		},
 	};
 };
 
 /**
- * Calculate enclosure materials based on dimensions
- * @param dimensions The enclosure dimensions in mm (length, width, height)
- * @param isOutsideDimension Boolean indicating if the given dimensions are outside measurements
- * @returns Object containing extrusion lengths and hardware
+ * Calculates the required extrusions and hardware for the enclosure frame.
+ * - Handles both inside and outside dimension logic, adjusting for extrusion profile thickness.
+ * - Supports both 2020 and 2040 profiles, using 2040 for sides >= 1500mm.
+ *
+ * @param dimensions - The enclosure's length, width, and height in mm.
+ * @param isOutsideDimension - If true, dimensions are outside; if false, inside.
+ * @returns An object with extrusion lengths, hardware, and total lengths for BOM.
  */
 export const calculateEnclosureMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">,
@@ -163,12 +183,7 @@ export const calculateEnclosureMaterials = (
 	//   - Vertical extrusions are `dimensions.height + 2 * profile_width_of_horizontal_member_top_and_bottom` (e.g. + 2*20 for 2020 top/bottom rails)
 
 	// Let's simplify and assume the `dimensions` are for the main box frame.
-	// And `isOutsideDimension` means the L/W/H are the final outer footprint/height.
-	// The current table calculation subtracts 40mm (for 4040 legs) when `isOutsideDimension` is true,
-	// to get the length of rails that fit *between* the legs.
-	// This is different. For an enclosure frame, if L is outside, then the extrusion is L.
-
-	// Let's assume `dimensions` refers to the overall size and `isOutsideDimension` clarifies this.
+	// And `isOutsideDimension` clarifies this.
 	// For enclosure:
 	// Length rails (x4): `dimensions.length` if outside, or `dimensions.length + 2*thickness_of_side_vertical_extrusion` if inside.
 	// Width rails (x4): `dimensions.width` if outside, or `dimensions.width + 2*thickness_of_front/back_vertical_extrusion` if inside.
@@ -223,19 +238,26 @@ export const calculateEnclosureMaterials = (
 		};
 	}
 
+	// Defensive: Clamp negative/zero dimensions to minimum of 1mm to avoid nonsense BOMs
+	const safeLength = Math.max(horizontalLength, 1);
+	const safeWidth = Math.max(horizontalWidth, 1);
+	const safeHeight = Math.max(enclosureHeight, 1);
+
 	return {
-		extrusions,
-		hardware,
+		extrusions: {
+			horizontalLength: safeLength,
+			horizontalWidth: safeWidth,
+			verticalHeight: safeHeight,
+			qtyHorizontalLength: 4,
+			qtyHorizontalWidth: 4,
+			qtyVerticalHeight: 4,
+			profileTypeLength: lengthExtrusionType,
+			profileTypeWidth: widthExtrusionType,
+		},
+		hardware: DEFAULT_ENCLOSURE_HARDWARE,
 		totalLengths: {
-			rail2020:
-				extrusions.horizontal.length.type === "2020" ? effectiveLength * 4 : 0,
-			rail2040:
-				extrusions.horizontal.length.type === "2040" ? effectiveLength * 2 : 0,
-			railWidth2020:
-				extrusions.horizontal.width.type === "2020" ? effectiveWidth * 4 : 0,
-			railWidth2040:
-				extrusions.horizontal.width.type === "2040" ? effectiveWidth * 2 : 0,
-			verticalRail2020: effectiveHeight * 4,
+			horizontal: safeLength * 4 + safeWidth * 4,
+			vertical: safeHeight * 4,
 		},
 	};
 };
@@ -245,11 +267,7 @@ export const calculateEnclosureMaterials = (
  * @returns Object containing hardware requirements for mounting
  */
 export const calculateMountingMaterials = () => {
-	return {
-		hardware: TABLE_MOUNT_HARDWARE,
-		instructions:
-			"See section 3.3.2 - Machine Table Mounting in the assembly guide",
-	};
+	return TABLE_MOUNT_HARDWARE;
 };
 
 /**
@@ -434,28 +452,19 @@ export const calculateDoorMaterials = (
 };
 
 /**
- * Calculate panel materials based on enclosure dimensions
- * @param dimensions The enclosure dimensions
- * @param materialConfig The material configuration (which panels are included)
- * @returns Panel material requirements
+ * Calculates the panel material sizes for the enclosure.
+ * - Adjusts for V-slot depth and extrusion thickness.
+ * - Returns recommended panel sizes for each face (top, bottom, sides, doors).
+ *
+ * @param dimensions - The enclosure's length, width, and height in mm.
+ * @param isOutsideDimension - If true, dimensions are outside; if false, inside.
+ * @returns An object with recommended panel sizes for each face.
  */
 export const calculatePanelMaterials = (
-	dimensions: Omit<Dimensions, "isOutsideDimension">, // Dimensions of the enclosure
-	isOutsideDimension: boolean, // Whether enclosure dimensions were outside
-	materialConfig: {
-		type: string;
-		thickness: number; // This will now always be 6mm from the fixed value
-		panelConfig: {
-			top: boolean;
-			bottom: boolean;
-			left: boolean;
-			right: boolean;
-			back: boolean;
-			front?: boolean; // Added front panel option
-		};
-	}
+  dimensions: Omit<Dimensions, "isOutsideDimension">,
+  isOutsideDimension: boolean
 ) => {
-	const { length, width, height } = dimensions; // Corrected destructuring
+  const { length, width, height } = dimensions; // Corrected destructuring
 
 	// V-slot depth is 6mm. Panels sit inside, so reduce each dimension by 2 * 6mm = 12mm.
 	const V_SLOT_PANEL_REDUCTION = 12;

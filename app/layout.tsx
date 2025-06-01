@@ -15,6 +15,7 @@ import { ItemProvider } from "../contexts/ItemContext";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Uses next/font to load the Nunito Sans font from Google Fonts.
 const nunito = Nunito({ subsets: ["latin"] });
@@ -57,16 +58,18 @@ export default function RootLayout({
 			<AuthProvider>
 				{/* The ItemProvider component is used to provide the item context to the components. */}
 				<ItemProvider>
-					<body className={nunito.className}>
-						{/* Render the Navbar component then render the children components. */}
-						<Navbar
-							brand={"CNC Tools"}
-							navItems={navItems} // Pass the navigation array to the Navbar
-						/>
-						<main>{children}</main>
-						{/* Add Footer component at the bottom of the page */}
-						<Footer />
-					</body>
+					<ErrorBoundary>
+						<body className={nunito.className}>
+							{/* Render the Navbar component then render the children components. */}
+							<Navbar
+								brand={"CNC Tools"}
+								navItems={navItems} // Pass the navigation array to the Navbar
+							/>
+							<main>{children}</main>
+							{/* Add Footer component at the bottom of the page */}
+							<Footer />
+						</body>
+					</ErrorBoundary>
 				</ItemProvider>
 			</AuthProvider>
 		</html>

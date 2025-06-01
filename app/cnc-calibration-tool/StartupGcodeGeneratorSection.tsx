@@ -166,6 +166,11 @@ const StartupGcodeGeneratorSection = () => {
 		setBedSizeY(event.target.value);
 	};
 
+	// Add a copy to clipboard button for test compatibility
+	const handleCopy = () => {
+		navigator.clipboard?.writeText(startupGCode);
+	};
+
 	return (
 		<>
 			<div className="row my-3 mt-5">
@@ -346,7 +351,23 @@ const StartupGcodeGeneratorSection = () => {
 					<label htmlFor="sgg_code">Startup Code</label>
 				</div>
 				<div className="col-lg-8 col-md-2 col-6 my-1">
-					<textarea className="form-control" id="sgg_code" rows={5} readOnly />
+					<textarea
+						className="form-control"
+						id="sgg_code"
+						rows={5}
+						readOnly
+						value={startupGCode}
+					/>
+				</div>
+				<div className="col-lg-1 col-md-2 col-6 my-1">
+					<button
+						type="button"
+						className="btn btn-primary"
+						onClick={handleCopy}
+						aria-label="Copy to Clipboard"
+					>
+						Copy
+					</button>
 				</div>
 			</div>
 

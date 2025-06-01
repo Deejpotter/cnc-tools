@@ -163,34 +163,56 @@ Each mini-app in the `/app` directory should follow this structure:
 - Use table-driven tests for functions with many input/output combinations
 - Test error handling
 
-### Test Structure
+### Component Testing
 
-Use the following structure for your tests:
+#### Test Structure for Components
+
+For component tests, follow this general pattern:
 
 ```typescript
-// Import dependencies
-import { functionToTest } from './path-to-function';
+import React from 'react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import Component from './path-to-component';
 
-// Describe block for the component/function
-describe('FunctionName or ComponentName', () => {
+describe('Component Name', () => {
   // Setup that runs before each test
   beforeEach(() => {
     // Setup code
   });
 
-  // Individual test cases
-  it('should do something specific', () => {
-    // Arrange
-    const input = 'test';
+  // Render tests - verify the component renders correctly with different props
+  test('renders with default props', () => {
+    render(<Component />);
+    expect(screen.getByText('Expected Text')).toBeInTheDocument();
+  });
+  
+  // Behavior tests - verify the component responds correctly to user interactions
+  test('responds to user interaction', () => {
+    render(<Component />);
     
-    // Act
-    const result = functionToTest(input);
+    // Trigger user interaction
+    fireEvent.click(screen.getByRole('button'));
     
-    // Assert
-    expect(result).toBe('expected output');
+    // Verify the expected outcome
+    expect(screen.getByText('New Text')).toBeInTheDocument();
+  });
+  
+  // Style and class tests - verify the component applies styling correctly
+  test('applies proper styling based on props', () => {
+    const { container } = render(<Component variant="primary" />);
+    expect(container.firstChild).toHaveClass('bg-primary');
   });
 });
 ```
+
+#### Testing Hooks and Context
+
+When testing components that use hooks or context:
+
+1. Create mock implementations of hooks and context providers
+2. Use the custom render function from test-utils.ts
+3. Configure mocks to simulate different states
 
 ### Mocking
 

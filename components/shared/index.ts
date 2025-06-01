@@ -13,6 +13,7 @@ export { default as Table } from "./display/Table";
 
 // Form components
 export { default as Form } from "./forms/Form";
+export { default as Input } from "./forms/Input";
 export { default as FileUpload } from "./FileUpload";
 
 // Export component types
@@ -23,6 +24,8 @@ export type { AlertProps } from "./display/Alert";
 export type { CardProps } from "./display/Card";
 export type { TableColumn, TableProps } from "./display/Table";
 export type { FormField, FormProps } from "./forms/Form";
+export type { InputProps } from "./forms/Input";
+export type { FileUploadProps } from "./FileUpload";
 
 /**
  * CNC Tools Shared Components Library

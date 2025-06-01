@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { useFileUpload, UseFileUploadOptions } from "../hooks/useFileUpload";
+import { useFileUpload, UseFileUploadOptions } from "./hooks/useFileUpload";
 
 /**
  * Props for the FileUpload component, extends UseFileUploadOptions
@@ -18,7 +18,7 @@ import { useFileUpload, UseFileUploadOptions } from "../hooks/useFileUpload";
  * @property {(result: any) => void} [onProcessingComplete] - Callback when processing is complete
  * @property {(files: File[]) => Promise<any>} [processFiles] - Custom file processing function
  */
-interface FileUploadProps extends UseFileUploadOptions {
+export interface FileUploadProps extends UseFileUploadOptions {
 	className?: string;
 	activeClassName?: string;
 	dragMessage?: string;
@@ -34,8 +34,9 @@ interface FileUploadProps extends UseFileUploadOptions {
 }
 
 /**
- * Generic file upload component with drag & drop support
+ * Enhanced file upload component with drag & drop support
  * Handles multiple file types and provides validation
+ * Accepts custom file processing logic as a prop
  *
  * @param {FileUploadProps} props - The component props
  * @returns {JSX.Element} The rendered FileUpload component
@@ -50,16 +51,62 @@ const FileUpload: React.FC<FileUploadProps> = ({
 	buttonText,
 	showFileInfo = false,
 	icon,
+	theme = "light",
+	onProcessingComplete,
+	processFiles,
 	...uploadOptions
 }) => {
+	// Custom onUpload handler that will use the processFiles prop if provided
+	const handleUpload = async (content: string, file: File) => {
+		// If there's a custom processor defined in props, we'll let the hook handle single files
+		// The batch processing will happen in the handleDrop override below
+		if (uploadOptions.onUpload && !processFiles) {
+			return uploadOptions.onUpload(content, file);
+		}
+	};
+
+	// Get base hook functionality but with our custom upload handler
 	const {
 		isDragActive,
 		isLoading,
 		error,
-		handleDrop,
-		handleFileSelect,
+		handleDrop: baseHandleDrop,
+		handleFileSelect: baseHandleFileSelect,
 		fileInfo,
-	} = useFileUpload(uploadOptions);
+	} = useFileUpload({
+		...uploadOptions,
+		onUpload: handleUpload,
+	});
+
+	// Override handleDrop to use custom processor if provided
+	const handleDrop = async (files: File[]) => {
+		if (processFiles) {
+			try {
+				// Start loading state
+				const result = await processFiles(files);
+				if (onProcessingComplete) {
+					onProcessingComplete(result);
+				}
+			} catch (err) {
+				console.error("Error processing files:", err);
+			}
+		} else {
+			// Fall back to base behavior
+			await baseHandleDrop(files);
+		}
+	};
+
+	// Override handleFileSelect to use our custom handleDrop
+	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = Array.from(e.target.files || []);
+		await handleDrop(files);
+	};
+	// Get theme-specific classes
+	const getThemeClasses = () => {
+		return theme === "dark"
+			? "bg-dark text-light border-secondary"
+			: "bg-light text-dark";
+	};
 
 	// Event handlers for drag and drop functionality
 	const handleDragEnter = (e: React.DragEvent) => {
@@ -86,7 +133,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
 	return (
 		<div
-			className={`card mb-4 ${className} ${
+			className={`card mb-4 ${className} ${getThemeClasses()} ${
 				isDragActive ? activeClassName : ""
 			}`}
 			onDragEnter={handleDragEnter}
@@ -110,31 +157,46 @@ const FileUpload: React.FC<FileUploadProps> = ({
 						<p className="mb-0">{dragMessage}</p>
 					) : (
 						<>
+							{" "}
 							{icon && <div className="mb-2">{icon}</div>}
 							<p className="mb-0">{idleMessage}</p>
 							{uploadOptions.allowedTypes && (
-								<small className="text-muted">
+								<small className={`text-muted`}>
 									Accepts: {uploadOptions.allowedTypes.join(", ")}
 								</small>
 							)}
 							{buttonText && (
 								<div className="mt-3">
-									<button className="btn btn-outline-primary">
+									<button
+										className={`btn ${
+											theme === "dark"
+												? "btn-outline-light"
+												: "btn-outline-primary"
+										}`}
+									>
 										{buttonText}
 									</button>
 								</div>
 							)}
 						</>
 					)}
-				</label>
-
+				</label>{" "}
 				{/* Show file information if requested */}
 				{showFileInfo && fileInfo && fileInfo.length > 0 && (
 					<div className="mt-3">
 						<h6>Selected Files:</h6>
-						<ul className="list-group">
+						<ul
+							className={`list-group ${
+								theme === "dark" ? "list-group-dark" : ""
+							}`}
+						>
 							{fileInfo.map((file, index) => (
-								<li key={index} className="list-group-item text-start">
+								<li
+									key={index}
+									className={`list-group-item text-start ${
+										theme === "dark" ? "bg-dark text-light" : ""
+									}`}
+								>
 									<strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)}{" "}
 									KB)
 								</li>
@@ -142,7 +204,6 @@ const FileUpload: React.FC<FileUploadProps> = ({
 						</ul>
 					</div>
 				)}
-
 				{/* Error display */}
 				{error && (
 					<div className="alert alert-danger mt-3 mb-0">
@@ -153,7 +214,5 @@ const FileUpload: React.FC<FileUploadProps> = ({
 		</div>
 	);
 };
-
-export default FileUpload;
 
 export default FileUpload;

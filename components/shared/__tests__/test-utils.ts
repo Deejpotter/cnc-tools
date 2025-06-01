@@ -1,0 +1,109 @@
+/**
+ * Test Utils
+ * Updated: 01/06/2025
+ * Author: Deej Potter
+ * Description: Utility functions for testing shared components.
+ */
+import React from "react";
+import { render as rtlRender, RenderOptions } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+
+interface CustomRenderOptions extends Omit<RenderOptions, "wrapper"> {
+	wrapper?: React.ComponentType<{ children: React.ReactNode }>;
+}
+
+/**
+ * Custom render function that allows for providing context providers
+ * @param ui - The component to render
+ * @param options - Render options including wrapper providers
+ */
+export function render(
+	ui: React.ReactElement,
+	options: CustomRenderOptions = {}
+) {
+	const { wrapper: Wrapper = React.Fragment, ...rest } = options;
+
+	return rtlRender(ui, {
+		wrapper: (props: { children: React.ReactNode }) => <Wrapper {...props} />,
+		...rest,
+	});
+}
+
+/**
+ * Creates a mock file with specified name, type, and size
+ * @param name - File name
+ * @param type - MIME type
+ * @param size - File size in bytes
+ * @returns Mock File object
+ */
+export function createMockFile(
+	name = "test.txt",
+	type = "text/plain",
+	size = 1024
+) {
+	const file = new File(["test file content"], name, { type });
+
+	// Override size property
+	Object.defineProperty(file, "size", {
+		get() {
+			return size;
+		},
+	});
+
+	return file;
+}
+
+/**
+ * Creates a mock FileList from an array of files
+ * @param files - Array of File objects
+ * @returns Mock FileList object
+ */
+export function createMockFileList(files: File[] = []) {
+	return {
+		...files,
+		item: (index: number) => files[index],
+		length: files.length,
+	};
+}
+
+/**
+ * Creates a mocked component for testing
+ * @param displayName - Display name for the component
+ * @param defaultProps - Default props to use when rendering
+ * @returns Mocked component
+ */
+export function createMockComponent(
+	displayName: string,
+	defaultProps: Record<string, any> = {}
+) {
+	const component = ({
+		children,
+		...props
+	}: {
+		children?: React.ReactNode;
+		[key: string]: any;
+	}) => (
+		<div
+			data-testid={`mock-${displayName.toLowerCase()}`}
+			{...defaultProps}
+			{...props}
+		>
+			{children}
+		</div>
+	);
+
+	component.displayName = displayName;
+
+	return component;
+}
+
+/**
+ * Creates a user event setup for testing interactions
+ * @returns User event instance
+ */
+export function setupUserEvent() {
+	return userEvent.setup();
+}
+
+// Re-export everything from testing-library
+export * from "@testing-library/react";

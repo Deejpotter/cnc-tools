@@ -37,9 +37,8 @@ const PriceCalculator: React.FC<PriceCalculatorProps> = ({
 	const subtotal = materialCost + customLengthTotal + cutTotal;
 	const gst = subtotal * 0.1;
 	const total = subtotal + gst;
-
 	return (
-		<div className="card mb-4">
+		<div className="card mb-4" data-testid="price-calculator">
 			<div className="card-header">
 				<h5 className="mb-0">Price Breakdown</h5>
 			</div>

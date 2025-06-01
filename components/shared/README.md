@@ -20,6 +20,7 @@ This library provides a set of reusable components designed to be used across th
 ### Form Components
 
 - **Form**: A generic form component that generates forms from configuration objects.
+- **Input**: A reusable input component with validation and various input types.
 - **FileUpload**: A drag-and-drop file upload component with validation and customization options.
 
 ## Usage
@@ -98,6 +99,32 @@ import Container from '@/components/shared/layout/Container';
 ## Customization
 
 Most components accept a `className` prop that allows you to add custom CSS classes. Additionally, many components have specific props for customizing their appearance and behavior.
+
+## Testing
+
+All components in this library are thoroughly tested to ensure they work correctly and maintain their functionality over time. The tests are located in the `__tests__` directory.
+
+### Running Tests
+
+```bash
+# Run all shared component tests
+npm test -- components/shared
+
+# Run tests for a specific component
+npm test -- components/shared/__tests__/FileUpload.test.tsx
+```
+
+For more details on the testing approach and utilities, see the [Testing README](./__tests__/README.md).
+
+## Contributing
+
+When adding new components or modifying existing ones, please follow these guidelines:
+
+1. Ensure the component is properly typed with TypeScript
+2. Add comprehensive JSDoc comments
+3. Export component types from the index file
+4. Follow the established naming and coding conventions
+5. Add appropriate tests for new functionality
 
 ## Theming
 
