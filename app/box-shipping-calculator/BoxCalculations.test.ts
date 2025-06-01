@@ -11,7 +11,7 @@ import {
 	packItemsIntoMultipleBoxes,
 	standardBoxes,
 } from "./BoxCalculations";
-import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import type ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 
 // Helper to create a mock ShippingItem
 const createMockShippingItem = (

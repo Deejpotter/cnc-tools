@@ -12,11 +12,6 @@ Author: Deej Potter
 
 This application contains several mini-apps:
 
-- **CNC Calibration Tool** - Calibrate your 3D printer or CNC machine with tools for:
-  - Steps per millimeter calculation
-  - Flow compensation
-  - Startup G-code generator
-
 - **Box Shipping Calculator** - Optimize box shipping configurations and costs using an advanced 3D bin packing algorithm:
   - Intelligent multi-box packing
   - Weight and volume optimization
@@ -37,6 +32,10 @@ This application contains several mini-apps:
   - **Material Selection** - Choose materials for the enclosure
   - **Assembly Instructions** - Generate assembly instructions for the enclosure
 
+- **CNC Calibration Tool** - Calibrate your 3D printer or CNC machine with tools for:
+  - Steps per millimeter calculation
+  - Flow compensation
+
 - **Price Difference Tool** - Compare prices and calculate differences between products or services
 
 ## Getting Started
@@ -53,7 +52,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the result.
 
 ## Technology Stack
 
@@ -69,22 +68,25 @@ This project is built with:
 
 ### Prerequisites
 
-- Node.js 18.x or higher
-- npm 9.x or higher
+- Node.js 22.x or higher (recommended LTS 22.16.0)
+- npm 10.x or higher (recommended 10.5.0)
 - MongoDB database (local or cloud instance)
 
 ### Environment Setup
 
 1. Clone the repository
-2. Create a `.env.local` file with the following variables:
+2. Create a `.env` file with the following variables:
 
-   ```
+   ``` bash
    MONGODB_URI=your_mongodb_connection_string
-   OPENAI_API_KEY=your_openai_api_key (for CNC Technical AI)
+   OPENAI_API_KEY=your_openai_api_key
    ```
 
 3. Install dependencies with `npm install`
 4. Run the development server with `npm run dev`
+
+The app uses server actions and pulls the variables from the environment process, so they won't be available in the browser.
+Make sure to set them in your environment in Netlify/Vercel or your local `.env` file.
 
 ### Testing
 
@@ -110,26 +112,48 @@ The application is deployed on Netlify for production use. The deployment proces
 - NextJS-specific optimizations for static pages and server components
 - Comprehensive testing before production deployment
 
+### Netlify Build & Deployment
+
+This project is designed to deploy seamlessly on Netlify using Next.js SSR (Server-Side Rendering).
+
+- **Build Command:**
+  - Netlify runs `yarn build` (or `npm run build`) as defined in `netlify.toml`.
+  - This executes `next build` to prepare the app for production.
+
+### Example Netlify Build Process
+
+1. Netlify installs dependencies using Yarn or npm.
+2. Runs `yarn build` (or `npm run build`).
+3. Publishes the `.next` directory for SSR.
+4. Sets environment variables as needed.
+
+For more details, see the comments in `netlify.toml` and the scripts in `package.json`.
+
 ## Project Structure
 
 The project follows a Next.js App Router structure:
 
 - `app/` - Main application pages and mini-apps
   - `box-shipping-calculator/` - Box Shipping Calculator tool
-  - `cnc-calibration-tool/` - CNC Calibration tool
   - `cnc-technical-ai/` - AI chatbot for CNC technical questions
   - `20-series-extrusions/` - 20-Series Extrusions calculator
   - `40-series-extrusions/` - 40-Series Extrusions calculator
   - `enclosure-calculator/` - Enclosure calculator
+  - `cnc-calibration-tool/` - CNC Calibration tool
   - `price-difference-tool/` - Price comparison tool
-- `app/actions/` - Server actions for backend functionality
-- `components/` - Reusable UI components
-- `interfaces/` - TypeScript interfaces
-- `contexts/` - React context providers
+- `app/actions/` - Server actions for backend functionality. Safe server actions are used for database operations and API calls.
+- `components/` - Reusable UI components. Should be abstracted because I use them in multiple apps.
+- `contexts/` - React context providers. Mostly used for authentication and other global state management.
 - `utils/` - Utility functions
 - `styles/` - CSS and SCSS files
 - `public/` - Static assets
-- `types/` - TypeScript type definitions
+- `types/` - TypeScript type definitions and interfaces for components and utilities.
+
+## Navigation and Portability
+
+- All internal navigation uses Next.js's `Link` component (`import Link from "next/link"`) for optimal routing and prefetching.
+- If you use components outside Next.js, replace `Link` with your router's link component.
+- See `CodingConventions.md` for more details on navigation best practices and portability.
 
 ## Learn More
 

@@ -11,7 +11,7 @@
 import { OpenAI } from "openai";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
 	updateItemInDatabase,
@@ -130,7 +130,7 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 				{
 					role: "system",
 					content:
-						"Extract item details from invoice text. Return only the structured data.",
+						"Extract item details from invoice text. Return only the structured data. Make sure you get the SKU and quantity exactly correct.",
 				},
 				{
 					role: "user",
@@ -208,13 +208,24 @@ async function estimateItemDimensions(
 				{
 					role: "system",
 					content: `
-                        Estimate dimensions for hardware items in millimeters.
+                        Estimate dimensions for hardware items in millimeters and weights in grams.
                         Consider:
                         - Standard hardware sizes
                         - Packaging for multi-packs
                         - Common engineering dimensions
                         - Item descriptions and SKUs
                         Return conservative estimates that would fit the items.
+												
+												Here are some weights per mm for common extrusion profiles:
+												- 20 x 20mm - 20 Series: 0.49g/mm
+												- 20 x 40mm - 20 Series: 0.8g/mm
+												- 20 x 60mm - 20 Series: 1.08g/mm
+												- 20 x 80mm - 20 Series: 1.56g/mm
+												- 40 x 40mm - 20 Series: 1.08g/mm
+												- C-beam - 20 Series: 2.065g/mm
+												- C-beam HEAVY - 20 Series: 3.31g/mm
+												- 40 x 40mm - 40 Series: 1.57g/mm
+												- 40 x 80mm - 40 Series: 2.86g/mm
                     `,
 				},
 				{

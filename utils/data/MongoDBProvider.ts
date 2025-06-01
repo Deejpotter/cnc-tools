@@ -8,12 +8,12 @@
 
 import { ObjectId } from "mongodb";
 import { getCollection } from "@/app/actions/mongodb/client";
-import { DatabaseResponse, MongoDocument } from "@/app/actions/mongodb/types";
+import { DatabaseResponse, MongoDocument } from "@/types/mongodb/mongo-types";
 import {
 	DataProvider,
 	DataProviderOptions,
 	DEFAULT_OPTIONS,
-} from "./DataProvider";
+} from "@/types/mongodb/DataProvider";
 
 /**
  * MongoDB Data Provider

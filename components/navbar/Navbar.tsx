@@ -1,64 +1,143 @@
 "use client";
+// NOTE: All internal navigation uses Next.js's Link component for optimal routing and prefetching.
+// Replace with a relevant link for other react projects.
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Auth from "./Auth";
 
-const Navbar = () => {
+/**
+ * Generic navigation item type for portability.
+ * Supports dropdowns via optional 'items' array.
+ */
+export interface NavItem {
+	name: string; // Display name
+	path?: string; // URL path (for links)
+	items?: NavItem[]; // Dropdown items (optional)
+}
+
+/**
+ * NavbarProps defines the props required for the Navbar component.
+ * - brand: Branding text or element for the navbar.
+ * - navItems: Array of navigation items (links, dropdowns, etc.).
+ * - authProps: Props to pass to the Auth component (optional).
+ * - showAuth: Whether to show the Auth section (default: true if authProps provided)
+ */
+export interface NavbarProps {
+	brand: React.ReactNode;
+	navItems: NavItem[];
+	authProps?: React.ComponentProps<typeof Auth>;
+	showAuth?: boolean;
+}
+
+/**
+ * Navbar component - a reusable, transportable navigation bar.
+ * Accepts navigation structure and branding as props, so it can be dropped into any project.
+ * Handles dropdowns, active link highlighting, and mobile collapse.
+ *
+ * To use in a non-Next.js project, replace 'Link' with your router's link component.
+ */
+const Navbar = ({
+	brand,
+	navItems,
+	authProps,
+	showAuth = true,
+}: NavbarProps) => {
 	// State for managing the collapsed state of the navbar. Initially set to true (collapsed).
 	const [isNavCollapsed, setIsNavCollapsed] = useState(true);
-
 	// State for managing the visibility of the dropdown menu. Initially set to false (hidden).
-	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
+	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 	// State for managing the scrolled state of the navbar
 	const [isScrolled, setIsScrolled] = useState(false);
-
-	// Get current pathname to highlight active links
+	// Get current pathname to highlight active links (Next.js only)
 	const pathname = usePathname();
 
-	// Function to toggle the collapsed state of the navbar.
-	// This will be triggered when the navbar toggler button is clicked.
+	// Toggle the collapsed state of the navbar (for mobile)
 	const handleNavCollapse = () => setIsNavCollapsed(!isNavCollapsed);
 
-	// Function to toggle the visibility of the dropdown menu.
-	// This will be triggered when the dropdown menu is clicked.
-	const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+	// Toggle dropdown by name
+	const toggleDropdown = (name: string) => {
+		setOpenDropdown((prev) => (prev === name ? null : name));
+	};
 
-	// Function to close the dropdown menu
-	const closeDropdown = () => setIsDropdownOpen(false);
+	// Close all dropdowns
+	const closeDropdown = () => setOpenDropdown(null);
 
-	// Function to close both dropdown and mobile navbar
+	// Close both dropdown and mobile navbar
 	const handleLinkClick = () => {
-		// Close the dropdown menu if it's open
-		setIsDropdownOpen(false);
-		// Collapse the mobile navbar if it's expanded
+		closeDropdown();
 		setIsNavCollapsed(true);
 	};
 
-	// Effect to listen for scrolling and update isScrolled state
+	// Listen for scrolling to update isScrolled state
 	useEffect(() => {
 		const handleScroll = () => {
-			// Set isScrolled to true when page is scrolled more than 10px
-			if (window.scrollY > 10) {
-				setIsScrolled(true);
-			} else {
-				setIsScrolled(false);
-			}
+			setIsScrolled(window.scrollY > 10);
 		};
-
-		// Add scroll event listener
 		window.addEventListener("scroll", handleScroll);
-
-		// Clean up event listener on unmount
-		return () => {
-			window.removeEventListener("scroll", handleScroll);
-		};
+		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 
 	// Check if the given path is active (current page)
-	const isActive = (path: string) => {
-		return pathname === path;
+	const isActive = (path?: string) => path && pathname === path;
+
+	// Render a single nav item (link or dropdown)
+	const renderNavItem = (item: NavItem) => {
+		if (item.items && item.items.length > 0) {
+			// Dropdown menu
+			return (
+				<li
+					key={item.name}
+					className="nav-item dropdown"
+					onMouseEnter={() => setOpenDropdown(item.name)}
+					onMouseLeave={closeDropdown}
+				>
+					<span
+						className="nav-link dropdown-toggle px-3 py-2 mx-1"
+						role="button"
+						aria-expanded={openDropdown === item.name}
+						onClick={() => toggleDropdown(item.name)}
+					>
+						{item.name}
+					</span>
+					<ul
+						className={`dropdown-menu ${
+							openDropdown === item.name ? "show" : ""
+						}`}
+					>
+						{item.items.map((sub) => (
+							<li key={sub.name}>
+								{sub.path ? (
+									<Link href={sub.path} onClick={handleLinkClick}>
+										<span className="dropdown-item">{sub.name}</span>
+									</Link>
+								) : (
+									<span className="dropdown-item">{sub.name}</span>
+								)}
+							</li>
+						))}
+					</ul>
+				</li>
+			);
+		}
+		// Regular nav link
+		return (
+			<li className="nav-item" key={item.name}>
+				{item.path ? (
+					<Link href={item.path} onClick={handleLinkClick}>
+						<span
+							className={`nav-link px-1 py-1 mx-1 ${
+								isActive(item.path) ? "active-link" : ""
+							}`}
+						>
+							{item.name}
+						</span>
+					</Link>
+				) : (
+					<span className="nav-link px-3 py-2 mx-1">{item.name}</span>
+				)}
+			</li>
+		);
 	};
 
 	return (
@@ -70,114 +149,39 @@ const Navbar = () => {
 			} transition-all`}
 		>
 			<div className="container-fluid">
-				{/* Next.js Link for client-side routing. The navbar brand is wrapped inside the Link. */}
+				{/* Navbar brand (customizable) */}
 				<Link href="/" onClick={handleLinkClick}>
 					<span
 						className={`navbar-brand ${isScrolled ? "fs-5" : "fs-4"} fw-bold`}
 					>
-						CNC Calculations
+						{brand}
 					</span>
 				</Link>
-
 				{/* Button to toggle the navbar on mobile devices. */}
 				<button
 					className="navbar-toggler"
 					type="button"
-					onClick={handleNavCollapse} // Set to call handleNavCollapse on click
-					aria-expanded={!isNavCollapsed} // Accessibility attribute
+					onClick={handleNavCollapse}
+					aria-expanded={!isNavCollapsed}
 					aria-label="Toggle navigation"
 				>
-					<span className="navbar-toggler-icon"></span>{" "}
-					{/* Hamburger icon from Bootstrap */}
+					<span className="navbar-toggler-icon"></span>
 				</button>
-
 				{/* Collapsible part of the navbar. Its visibility is controlled by isNavCollapsed state. */}
 				<div
 					className={`${isNavCollapsed ? "collapse" : ""} navbar-collapse`}
 					id="navbarNav"
 				>
-					<ul className="navbar-nav">
-						{/* Navigation items, each wrapped in a Next.js Link for client-side routing */}
-						<li className="nav-item">
-							<Link href="/cnc-technical-ai" onClick={handleLinkClick}>
-								<span
-									className={`nav-link px-3 py-2 mx-1 ${
-										isActive("/cnc-technical-ai") ? "active-link" : ""
-									}`}
-								>
-									CNC Technical AI
-								</span>
-							</Link>
-						</li>
-						<li className="nav-item">
-							<Link href="/cnc-calibration-tool" onClick={handleLinkClick}>
-								<span
-									className={`nav-link px-3 py-2 mx-1 ${
-										isActive("/cnc-calibration-tool") ? "active-link" : ""
-									}`}
-								>
-									CNC Calibration Tool
-								</span>
-							</Link>
-						</li>
-
-						{/* Dropdown Menu - uses onClick to toggle dropdown visibility */}
-						<li
-							className={`nav-item dropdown`}
-							onMouseEnter={() => setIsDropdownOpen(true)}
-							onMouseLeave={() => setIsDropdownOpen(false)}
-						>
-							<span
-								className="nav-link dropdown-toggle px-3 py-2 mx-1"
-								role="button"
-								aria-expanded={isDropdownOpen}
-								onClick={toggleDropdown}
-							>
-								Other Tools
-							</span>
-							<ul className={`dropdown-menu ${isDropdownOpen ? "show" : ""}`}>
-								<li>
-									<Link
-										href="/box-shipping-calculator"
-										onClick={handleLinkClick}
-									>
-										<span className="dropdown-item">
-											Box Shipping Calculator
-										</span>
-									</Link>
-								</li>{" "}
-								<li>
-									<Link href="/enclosure-calculator" onClick={handleLinkClick}>
-										<span className="dropdown-item">Enclosure Calculator</span>
-									</Link>
-								</li>
-								<li>
-									<Link
-										href="/table-enclosure-calculator"
-										onClick={handleLinkClick}
-									>
-										<span className="dropdown-item">
-											Table & Enclosure Calculator
-										</span>
-									</Link>
-								</li>
-								<li>
-									<Link href="/40-series-extrusions" onClick={handleLinkClick}>
-										<span className="dropdown-item">40 Series Extrusions</span>
-									</Link>
-								</li>
-								<li>
-									<Link href="/20-series-extrusions" onClick={handleLinkClick}>
-										<span className="dropdown-item">20 Series Extrusions</span>
-									</Link>
-								</li>
-								{/* Add more dropdown items as needed */}
-							</ul>
-						</li>
-						{/* Add more nav-items as needed */}
-					</ul>
+					<ul className="navbar-nav">{navItems.map(renderNavItem)}</ul>
 				</div>
-				<Auth />
+				{/* Auth section (optional, customizable) */}
+				{/* To customize Auth, pass props here if your Auth component supports them. Replace or remove as needed for your project. */}
+				{showAuth &&
+					(authProps && typeof authProps === "object" ? (
+						<Auth {...authProps} />
+					) : (
+						<Auth />
+					))}
 			</div>
 		</nav>
 	);

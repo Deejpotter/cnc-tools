@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import { Check, ChevronUp, ChevronRight, ChevronDown } from "lucide-react";
 
 interface ItemEditModalBatchProps {

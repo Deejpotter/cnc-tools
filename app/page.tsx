@@ -1,7 +1,15 @@
+/**
+ * Home Page Component
+ * Updated: 31/05/25
+ * Author: Daniel Potter
+ * Description: This component serves as the home page of the CNC application.
+ * Use the TileSection component to display various tools and calculators by adding the relevant data to the tilesData array at the top of the file.
+ */
+
 import React from "react";
-import LayoutContainer from "../components/LayoutContainer";
-import TileSection from "../components/TileSection";
-import { TileProps } from "../components/Tile";
+import LayoutContainer from "@/components/LayoutContainer";
+import TileSection from "@/components/tiles/TileSection";
+import { TileProps } from "@/components/tiles/Tile";
 
 export default function Home() {
 	// Defining tile data using the TileProps interface for TypeScript type checking
@@ -16,18 +24,18 @@ export default function Home() {
 			textColorClass: "text-dark",
 		},
 		{
-			title: "Table and Enclosure Calculator",
-			description: "Calculate the size of an enclosure.",
-			link: "/table-enclosure-calculator",
-			linkText: "Table and Enclosure Calculator",
-			bgColorClass: "bg-light",
-			textColorClass: "text-dark",
-		},
-		{
 			title: "CNC Calibration Tool",
 			description: "Calibrate your CNC machine for precise manufacturing.",
 			link: "/cnc-calibration-tool",
 			linkText: "Calibrate CNC",
+			bgColorClass: "bg-light",
+			textColorClass: "text-dark",
+		},
+		{
+			title: "Table and Enclosure Calculator",
+			description: "Calculate the size of an enclosure and/or a machine table.",
+			link: "/table-enclosure-calculator",
+			linkText: "Table and Enclosure Calculator",
 			bgColorClass: "bg-light",
 			textColorClass: "text-dark",
 		},

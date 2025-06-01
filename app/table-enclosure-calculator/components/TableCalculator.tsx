@@ -22,8 +22,8 @@ import type {
 	TableConfig,
 	MaterialConfig,
 	Results,
-} from "../types";
-import { DoorType } from "../types";
+} from "../../../types/box-shipping-calculator/box-shipping-types";
+import { DoorType } from "../../../types/box-shipping-calculator/box-shipping-types";
 import { ConfigPanel } from "./ConfigPanel";
 import { ResultsPanel } from "./ResultsPanel";
 
