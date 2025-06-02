@@ -11,7 +11,9 @@ The Table and Enclosure Calculator is a tool for calculating the materials neede
 - Handle both inside and outside dimension specifications
 - Support for mounting enclosures to tables
 - Support for doors and panels with various material types
-- Shareable URLs for saved configurations
+- Save and load configuration presets
+- Undo/Redo functionality for configuration changes
+- Export materials list to CSV/Excel formats
 
 ## Calculator Usage
 

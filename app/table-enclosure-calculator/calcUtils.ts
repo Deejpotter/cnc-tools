@@ -95,10 +95,10 @@ export const calculateTableMaterials = (
 	const rail2060Length = adjustedLength; // Length of 2060 extrusions for table length
 	const rail2060Width = adjustedWidth; // Length of 2060 extrusions for table width
 	const legExtrusions4040 = dimensions.height; // Length of 4040 extrusions for table legs
-
 	// Calculate total quantities needed
-	const qtyRail2060Width = 2; // 2 for width or X axis
-	const qtyRail2060Length = 2; // 2 for length or Y axis
+	// Table has top and bottom frame, so 4 extrusions per direction
+	const qtyRail2060Width = 4; // 4 for width (2 top + 2 bottom)
+	const qtyRail2060Length = 4; // 4 for length (2 top + 2 bottom)
 	const qtyRail4040Legs = 4; // 4 legs for the table or Z axis
 
 	return {
@@ -133,14 +133,14 @@ export const calculateEnclosureMaterials = (
 	const enclosureLength = dimensions.length;
 	const enclosureWidth = dimensions.width;
 	const enclosureHeight = dimensions.height;
-
 	/**
 	 * Determine extrusion types based on dimensions:
-	 * - For enclosures 1500mm or larger: Top extrusions use 2040, Bottom always uses 2020
+	 * - For enclosures with length >= 1500mm: Length extrusions use 2040, Width always uses 2020
 	 * - For smaller enclosures: All extrusions use 2020
 	 * - Vertical extrusions always use 2020
 	 */
-	const isLargeEnclosure = enclosureLength >= 1500 || enclosureWidth >= 1500;
+	const isLargeLength = enclosureLength >= 1500;
+	const isLargeWidth = enclosureWidth >= 1500;
 
 	// Get extrusion info from constants
 	const extrusion2020 = EXTRUSION_OPTIONS.find((e) => e.id === "20x20-20");
@@ -148,11 +148,14 @@ export const calculateEnclosureMaterials = (
 	const extrusion2040 = EXTRUSION_OPTIONS.find((e) => e.id === "20x40-20");
 
 	// Top extrusion types (for length and width rails)
-	const topExtrusionType = isLargeEnclosure ? "2040" : "2020";
-	const topExtrusionHeight = isLargeEnclosure
+	const topLengthExtrusionType = isLargeLength ? "2040" : "2020";
+	const topWidthExtrusionType = isLargeWidth ? "2040" : "2020";
+	const topLengthExtrusionHeight = isLargeLength
 		? extrusion2040.height
 		: extrusion2020.height;
-
+	const topWidthExtrusionHeight = isLargeWidth
+		? extrusion2040.height
+		: extrusion2020.height;
 	// Bottom extrusion types (always 2020)
 	const bottomExtrusionType = "2020";
 	const bottomExtrusionHeight = extrusion2020.height;
@@ -188,19 +191,23 @@ export const calculateEnclosureMaterials = (
 	const effectiveWidth = isOutsideDimension
 		? dimensions.width - verticalExtrusionWidth
 		: dimensions.width;
-
 	/**
 	 * For vertical extrusions, we need to account for the top and bottom horizontal extrusions.
-	 * The vertical extrusion height is the enclosure height minus the height of the horizontal extrusions.
-	 * For example:
-	 * - With 2020 top and bottom: height - (20mm top + 20mm bottom) = height - 40mm
-	 * - With 2040 top and 2020 bottom: height - (40mm top + 20mm bottom) = height - 60mm
-	 */ const effectiveHeight =
-		dimensions.height - (topExtrusionHeight + bottomExtrusionHeight);
+	 * The vertical extrusion height calculation depends on whether dimensions are inside or outside:
+	 * - For inside dimensions: vertical height = specified height (the height IS the vertical extrusion length)
+	 * - For outside dimensions: vertical height = specified height - (top rail + bottom rail)
+	 *
+	 * Examples:
+	 * - Inside 500mm height: vertical extrusions = 500mm, total outside = 500 + 20 + 20 = 540mm
+	 * - Outside 540mm height: vertical extrusions = 540 - 20 - 20 = 500mm, internal = 500mm
+	 */
+	const effectiveHeight = isOutsideDimension
+		? dimensions.height - (topLengthExtrusionHeight + bottomExtrusionHeight)
+		: dimensions.height;
 	/**
 	 * Structure the extrusions to match the expected interface in types.ts
 	 * For the enclosure frame:
-	 * - Top: 2x length extrusions and 2x width extrusions (using topExtrusionType)
+	 * - Top: 2x length extrusions and 2x width extrusions (using respective types)
 	 * - Bottom: 2x length extrusions and 2x width extrusions (using bottomExtrusionType/2020)
 	 * - Vertical: 4x corner extrusions (always 2020)
 	 *
@@ -210,13 +217,13 @@ export const calculateEnclosureMaterials = (
 	const extrusions = {
 		horizontal: {
 			length: {
-				// Using top extrusion type which could be 2020 or 2040 based on size
-				type: topExtrusionType,
+				// Using top length extrusion type which could be 2020 or 2040 based on size
+				type: topLengthExtrusionType,
 				size: effectiveLength,
 			},
 			width: {
-				// Using top extrusion type which could be 2020 or 2040 based on size
-				type: topExtrusionType,
+				// Using top width extrusion type which could be 2020 or 2040 based on size
+				type: topWidthExtrusionType,
 				size: effectiveWidth,
 			},
 		},
@@ -238,12 +245,15 @@ export const calculateEnclosureMaterials = (
 				hardware.CAP_HEAD_M5_8MM + EXTRA_HARDWARE_FOR_1_5M.CAP_HEAD_M5_8MM,
 		};
 	}
-
 	// Calculate the total lengths for each extrusion type
-	const topLength2020 = topExtrusionType === "2020" ? effectiveLength * 2 : 0; // 2 for top length
-	const topWidth2020 = topExtrusionType === "2020" ? effectiveWidth * 2 : 0; // 2 for top width
-	const topLength2040 = topExtrusionType === "2040" ? effectiveLength * 2 : 0; // 2 for top length
-	const topWidth2040 = topExtrusionType === "2040" ? effectiveWidth * 2 : 0; // 2 for top width
+	const topLength2020 =
+		topLengthExtrusionType === "2020" ? effectiveLength * 2 : 0; // 2 for top length
+	const topWidth2020 =
+		topWidthExtrusionType === "2020" ? effectiveWidth * 2 : 0; // 2 for top width
+	const topLength2040 =
+		topLengthExtrusionType === "2040" ? effectiveLength * 2 : 0; // 2 for top length
+	const topWidth2040 =
+		topWidthExtrusionType === "2040" ? effectiveWidth * 2 : 0; // 2 for top width
 
 	const bottomLength2020 = effectiveLength * 2; // Always 2020 for bottom length
 	const bottomWidth2020 = effectiveWidth * 2; // Always 2020 for bottom width
@@ -305,17 +315,16 @@ export const calculateDoorMaterials = (
 	 * (panelWidth - extrusionWidth + slotDepth) * (panelHeight - extrusionHeight + slotDepth)
 	 * or (100 - 20 + 6) * (100 - 20 + 6) = 86 * 86 = 7396mm^2
 	 */
-
 	// Get slot depth information from EXTRUSION_OPTIONS
 	const extrusion20Series = EXTRUSION_OPTIONS.find((e) =>
 		e.id.includes("20x20-20")
 	);
 	const slotDepth = extrusion20Series ? extrusion20Series.slotDepth : 6; // Default to 6mm if not found
-	const PANEL_CALCULATION = (20 - slotDepth) * 2; // Calculation based on extrusion width and slot depth
+	const extrusionWidth = extrusion20Series ? extrusion20Series.width : 20; // Get from constants
+	const PANEL_CALCULATION = slotDepth * 2; // Panels are reduced by slot depth on each side
 
 	// Adjust dimensions based on whether they're inside or outside measurements
 	// For outside dimensions, we need to subtract the extrusion width (20mm for 2020) to get the internal frame dimension.
-	const extrusionWidth = 20; // Assuming 2020 extrusion for door panels as well
 	const internalLength = isOutsideDimension
 		? length - extrusionWidth * 2
 		: length;
@@ -508,7 +517,7 @@ export const calculatePanelMaterials = (
 	);
 	const slotDepth = extrusionInfo ? extrusionInfo.slotDepth : 6; // Default to 6mm if not found
 	const extrusionWidth = extrusionInfo ? extrusionInfo.width : 20; // Default to 20mm if not found
-	const PANEL_REDUCTION = (extrusionWidth - slotDepth) * 2; // Calculation based on extrusion width and slot depth
+	const PANEL_REDUCTION = slotDepth * 2; // Panels are reduced by slot depth on each side
 
 	// Adjust dimensions based on whether they're inside or outside measurements
 	// For outside dimensions, we need to subtract the extrusion width (20mm for 2020) to get the internal frame dimension.

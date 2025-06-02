@@ -21,6 +21,23 @@ import {
 } from "@/types/box-shipping-calculator/box-shipping-types";
 
 /**
+ * Interface for input validation errors
+ */
+interface ValidationErrors {
+	table?: {
+		length?: string;
+		width?: string;
+		height?: string;
+	};
+	enclosure?: {
+		length?: string;
+		width?: string;
+		height?: string;
+	};
+	general?: string[];
+}
+
+/**
  * The props for the ConfigPanel component.
  * @property {TableConfig} config - The configuration object for the table and enclosure.
  * @property {Omit<Dimensions, "isOutsideDimension">} tableDimensions - The dimensions of the table.
@@ -45,6 +62,8 @@ interface ConfigPanelProps {
 	handleDoorTypeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 	MATERIAL_TYPES: Array<{ id: string; name: string }>;
 	MATERIAL_THICKNESS: number;
+	validationErrors?: ValidationErrors;
+	showTooltips?: boolean;
 }
 
 /**
@@ -63,6 +82,8 @@ export function ConfigPanel({
 	handleDoorTypeChange,
 	MATERIAL_TYPES,
 	MATERIAL_THICKNESS,
+	validationErrors,
+	showTooltips,
 }: ConfigPanelProps) {
 	return (
 		<>
@@ -72,6 +93,7 @@ export function ConfigPanel({
 					<h2 className="h5 mb-0">Configuration</h2>
 				</div>
 				<div className="card-body">
+					{" "}
 					<div className="row g-3">
 						<div className="col-md-4">
 							<div className="form-check form-switch">
@@ -86,9 +108,15 @@ export function ConfigPanel({
 								/>
 								<label className="form-check-label" htmlFor="includeTable">
 									Include Table
+									{showTooltips && (
+										<small className="text-muted d-block">
+											Calculate materials for a CNC table structure with
+											aluminum extrusions
+										</small>
+									)}
 								</label>
 							</div>
-						</div>
+						</div>{" "}
 						<div className="col-md-4">
 							<div className="form-check form-switch">
 								<input
@@ -102,10 +130,16 @@ export function ConfigPanel({
 								/>
 								<label className="form-check-label" htmlFor="includeEnclosure">
 									Include Enclosure
+									{showTooltips && (
+										<small className="text-muted d-block">
+											Calculate materials for an aluminum frame enclosure around
+											your CNC
+										</small>
+									)}
 								</label>
 							</div>
 						</div>{" "}
-						{/* Moved "Use Outside Dimensions" here */}
+						{/* Moved "Use Outside Dimensions" here */}{" "}
 						<div className="col-md-4">
 							<div className="form-check form-switch">
 								<input
@@ -122,6 +156,13 @@ export function ConfigPanel({
 									htmlFor="isOutsideDimension"
 								>
 									Use Outside Dimensions
+									{showTooltips && (
+										<small className="text-muted d-block">
+											When enabled, dimensions represent the outer measurements.
+											When disabled, dimensions represent the inner working
+											area.
+										</small>
+									)}
 								</label>
 							</div>
 						</div>
@@ -135,12 +176,18 @@ export function ConfigPanel({
 										name="mountEnclosureToTable" // Handled by handleConfigChange
 										checked={config.mountEnclosureToTable}
 										onChange={handleConfigChange}
-									/>
+									/>{" "}
 									<label
 										className="form-check-label"
 										htmlFor="mountEnclosureToTable"
 									>
 										Mount Enclosure to Table
+										{showTooltips && (
+											<small className="text-muted d-block">
+												Calculate brackets and hardware to mount the enclosure
+												directly to the table frame
+											</small>
+										)}
 									</label>
 								</div>
 							</div>
@@ -155,9 +202,15 @@ export function ConfigPanel({
 										name="includeDoors" // Handled by handleConfigChange
 										checked={config.includeDoors}
 										onChange={handleConfigChange}
-									/>
+									/>{" "}
 									<label className="form-check-label" htmlFor="includeDoors">
 										Include Doors
+										{showTooltips && (
+											<small className="text-muted d-block">
+												Add hinged doors to the enclosure for access. Select
+												positions and door type below.
+											</small>
+										)}
 									</label>
 								</div>
 							</div>
@@ -216,19 +269,34 @@ export function ConfigPanel({
 						)}
 					</div>
 				</div>
-			</div>
+			</div>{" "}
 			{/* Table Dimensions */}
 			{config.includeTable && (
 				<div className="card mb-4">
 					<div className="card-header">
-						<h2 className="h5 mb-0">Table Dimensions (mm)</h2>
+						<h2 className="h5 mb-0">
+							Table Dimensions (mm)
+							{showTooltips && (
+								<small className="text-muted d-block">
+									Enter the size of your CNC table. These dimensions will
+									determine the amount of aluminum extrusions and hardware
+									needed.
+								</small>
+							)}
+						</h2>
 					</div>
 					<div className="card-body">
 						{" "}
 						<div className="row g-3">
+							{" "}
 							<div className="col-md-3 col-sm-6">
 								<label htmlFor="tableLength" className="form-label">
 									Length (mm)
+									{showTooltips && (
+										<small className="text-muted d-block">
+											The front-to-back measurement of your table
+										</small>
+									)}
 								</label>
 								<input
 									type="number"
@@ -239,11 +307,20 @@ export function ConfigPanel({
 									onChange={handleTableDimensionChange}
 									min="0"
 								/>
-							</div>
-
+								{validationErrors?.table?.length && (
+									<div className="text-danger small mt-1">
+										{validationErrors.table.length}
+									</div>
+								)}
+							</div>{" "}
 							<div className="col-md-3 col-sm-6">
 								<label htmlFor="tableWidth" className="form-label">
 									Width (mm)
+									{showTooltips && (
+										<small className="text-muted d-block">
+											The left-to-right measurement of your table
+										</small>
+									)}
 								</label>
 								<input
 									type="number"
@@ -254,11 +331,20 @@ export function ConfigPanel({
 									onChange={handleTableDimensionChange}
 									min="0"
 								/>
-							</div>
-
+								{validationErrors?.table?.width && (
+									<div className="text-danger small mt-1">
+										{validationErrors.table.width}
+									</div>
+								)}
+							</div>{" "}
 							<div className="col-md-3 col-sm-6">
 								<label htmlFor="tableHeight" className="form-label">
 									Height (mm)
+									{showTooltips && (
+										<small className="text-muted d-block">
+											The height from floor to table surface
+										</small>
+									)}
 								</label>
 								<input
 									type="number"
@@ -269,17 +355,46 @@ export function ConfigPanel({
 									onChange={handleTableDimensionChange}
 									min="0"
 								/>
+								{validationErrors?.table?.height && (
+									<div className="text-danger small mt-1">
+										{validationErrors.table.height}
+									</div>
+								)}
 							</div>
 							{/* Removed individual isOutsideDimension checkbox for table */}
 						</div>
+						{/* Show validation errors if any */}
+						{validationErrors?.table &&
+							Object.keys(validationErrors.table).length > 0 && (
+								<div className="alert alert-danger">
+									<strong>Table dimension errors:</strong>
+									<ul className="mb-0 mt-2">
+										{Object.entries(validationErrors.table).map(
+											([field, error]) => (
+												<li key={field}>
+													{field}: {error}
+												</li>
+											)
+										)}
+									</ul>
+								</div>
+							)}
 					</div>
 				</div>
-			)}
+			)}{" "}
 			{/* Enclosure Dimensions */}
 			{config.includeEnclosure && (
 				<div className="card mb-4">
 					<div className="card-header">
-						<h2 className="h5 mb-0">Enclosure Dimensions (mm)</h2>
+						<h2 className="h5 mb-0">
+							Enclosure Dimensions (mm)
+							{showTooltips && (
+								<small className="text-muted d-block">
+									Enter the size of your enclosure. If a table is included,
+									length and width will auto-adjust to fit the table.
+								</small>
+							)}
+						</h2>
 						{config.includeTable && (
 							<small className="text-muted ms-2">
 								(Length & Width auto-adjusted if table is included)
@@ -288,9 +403,17 @@ export function ConfigPanel({
 					</div>
 					<div className="card-body">
 						<div className="row g-3">
+							{" "}
 							<div className="col-md-3 col-sm-6">
 								<label htmlFor="enclosureLength" className="form-label">
 									Length (mm)
+									{showTooltips && (
+										<small className="text-muted d-block">
+											{config.includeTable
+												? "Auto-calculated from table size"
+												: "The front-to-back measurement of your enclosure"}
+										</small>
+									)}
 								</label>
 								<input
 									type="number"
@@ -302,10 +425,22 @@ export function ConfigPanel({
 									min="0"
 									disabled={config.includeTable} // Disabled if table dictates size
 								/>
-							</div>
+								{validationErrors?.enclosure?.length && (
+									<div className="text-danger small mt-1">
+										{validationErrors.enclosure.length}
+									</div>
+								)}
+							</div>{" "}
 							<div className="col-md-3 col-sm-6">
 								<label htmlFor="enclosureWidth" className="form-label">
 									Width (mm)
+									{showTooltips && (
+										<small className="text-muted d-block">
+											{config.includeTable
+												? "Auto-calculated from table size"
+												: "The left-to-right measurement of your enclosure"}
+										</small>
+									)}
 								</label>
 								<input
 									type="number"
@@ -317,10 +452,20 @@ export function ConfigPanel({
 									min="0"
 									disabled={config.includeTable} // Disabled if table dictates size
 								/>
-							</div>
+								{validationErrors?.enclosure?.width && (
+									<div className="text-danger small mt-1">
+										{validationErrors.enclosure.width}
+									</div>
+								)}
+							</div>{" "}
 							<div className="col-md-3 col-sm-6">
 								<label htmlFor="enclosureHeight" className="form-label">
 									Height (mm)
+									{showTooltips && (
+										<small className="text-muted d-block">
+											The height of the enclosure frame (working height inside)
+										</small>
+									)}
 								</label>
 								<input
 									type="number"
@@ -331,39 +476,102 @@ export function ConfigPanel({
 									onChange={handleEnclosureDimensionChange}
 									min="0"
 								/>
+								{validationErrors?.enclosure?.height && (
+									<div className="text-danger small mt-1">
+										{validationErrors.enclosure.height}
+									</div>
+								)}
 							</div>
 							{/* Removed individual isOutsideDimension checkbox for enclosure */}
 						</div>
+						{/* Show validation errors if any */}
+						{validationErrors?.enclosure &&
+							Object.keys(validationErrors.enclosure).length > 0 && (
+								<div className="alert alert-danger">
+									<strong>Enclosure dimension errors:</strong>
+									<ul className="mb-0 mt-2">
+										{Object.entries(validationErrors.enclosure).map(
+											([field, error]) => (
+												<li key={field}>
+													{field}: {error}
+												</li>
+											)
+										)}
+									</ul>
+								</div>
+							)}
 					</div>
 				</div>
-			)}
+			)}{" "}
 			{/* Material Configuration */}
 			{config.includeEnclosure && (
 				<div className="card mb-4">
 					<div className="card-header">
-						<h2 className="h5 mb-0">Panel Materials</h2>
-					</div>
+						<h2 className="h5 mb-0">
+							Panel Materials
+							{showTooltips && (
+								<small className="text-muted d-block">
+									Configure materials for enclosure panels (walls, top, bottom).
+									Panels provide enclosure and noise reduction.
+								</small>
+							)}
+						</h2>
+					</div>{" "}
 					<div className="card-body">
 						<div className="row mb-3">
 							<div className="col-md-6">
-								<label htmlFor="materialType" className="form-label">
-									Material Type (All {MATERIAL_THICKNESS}mm Thick)
-								</label>
-								<select
-									className="form-select"
-									id="materialType"
-									value={materialConfig.type}
-									onChange={handleMaterialTypeChange}
-								>
-									{MATERIAL_TYPES.map((type) => (
-										<option key={type.id} value={type.id}>
-											{type.name}
-										</option>
-									))}
-								</select>
+								<div className="form-check form-switch mb-3">
+									<input
+										className="form-check-input"
+										type="checkbox"
+										role="switch"
+										id="includePanels"
+										name="includePanels"
+										checked={materialConfig.includePanels}
+										onChange={handlePanelConfigChange}
+									/>
+									<label className="form-check-label" htmlFor="includePanels">
+										Include Panels
+										{showTooltips && (
+											<small className="text-muted d-block">
+												Add material panels to enclose the frame. Panels provide
+												dust containment and noise reduction.
+											</small>
+										)}
+									</label>
+								</div>
 							</div>
-							{/* Removed Material Thickness dropdown */}
 						</div>
+
+						{materialConfig.includePanels && (
+							<div className="row mb-3">
+								<div className="col-md-6">
+									<label htmlFor="materialType" className="form-label">
+										Material Type (All {MATERIAL_THICKNESS}mm Thick)
+										{showTooltips && (
+											<small className="text-muted d-block">
+												Choose the material for your panels. Different materials
+												provide varying levels of noise reduction and
+												durability.
+											</small>
+										)}
+									</label>
+									<select
+										className="form-select"
+										id="materialType"
+										value={materialConfig.type}
+										onChange={handleMaterialTypeChange}
+									>
+										{MATERIAL_TYPES.map((type) => (
+											<option key={type.id} value={type.id}>
+												{type.name}
+											</option>
+										))}
+									</select>
+								</div>
+								{/* Removed Material Thickness dropdown */}
+							</div>
+						)}
 
 						{materialConfig.includePanels && (
 							<div>
