@@ -1,14 +1,16 @@
 /**
  * Process Invoices server actions
- * Updated: 30/03/25
+ * Updated: 02/06/2025
  * Author: Deej Potter
- * Description: Handles invoice processing, including PDF extraction and AI item extraction.
+ * Description: Handles invoice processing, including PDF extraction using pdf-ts and AI item extraction.
  * Uses Next.js 14 server actions and OpenAI API for item extraction.
+ * Enhanced to support both PDF and text file imports using pdf-ts library.
  */
 
 "use server";
 
 import { OpenAI } from "openai";
+import { pdfToText } from "pdf-ts"; // Import pdf-ts for PDF text extraction
 import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
@@ -32,8 +34,8 @@ export interface ExtractedItem {
 
 /**
  * Process invoice file and extract items using AI
- * Simplified to process text content only (no PDF processing)
- * @param formData Form data containing the invoice text file
+ * Enhanced to support both PDF and text files using pdf-ts library
+ * @param formData Form data containing the invoice file (PDF or text)
  * @returns Array of shipping items with dimensions
  */
 export async function processInvoice(
@@ -45,15 +47,50 @@ export async function processInvoice(
 			throw new Error("No file provided");
 		}
 
-		// Process text content directly (no PDF extraction)
-		const textContent = await file.text();
-		console.log("Text Content:", textContent);
+		console.log(
+			`Processing file: ${file.name} (${file.type}, ${file.size} bytes)`
+		);
+
+		let textContent: string;
+
+		// Check file type and extract text accordingly
+		if (
+			file.type === "application/pdf" ||
+			file.name.toLowerCase().endsWith(".pdf")
+		) {
+			// Handle PDF files using pdf-ts
+			console.log("Processing PDF file with pdf-ts library");
+			try {
+				// Convert File to ArrayBuffer for pdf-ts
+				const arrayBuffer = await file.arrayBuffer();
+				const uint8Array = new Uint8Array(arrayBuffer);
+
+				// Extract text from PDF using pdf-ts
+				textContent = await pdfToText(uint8Array);
+				console.log("PDF text extraction successful");
+			} catch (pdfError) {
+				console.error("PDF extraction error:", pdfError);
+				throw new Error(
+					`Failed to extract text from PDF: ${
+						pdfError instanceof Error
+							? pdfError.message
+							: "Unknown PDF processing error"
+					}`
+				);
+			}
+		} else {
+			// Handle text files (existing functionality)
+			console.log("Processing text file");
+			textContent = await file.text();
+		}
+
+		console.log("Extracted text content length:", textContent.length);
 
 		if (!textContent.trim()) {
 			throw new Error("File appears to be empty or unreadable");
 		}
 
-		// Process with AI to extract items
+		// Process with AI to extract items (same for both PDF and text)
 		const extractedItems = await processWithAI(textContent);
 		if (!extractedItems?.length) {
 			throw new Error("No items found in invoice");
@@ -78,7 +115,7 @@ export async function processInvoice(
 
 /**
  * Process text content with OpenAI to extract item details
- * Updated to work with text-only input (PDF processing removed for simplicity)
+ * Enhanced to work with text extracted from both PDF and text files
  */
 async function processWithAI(text: string): Promise<ExtractedItem[]> {
 	try {
