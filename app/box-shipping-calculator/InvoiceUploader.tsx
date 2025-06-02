@@ -1,8 +1,9 @@
 /**
  * InvoiceUploader
- * Updated: 14/05/2025
+ * Updated: 02/06/2025
  * Author: Deej Potter
  * Description: Component for uploading and processing invoice files.
+ * Simplified to process text files only (removed PDF processing dependencies).
  * Extracts shipping items from invoices and passes them to the parent component.
  * Enhanced with better visual feedback, consistent Bootstrap styling and improved accessibility.
  */
@@ -145,15 +146,14 @@ export default function InvoiceUploader({
 					}
 				}}
 			>
-				<div className="card-body text-center p-5">
-					<input
+				<div className="card-body text-center p-5">					<input
 						type="file"
 						name="invoice"
-						accept=".pdf"
+						accept=".txt,.text"
 						className="d-none"
 						id="invoice-upload"
 						onChange={handleFileChange}
-						aria-label="Upload invoice PDF"
+						aria-label="Upload invoice text file"
 					/>
 					<label
 						htmlFor="invoice-upload"
@@ -173,12 +173,11 @@ export default function InvoiceUploader({
 								<>
 									<div className="mb-3 text-primary">
 										<Upload size={48} className="mx-auto" />
-									</div>
-									<h5 className="card-title">
-										Drag & drop a Maker Store invoice PDF here
+									</div>									<h5 className="card-title">
+										Drag & drop a Maker Store invoice text file here
 									</h5>
 									<p className="card-text text-muted">
-										Or click to select a file
+										Or click to select a .txt file
 									</p>
 								</>
 							)}

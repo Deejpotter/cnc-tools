@@ -9,18 +9,12 @@
 "use server";
 
 import { OpenAI } from "openai";
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
 import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
 	updateItemInDatabase,
 	getAllDocuments,
 } from "./mongodb/actions";
-
-// Initialize PDF.js worker
-const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
-pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
@@ -38,7 +32,8 @@ export interface ExtractedItem {
 
 /**
  * Process invoice file and extract items using AI
- * @param formData Form data containing the invoice file
+ * Simplified to process text content only (no PDF processing)
+ * @param formData Form data containing the invoice text file
  * @returns Array of shipping items with dimensions
  */
 export async function processInvoice(
@@ -50,18 +45,12 @@ export async function processInvoice(
 			throw new Error("No file provided");
 		}
 
-		// First try PDF extraction
-		const buffer = await file.arrayBuffer();
-		const pdfText = await extractPdfText(buffer);
+		// Process text content directly (no PDF extraction)
+		const textContent = await file.text();
+		console.log("Text Content:", textContent);
 
-		let textContent: string;
-
-		if (pdfText) {
-			console.log("PDF Content:", pdfText);
-			textContent = pdfText;
-		} else {
-			textContent = await file.text();
-			console.log("Raw Text Content:", textContent);
+		if (!textContent.trim()) {
+			throw new Error("File appears to be empty or unreadable");
 		}
 
 		// Process with AI to extract items
@@ -88,38 +77,8 @@ export async function processInvoice(
 }
 
 /**
- * Extract text content from PDF using pdf.js
- * @param buffer PDF file buffer
- * @returns Extracted text content
- */
-async function extractPdfText(buffer: ArrayBuffer): Promise<string | null> {
-	try {
-		const loadingTask = pdfjs.getDocument({
-			data: new Uint8Array(buffer),
-			useWorkerFetch: false,
-			isEvalSupported: false,
-		});
-
-		const pdf = await loadingTask.promise;
-		let text = "";
-
-		for (let i = 1; i <= pdf.numPages; i++) {
-			const page = await pdf.getPage(i);
-			const content = await page.getTextContent();
-			text +=
-				content.items.map((item) => (item as TextItem).str).join(" ") + "\n";
-		}
-
-		// Only return if we actually got some text
-		return text.trim() || null;
-	} catch (error) {
-		console.error("PDF extraction error:", error);
-		return null;
-	}
-}
-
-/**
  * Process text content with OpenAI to extract item details
+ * Updated to work with text-only input (PDF processing removed for simplicity)
  */
 async function processWithAI(text: string): Promise<ExtractedItem[]> {
 	try {

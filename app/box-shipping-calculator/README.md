@@ -16,6 +16,8 @@ Author: Deej Potter
 - **Item Management**: Add, edit, and remove items from the database with a user-friendly interface
 - **Smart Box Selection**: Prioritizes smaller boxes over larger ones to minimize shipping costs
 - **Orientation Optimization**: Considers all possible item orientations to maximize space efficiency
+- **Invoice Processing**: Import items from text files using AI-powered text extraction
+- **Simplified File Processing**: Processes text files directly (no complex PDF dependencies)
 
 ## Components
 
