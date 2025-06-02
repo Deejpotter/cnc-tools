@@ -27,6 +27,12 @@ interface ResultsPanelProps {
 }
 
 /**
+ * NOTE: The BOM and results are only displayed if the calculation results are present.
+ * If no results are available (e.g., user has not enabled Table or Enclosure, or inputs are invalid),
+ * an info alert is shown instead. This helps guide the user to configure the calculator correctly.
+ */
+
+/**
  * Client component for displaying results
  */
 export function ResultsPanel({
@@ -471,6 +477,10 @@ export function ResultsPanel({
 
 	return (
 		<div className="card mb-4">
+			{/*
+				If results.table or results.enclosure is present, show the BOM and cost breakdown.
+				Otherwise, show an info alert prompting the user to select components and enter dimensions.
+			*/}
 			<div className="card-header d-flex justify-content-between align-items-center">
 				<div>
 					<h2 className="h5 mb-0">Bill of Materials</h2>
@@ -685,10 +695,6 @@ export function ResultsPanel({
 									)}
 								</span>
 							</div>
-							<p className="text-sm text-gray-600 mt-2">
-								* Estimate includes materials and standard hardware. Does not
-								include tools, finishing, or labor costs.
-							</p>
 						</div>
 					</div>
 				)}
@@ -1211,6 +1217,10 @@ export function ResultsPanel({
 				{/* No Results Message */}
 				{!results.table && !results.enclosure && (
 					<div className="alert alert-info">
+						{/*
+							This message appears if no calculation results are present.
+							User must enable Table or Enclosure and enter valid dimensions to see the BOM.
+						*/}
 						Please select at least one component (Table or Enclosure) and
 						specify dimensions.
 					</div>
@@ -1630,31 +1640,6 @@ export function ResultsPanel({
 												</tr>
 											</tbody>
 										</table>
-									</div>
-								</div>
-							</div>
-							{/* Cost Saving Tips */}
-							<div className="row mt-4">
-								<div className="col-12">
-									<div className="alert alert-info">
-										<h5 className="alert-heading h6">💡 Cost Saving Tips</h5>
-										<ul className="mb-0 small">
-											<li>
-												Consider buying materials in standard sheet sizes
-												(1220×2440mm) to minimize waste
-											</li>
-											<li>
-												Check local suppliers for bulk discounts on materials
-											</li>
-											<li>Reuse hardware from other projects where possible</li>
-											<li>
-												Consider alternative materials - MDF is typically
-												cheaper than plywood
-											</li>
-											<li>
-												Plan your cuts efficiently to maximize material usage
-											</li>
-										</ul>
 									</div>
 								</div>
 							</div>

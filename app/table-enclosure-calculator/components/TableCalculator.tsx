@@ -680,8 +680,13 @@ export default function TableCalculator({
 	};
 
 	/**
-	 * Enhanced rendering with validation errors and loading states
+	 * UI/UX IMPROVEMENT: Show a prominent message if no calculation is performed
+	 * This helps users understand why the BOM/results are not visible.
+	 * Calculation is only performed if at least one component (Table or Enclosure) is enabled and dimensions are valid.
 	 */
+	const showNoCalculationMessage =
+		!config.includeTable && !config.includeEnclosure;
+
 	return (
 		<div className="container mt-0">
 			{/* Simplified header */}
@@ -704,6 +709,14 @@ export default function TableCalculator({
 				</div>
 			</div>
 
+			{/* Show a message if no calculation is being performed */}
+			{showNoCalculationMessage && (
+				<div className="alert alert-info mb-4">
+					Please select at least one component (Table or Enclosure) and enter
+					valid dimensions to see the Bill of Materials.
+				</div>
+			)}
+
 			{/* Global validation errors */}
 			{validationErrors.general && validationErrors.general.length > 0 && (
 				<div className="alert alert-warning mb-4">
@@ -716,6 +729,10 @@ export default function TableCalculator({
 				</div>
 			)}
 
+			{/*
+				ConfigPanel handles all user input for table/enclosure/panel/door config.
+				ResultsPanel displays the calculated BOM and cost breakdown if results are available.
+			*/}
 			<ConfigPanel
 				config={config}
 				tableDimensions={tableDimensions}

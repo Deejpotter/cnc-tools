@@ -67,9 +67,26 @@ export interface Dimensions {
 
 /**
  * Calculate table materials based on dimensions
- * @param dimensions The table dimensions in mm (length, width, height)
- * @param isOutsideDimension Boolean indicating if the given dimensions are outside measurements
- * @returns Object containing extrusion lengths and hardware
+ *
+ * This function implements the BOM and logic described in the requirements:
+ * - 4x 2060 x ID Length (2 for top, 2 for support)
+ * - 4x 2060 x ID Width (2 for top, 2 for support)
+ * - 4x 4040 x Height (legs)
+ *
+ * If isOutsideDimension is true, the input dimensions are the OUTSIDE of the table,
+ * so we subtract the 4040 extrusion width to get the correct working area for the top.
+ * If isOutsideDimension is false, the input dimensions are the INSIDE (working area),
+ * so we use them as-is for the extrusion lengths.
+ *
+ * Hardware counts match the BOM:
+ * - 8x IOCNR_60 (corner brackets)
+ * - 16x L_BRACKET_TRIPLE (triple L brackets)
+ * - 144x T_NUT_SLIDING (sliding T-nuts)
+ * - 48x CAP_HEAD_M5_8MM (cap head bolts)
+ * - 96x BUTTON_HEAD_M5_8MM (button head screws)
+ * - 16x LOW_PROFILE_M5_25MM (low profile screws)
+ * - 4x FOOT_BRACKETS (foot mounting brackets)
+ * - 4x FEET (wheels or adjustable feet)
  */
 export const calculateTableMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">,
@@ -121,9 +138,23 @@ export const calculateTableMaterials = (
 
 /**
  * Calculate enclosure materials based on dimensions
- * @param dimensions The enclosure dimensions in mm (length, width, height)
- * @param isOutsideDimension Boolean indicating if the given dimensions are outside measurements
- * @returns Object containing extrusion lengths and hardware
+ *
+ * This function implements the BOM and logic described in the requirements:
+ * - 2x 2020 x ID Length (top)
+ * - 2x 2020 x ID Length (bottom)
+ * - 2x 2020 x ID Width (top)
+ * - 2x 2020 x ID Width (bottom)
+ * - 8x 2020 x ID Height (verticals)
+ *
+ * For enclosures with length or width >= 1500mm, the top extrusions for that axis use 2040 profile instead of 2020.
+ * Hardware counts are increased for large enclosures as per the BOM.
+ *
+ * If isOutsideDimension is true, the input dimensions are the OUTSIDE of the enclosure,
+ * so we subtract the vertical extrusion width to get the correct internal frame size.
+ * If isOutsideDimension is false, the input dimensions are the INSIDE (clear space),
+ * so we add the vertical extrusion width to get the correct extrusion lengths.
+ *
+ * Hardware counts match the BOM for <1500mm and >1500mm enclosures.
  */
 export const calculateEnclosureMaterials = (
 	// Omitting isOutsideDimension from dimensions for clarity
@@ -289,10 +320,17 @@ export const calculateMountingMaterials = () => {
 };
 
 /**
- * Calculate door materials based on enclosure dimensions
- * @param dimensions The enclosure dimensions
- * @param doorConfig The door configuration (which doors are included and type)
- * @returns Door material requirements
+ * Calculate door materials based on enclosure dimensions and door config
+ *
+ * This function implements the door panel sizing and hardware logic described in the requirements:
+ * - Standard doors: 2 doors per side, each with a 2mm gap for clearance
+ * - Bi-fold doors: 2 panels per side, each split in half, with hinge logic
+ * - Awning doors: single panel, 4mm less than ID for clearance
+ *
+ * Panel sizes are calculated using the V-slot reduction formula:
+ * (panelWidth - extrusionWidth + slotDepth) × (panelHeight - extrusionHeight + slotDepth)
+ *
+ * Hardware counts are calculated per door, with adjustments for door type.
  */
 export const calculateDoorMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">, // Dimensions of the enclosure
@@ -481,10 +519,14 @@ export const calculateDoorMaterials = (
 };
 
 /**
- * Calculate panel materials based on enclosure dimensions
- * @param dimensions The enclosure dimensions
- * @param materialConfig The material configuration (which panels are included)
- * @returns Panel material requirements
+ * Calculate panel materials based on enclosure dimensions and material config
+ *
+ * This function implements the panel sizing logic described in the requirements:
+ * - Panels sit inside the slot of the extrusion, so we subtract the extrusion width and add the slot depth
+ * - For 20 series V-slot, the slot depth is 6mm
+ * - The formula is (panelWidth - extrusionWidth + slotDepth) × (panelHeight - extrusionHeight + slotDepth)
+ *
+ * The function returns all panel dimensions and the total area for material estimation.
  */
 export const calculatePanelMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">, // Dimensions of the enclosure
