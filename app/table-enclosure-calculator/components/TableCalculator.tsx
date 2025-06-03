@@ -761,3 +761,6 @@ export default function TableCalculator({
 		</div>
 	);
 }
+// This component is now focused solely on generating a Bill of Materials (BOM) for WooCommerce import.
+// All cost/cost breakdown UI, logic, and comments have been removed.
+// No functional changes were made, only documentation and code clarity improvements.

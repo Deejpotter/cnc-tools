@@ -128,11 +128,6 @@ export const calculateTableMaterials = (
 			qtyRail4040Legs,
 		},
 		hardware: DEFAULT_TABLE_HARDWARE,
-		totalLengths: {
-			rail2060:
-				rail2060Length * qtyRail2060Length + rail2060Width * qtyRail2060Width,
-			rail4040: legExtrusions4040 * qtyRail4040Legs,
-		},
 	};
 };
 
@@ -292,18 +287,6 @@ export const calculateEnclosureMaterials = (
 	return {
 		extrusions,
 		hardware,
-		totalLengths: {
-			// Total length of 2020 extrusions (top + bottom if applicable)
-			rail2020: topLength2020 + bottomLength2020,
-			// Total length of 2040 extrusions (top only if applicable)
-			rail2040: topLength2040,
-			// Total width of 2020 extrusions (top + bottom if applicable)
-			railWidth2020: topWidth2020 + bottomWidth2020,
-			// Total width of 2040 extrusions (top only if applicable)
-			railWidth2040: topWidth2040,
-			// Total vertical 2020 extrusion length
-			verticalRail2020: effectiveHeight * 8, // 2 for each frame side.
-		},
 	};
 };
 
@@ -636,25 +619,18 @@ export const calculatePanelMaterials = (
 		});
 	}
 
-	// Calculate total area for material estimation
-	const totalArea = panels.reduce((sum, panel) => {
-		// For top/bottom panels
-		if (panel.position === "Top" || panel.position === "Bottom") {
-			return sum + (panel.width || 0) * (panel.length || 0);
-		}
-		// For side panels
-		return sum + (panel.width || 0) * (panel.height || 0);
-	}, 0);
-
 	return {
 		material: {
 			type: materialConfig.type,
 			thickness: materialConfig.thickness,
 		},
 		panels,
-		totalArea,
 	};
 };
+
+// All cost/cost breakdown logic has been removed from this file.
+// All calculation functions below only return BOM-relevant data: part, SKU, qty, description/length.
+// This file is now focused solely on generating a Bill of Materials (BOM) for WooCommerce import.
 
 // Export constants for testing
 export const CONSTANTS = {
