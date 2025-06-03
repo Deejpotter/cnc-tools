@@ -31,7 +31,7 @@ export default function TableEnclosureCalculatorPage() {
 				>
 					<TableCalculator
 						materialTypes={MATERIAL_TYPES}
-						materialThickness={MATERIAL_THICKNESS} // Changed from materialThicknesses
+						materialThickness={MATERIAL_THICKNESS}
 					/>
 				</Suspense>
 			</div>

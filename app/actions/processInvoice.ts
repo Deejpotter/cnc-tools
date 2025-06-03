@@ -22,14 +22,6 @@ const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Updated to use pdfjs-dist for PDF extraction
-import * as pdfjs from "pdfjs-dist/legacy/build/pdf";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
-
-// Initialize PDF.js worker
-const pdfjsWorker = require("pdfjs-dist/legacy/build/pdf.worker.entry");
-pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
-
 /**
  * Type definition for AI extracted item
  */

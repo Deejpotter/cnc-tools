@@ -292,9 +292,25 @@ export const calculateEnclosureMaterials = (
 	const bottomLength2020 = effectiveLength * 2; // Always 2020 for bottom length
 	const bottomWidth2020 = effectiveWidth * 2; // Always 2020 for bottom width
 
+	// Calculate the total lengths for each extrusion type (for test/build compatibility)
+	const totalLengths = {
+		rail2020:
+			(topLengthExtrusionType === "2020" ? effectiveLength * 2 : 0) +
+			(topWidthExtrusionType === "2020" ? effectiveWidth * 2 : 0) +
+			bottomLength2020 +
+			bottomWidth2020, // all 2020 rails
+		rail2040:
+			(topLengthExtrusionType === "2040" ? effectiveLength * 2 : 0) +
+			(topWidthExtrusionType === "2040" ? effectiveWidth * 2 : 0), // all 2040 rails
+		railWidth2020: topWidth2020 + bottomWidth2020, // width rails (2020)
+		railWidth2040: topWidth2040, // width rails (2040)
+		verticalRail2020: effectiveHeight * 4, // always 4 verticals
+	};
+
 	return {
 		extrusions,
 		hardware,
+		totalLengths, // for test/build compatibility
 	};
 };
 
