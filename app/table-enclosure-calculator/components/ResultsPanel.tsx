@@ -112,7 +112,7 @@ export function ResultsPanel({
 				sku: `LR-4040-${results.table.extrusions.rail4040Legs}`,
 				qty: results.table.extrusions.qtyRail4040Legs,
 			});
-			// Add table hardware (example, expand as needed)
+			// Table hardware (expand as needed)
 			bomItems.push({
 				item: "In-Out Corner Bracket – 60mm",
 				description: "Table corners",
@@ -130,7 +130,7 @@ export function ResultsPanel({
 
 		// Panels
 		if (results.panels && materialConfig.includePanels) {
-			results.panels.panels.forEach((panel: any, idx: number) => {
+			results.panels.panels.forEach((panel: any) => {
 				bomItems.push({
 					item: `Panel (${panel.position})`,
 					description: `${panel.length}mm x ${panel.width}mm x ${panel.thickness}mm`,
@@ -142,7 +142,7 @@ export function ResultsPanel({
 
 		// Doors
 		if (results.doors && config.includeDoors) {
-			results.doors.panels?.forEach((door: any, idx: number) => {
+			results.doors.panels?.forEach((door: any) => {
 				bomItems.push({
 					item: `Door Panel (${door.position})`,
 					description: `${door.length}mm x ${door.width}mm x ${door.thickness}mm`,
@@ -207,10 +207,6 @@ export function ResultsPanel({
 
 	return (
 		<div className="card mb-4">
-			{/*
-				If results.table or results.enclosure is present, show the BOM and cost breakdown.
-				Otherwise, show an info alert prompting the user to select components and enter dimensions.
-			*/}
 			<div className="card-header d-flex justify-content-between align-items-center">
 				<div>
 					<h2 className="h5 mb-0">Bill of Materials</h2>
@@ -241,8 +237,7 @@ export function ResultsPanel({
 				</div>
 			</div>
 			<div className="card-body" ref={printRef}>
-				{" "}
-				{/* Quick Summary */}
+				{/* Project Summary */}
 				<div className="alert alert-primary mb-4">
 					<h3 className="h6">Project Summary</h3>
 					<div className="row">
@@ -284,8 +279,8 @@ export function ResultsPanel({
 						)}
 					</div>
 				</div>
-				{/* BOM Table (WooCommerce-ready, no cost columns) */}
-				{(results.table || results.enclosure) && (
+				{/* Single BOM Table (WooCommerce-ready, no cost columns) */}
+				{results.table || results.enclosure ? (
 					<div className="mb-4">
 						<h3 className="h6 mb-3">Bill of Materials (BOM)</h3>
 						<div className="table-responsive">
@@ -293,199 +288,28 @@ export function ResultsPanel({
 								<thead>
 									<tr>
 										<th>Item</th>
-										<th>Description</th>
 										<th>SKU</th>
 										<th>QTY</th>
+										<th>Description/Length</th>
 									</tr>
 								</thead>
 								<tbody>
 									{generateBOMData().map((row, idx) => (
 										<tr key={idx}>
 											<td>{row.item}</td>
-											<td>{row.description}</td>
 											<td>{row.sku}</td>
 											<td>{row.qty}</td>
+											<td>{row.description}</td>
 										</tr>
 									))}
 								</tbody>
 							</table>
 						</div>
 					</div>
-				)}
-				{/* Table Results */}
-				{results.table && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Machine Table Components</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									{/* Render table BOM rows dynamically from generateBOMData() */}
-									{generateBOMData()
-										.filter(
-											(row) =>
-												row.category === "Table Frame" ||
-												row.category === "Table Hardware"
-										)
-										.map((row, idx) => (
-											<tr key={idx}>
-												<td>{idx + 1}</td>
-												<td>
-													{row.item} {row.length ? `- ${row.length}` : ""}
-												</td>
-												<td>{row.SKU}</td>
-												<td>{row.quantity}</td>
-											</tr>
-										))}
-								</tbody>
-							</table>
-						</div>
-						<p className="text-muted small">
-							Total 2060 Extrusion: {results.table.totalLengths.rail2060}mm
-							<br />
-							Total 4040 Extrusion: {results.table.totalLengths.rail4040}mm
-						</p>
-					</div>
-				)}
-				{/* Enclosure Results */}
-				{results.enclosure && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Enclosure Components</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									{/* Render enclosure BOM rows dynamically from generateBOMData() */}
-									{generateBOMData()
-										.filter(
-											(row) =>
-												row.category === "Enclosure Frame" ||
-												row.category === "Enclosure Hardware"
-										)
-										.map((row, idx) => (
-											<tr key={idx}>
-												<td>{idx + 1}</td>
-												<td>
-													{row.item} {row.length ? `- ${row.length}` : ""}
-												</td>
-												<td>{row.SKU}</td>
-												<td>{row.quantity}</td>
-											</tr>
-										))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				)}
-				{/* Mounting Hardware */}
-				{results.mounting && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Mounting Hardware</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									{/* Render mounting BOM rows dynamically from generateBOMData() */}
-									{generateBOMData()
-										.filter((row) => row.category === "Mounting Hardware")
-										.map((row, idx) => (
-											<tr key={idx}>
-												<td>{idx + 1}</td>
-												<td>{row.item}</td>
-												<td>{row.SKU}</td>
-												<td>{row.quantity}</td>
-											</tr>
-										))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				)}
-				{/* Panels */}
-				{results.panels && materialConfig.includePanels && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Panels</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									{/* Render panel BOM rows dynamically from generateBOMData() */}
-									{generateBOMData()
-										.filter((row) => row.category === "Panels")
-										.map((row, idx) => (
-											<tr key={idx}>
-												<td>{idx + 1}</td>
-												<td>{row.item}</td>
-												<td>{row.SKU}</td>
-												<td>{row.quantity}</td>
-											</tr>
-										))}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				)}
-				{/* Doors */}
-				{results.doors && config.includeDoors && (
-					<div className="mb-4">
-						<h3 className="h6 mb-3">Doors</h3>
-						<div className="table-responsive">
-							<table className="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>Item</th>
-										<th>Description</th>
-										<th>SKU</th>
-										<th>QTY</th>
-									</tr>
-								</thead>
-								<tbody>
-									{/* Render door BOM rows dynamically from generateBOMData() */}
-									{generateBOMData()
-										.filter(
-											(row) =>
-												row.category === "Doors" ||
-												row.category === "Door Hardware"
-										)
-										.map((row, idx) => (
-											<tr key={idx}>
-												<td>{idx + 1}</td>
-												<td>{row.item}</td>
-												<td>{row.SKU}</td>
-												<td>{row.quantity}</td>
-											</tr>
-										))}
-								</tbody>
-							</table>
-						</div>
+				) : (
+					<div className="alert alert-info">
+						No calculation performed. Please configure the calculator and run a
+						calculation to see the Bill of Materials.
 					</div>
 				)}
 			</div>

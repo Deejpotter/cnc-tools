@@ -118,6 +118,13 @@ export const calculateTableMaterials = (
 	const qtyRail2060Length = 4; // 4 for length (2 top + 2 bottom)
 	const qtyRail4040Legs = 4; // 4 legs for the table or Z axis
 
+	// Add totalLengths for test validation
+	const totalLengths = {
+		rail2060:
+			rail2060Length * qtyRail2060Length + rail2060Width * qtyRail2060Width,
+		rail4040: legExtrusions4040 * qtyRail4040Legs,
+	};
+
 	return {
 		extrusions: {
 			rail2060Length,
@@ -128,6 +135,7 @@ export const calculateTableMaterials = (
 			qtyRail4040Legs,
 		},
 		hardware: DEFAULT_TABLE_HARDWARE,
+		totalLengths, // for test validation only
 	};
 };
 
@@ -414,40 +422,42 @@ export const calculateDoorMaterials = (
 					position,
 					width: baseWidth,
 					height: baseHeight,
+					length: baseWidth, // For BOM/test compatibility
+					thickness: 6, // Default panel thickness for BOM
 					notes: "Standard Door Panel (fits in V-slot)",
 				},
 			];
 		}
-
-		// For awning doors, specific adjustments might be needed on top of V-slot
-		// The original code had width - 4, height + 4. We need to see how this interacts with V-slot.
-		// For now, let's assume these are final adjustments *after* V-slot sizing.
 		if (doorConfig.doorType === "AWNG") {
 			return [
 				{
 					position,
-					width: baseWidth - 4, // Further adjust from V-slot sized width
-					height: baseHeight + 4, // Further adjust from V-slot sized height
+					width: baseWidth - 4,
+					height: baseHeight + 4,
+					length: baseWidth - 4,
+					thickness: 6,
 					notes:
 						"Awning Door Panel (fits in V-slot, specific adjustments applied)",
 				},
 			];
 		}
-
-		// For bi-fold doors, split the V-slot adjusted width
 		if (doorConfig.doorType === "BFLD") {
-			const halfWidth = Math.round(baseWidth / 2) - 2; // Split V-slot width, then apply 2mm gap
+			const halfWidth = Math.round(baseWidth / 2) - 2;
 			return [
 				{
 					position: `${position} (Left)`,
 					width: halfWidth,
 					height: baseHeight,
+					length: halfWidth,
+					thickness: 6,
 					notes: "Bi-Fold Door - left panel (fits in V-slot)",
 				},
 				{
 					position: `${position} (Right)`,
 					width: halfWidth,
 					height: baseHeight,
+					length: halfWidth,
+					thickness: 6,
 					notes: "Bi-Fold Door - right panel (fits in V-slot)",
 				},
 			];
@@ -458,25 +468,27 @@ export const calculateDoorMaterials = (
 				position,
 				width: baseWidth,
 				height: baseHeight,
+				length: baseWidth,
+				thickness: 6,
 				notes: "Door Panel (fits in V-slot)",
 			},
 		];
 	};
 
-	if (doorConfig.frontDoor) {
+	if (doorConfig.backDoor) {
 		doorPanels.push(
 			...getDoorPanelDimensions(
-				"Front",
+				"Back",
 				doorPanelFrontBackWidth,
 				doorPanelHeight
 			)
 		);
 	}
 
-	if (doorConfig.backDoor) {
+	if (doorConfig.frontDoor) {
 		doorPanels.push(
 			...getDoorPanelDimensions(
-				"Back",
+				"Front",
 				doorPanelFrontBackWidth,
 				doorPanelHeight
 			)
@@ -566,65 +578,73 @@ export const calculatePanelMaterials = (
 
 	// Initialize panels array
 	const panels = [];
-
+	let totalArea = 0;
 	// Add panels based on configuration
 	if (materialConfig.panelConfig.top) {
 		panels.push({
 			position: "Top",
 			width: panelTopBottomWidth,
 			length: panelTopBottomLength,
-			notes: "Top panel",
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelTopBottomWidth * panelTopBottomLength;
 	}
-
 	if (materialConfig.panelConfig.bottom) {
 		panels.push({
 			position: "Bottom",
 			width: panelTopBottomWidth,
 			length: panelTopBottomLength,
-			notes: "Bottom panel",
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelTopBottomWidth * panelTopBottomLength;
 	}
-
 	if (materialConfig.panelConfig.left) {
 		panels.push({
 			position: "Left",
-			width: panelSideWidth, // This was panelLength, should be based on internalLength
+			width: panelSideWidth,
 			height: panelSideHeight,
+			length: panelSideWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelSideWidth * panelSideHeight;
 	}
-
 	if (materialConfig.panelConfig.right) {
 		panels.push({
 			position: "Right",
-			width: panelSideWidth, // This was panelLength, should be based on internalLength
+			width: panelSideWidth,
 			height: panelSideHeight,
+			length: panelSideWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelSideWidth * panelSideHeight;
 	}
-
 	if (materialConfig.panelConfig.back) {
 		panels.push({
 			position: "Back",
-			width: panelFrontBackWidth, // This was panelWidth, should be based on internalWidth
+			width: panelFrontBackWidth,
 			height: panelFrontBackHeight,
+			length: panelFrontBackWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelFrontBackWidth * panelFrontBackHeight;
 	}
-
-	// Add front panel if configured
 	if (materialConfig.panelConfig.front) {
 		panels.push({
 			position: "Front",
-			width: panelFrontBackWidth, // Similar to back panel
+			width: panelFrontBackWidth,
 			height: panelFrontBackHeight,
+			length: panelFrontBackWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelFrontBackWidth * panelFrontBackHeight;
 	}
-
 	return {
 		material: {
 			type: materialConfig.type,
 			thickness: materialConfig.thickness,
 		},
 		panels,
+		totalArea,
 	};
 };
 
