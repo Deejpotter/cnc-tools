@@ -10,7 +10,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import BoxResultsDisplay from "./BoxResultsDisplay";
@@ -19,12 +19,13 @@ import {
 	packItemsIntoMultipleBoxes,
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
-import InvoiceUploader from "./InvoiceUploader";
 import {
 	getAvailableItems,
 	addItemToDatabase,
 	syncWithRemoteDatabase,
 } from "@/app/actions/data-actions";
+import { processInvoice } from "@/app/actions/processInvoice";
+import PdfImport from "@/components/PdfImport";
 
 /**
  * Box Shipping Calculator Page Component
@@ -138,7 +139,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 						};
 					} else {
 						// Item is not in selectedItems, add it.
-						// The invoiceItem should already have the correct quantity from the invoice processing.
+						// The invoiceItem should already have the correct quantity from the invoice.
 						updatedSelectedItems.push({
 							...invoiceItem,
 							quantity: Number(invoiceItem.quantity) || 1,
@@ -200,6 +201,37 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		}
 	};
 
+	/**
+	 * Handler for when text is extracted from a PDF or text file via PdfImport.
+	 * This function processes the text directly with the invoice processing server action.
+	 * @param text The extracted text content from the file
+	 */
+	const handleTextExtracted = async (text: string) => {
+		try {
+			// Create a new File object from the extracted text (simulate a text file upload)
+			const blob = new Blob([text], { type: "text/plain" });
+			const file = new File([blob], "extracted-invoice.txt", {
+				type: "text/plain",
+			});
+			const formData = new FormData();
+			formData.append("invoice", file);
+
+			// Process the extracted text with our invoice processing server action
+			const items = await processInvoice(formData);
+
+			if (items.length === 0) {
+				setImportError("No items found in invoice");
+			} else {
+				handleInvoiceItems(items);
+			}
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Failed to process invoice";
+			console.error("Invoice processing error:", error);
+			setImportError(errorMessage);
+		}
+	};
+
 	// Render loading state while fetching initial data
 	if (isLoading) {
 		return (
@@ -247,9 +279,11 @@ const BoxShippingCalculatorPage: React.FC = () => {
 						<div className="card h-100 shadow bg-light">
 							<div className="card-body">
 								<h2 className="card-title mb-3">Import from Invoice</h2>
-								<InvoiceUploader
-									onItemsFound={handleInvoiceItems}
+								<PdfImport
+									onTextExtracted={handleTextExtracted}
 									onError={setImportError}
+									label="Import Maker Store Invoice (PDF or Text)"
+									accept=".pdf,.txt,.text"
 								/>
 								{importError && (
 									<p className="mt-3 text-danger">{importError}</p>

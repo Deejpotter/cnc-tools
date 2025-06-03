@@ -13,7 +13,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
 import {
 	updateItemInDatabase,

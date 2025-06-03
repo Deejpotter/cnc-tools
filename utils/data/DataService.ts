@@ -6,9 +6,9 @@
  * Makes it easy to access data with the appropriate provider and options
  */
 
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
-import { DatabaseResponse } from "@/app/actions/mongodb/types";
-import { DataProviderOptions } from "./DataProvider";
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+import { DatabaseResponse } from "@/types/mongodb/mongo-types";
+import { DataProviderOptions } from "../../types/mongodb/DataProvider";
 import { MongoDBProvider } from "./MongoDBProvider"; // Added
 
 // Singleton instance of the hybrid provider

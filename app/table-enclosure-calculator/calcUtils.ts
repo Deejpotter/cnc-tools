@@ -1,10 +1,12 @@
 /**
  * Table and Enclosure Calculator Utilities
- * Updated: 14/05/2025
+ * Updated: 17/05/2025
  * Author: Deej Potter
  * Description: Utility functions for the Table and Enclosure Calculator component.
  * These functions handle calculations for different parts of a table and enclosure.
  */
+
+import { EXTRUSION_OPTIONS } from "./constants";
 
 // Constants for hardware quantities
 const DEFAULT_TABLE_HARDWARE = {
@@ -53,7 +55,8 @@ const DOOR_HARDWARE = {
 
 /**
  * Interface for dimensions of table or enclosure
- * Includes flag for specifying whether dimensions are inside or outside measurements
+ * Includes flag for specifying whether dimensions are inside or outside measurements.
+ * For the enclosure and table, the height is always the OD, the length and width are the ID or OD depending on the isOutsideDimension flag.
  */
 export interface Dimensions {
 	length: number;
@@ -64,66 +67,138 @@ export interface Dimensions {
 
 /**
  * Calculate table materials based on dimensions
- * @param dimensions The table dimensions in mm (length, width, height)
- * @param isOutsideDimension Boolean indicating if the given dimensions are outside measurements
- * @returns Object containing extrusion lengths and hardware
+ *
+ * This function implements the BOM and logic described in the requirements:
+ * - 4x 2060 x ID Length (2 for top, 2 for support)
+ * - 4x 2060 x ID Width (2 for top, 2 for support)
+ * - 4x 4040 x Height (legs)
+ *
+ * If isOutsideDimension is true, the input dimensions are the OUTSIDE of the table,
+ * so we subtract the 4040 extrusion width to get the correct working area for the top.
+ * If isOutsideDimension is false, the input dimensions are the INSIDE (working area),
+ * so we use them as-is for the extrusion lengths.
+ *
+ * Hardware counts match the BOM:
+ * - 8x IOCNR_60 (corner brackets)
+ * - 16x L_BRACKET_TRIPLE (triple L brackets)
+ * - 144x T_NUT_SLIDING (sliding T-nuts)
+ * - 48x CAP_HEAD_M5_8MM (cap head bolts)
+ * - 96x BUTTON_HEAD_M5_8MM (button head screws)
+ * - 16x LOW_PROFILE_M5_25MM (low profile screws)
+ * - 4x FOOT_BRACKETS (foot mounting brackets)
+ * - 4x FEET (wheels or adjustable feet)
  */
 export const calculateTableMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">,
 	isOutsideDimension: boolean
 ) => {
+	// Find the 4040 and 2060 extrusion dimensions from the constants
+	// For the table legs we use 4040 extrusions
+	const extrusion4040 = EXTRUSION_OPTIONS.find((e) => e.id === "40x40-40") || {
+		width: 40,
+		height: 40,
+	}; // Default to 40mm if not found
+
+	// Adjust the dimensions based on extrusion width
+	// We use 4040 legs so we need to account for their thickness in the rail lengths
 	const adjustedLength = isOutsideDimension
-		? dimensions.length - 40
+		? dimensions.length - extrusion4040.width
 		: dimensions.length;
 	const adjustedWidth = isOutsideDimension
-		? dimensions.width - 40
+		? dimensions.width - extrusion4040.width
 		: dimensions.width;
 
 	// Extrusion lengths
 	const rail2060Length = adjustedLength; // Length of 2060 extrusions for table length
 	const rail2060Width = adjustedWidth; // Length of 2060 extrusions for table width
 	const legExtrusions4040 = dimensions.height; // Length of 4040 extrusions for table legs
+	// Calculate total quantities needed
+	// Table has top and bottom frame, so 4 extrusions per direction
+	const qtyRail2060Width = 4; // 4 for width (2 top + 2 bottom)
+	const qtyRail2060Length = 4; // 4 for length (2 top + 2 bottom)
+	const qtyRail4040Legs = 4; // 4 legs for the table or Z axis
+
+	// Add totalLengths for test validation
+	const totalLengths = {
+		rail2060:
+			rail2060Length * qtyRail2060Length + rail2060Width * qtyRail2060Width,
+		rail4040: legExtrusions4040 * qtyRail4040Legs,
+	};
 
 	return {
 		extrusions: {
 			rail2060Length,
 			rail2060Width,
 			rail4040Legs: legExtrusions4040,
-			// Calculate total quantities needed
-			qtyRail2060Length: 4,
-			qtyRail2060Width: 4,
-			qtyRail4040Legs: 4,
+			qtyRail2060Length,
+			qtyRail2060Width,
+			qtyRail4040Legs,
 		},
 		hardware: DEFAULT_TABLE_HARDWARE,
-		totalLengths: {
-			rail2060: rail2060Length * 4 + rail2060Width * 4,
-			rail4040: legExtrusions4040 * 4,
-		},
+		totalLengths, // for test validation only
 	};
 };
 
 /**
  * Calculate enclosure materials based on dimensions
- * @param dimensions The enclosure dimensions in mm (length, width, height)
- * @param isOutsideDimension Boolean indicating if the given dimensions are outside measurements
- * @returns Object containing extrusion lengths and hardware
+ *
+ * This function implements the BOM and logic described in the requirements:
+ * - 2x 2020 x ID Length (top)
+ * - 2x 2020 x ID Length (bottom)
+ * - 2x 2020 x ID Width (top)
+ * - 2x 2020 x ID Width (bottom)
+ * - 8x 2020 x ID Height (verticals)
+ *
+ * For enclosures with length or width >= 1500mm, the top extrusions for that axis use 2040 profile instead of 2020.
+ * Hardware counts are increased for large enclosures as per the BOM.
+ *
+ * If isOutsideDimension is true, the input dimensions are the OUTSIDE of the enclosure,
+ * so we subtract the vertical extrusion width to get the correct internal frame size.
+ * If isOutsideDimension is false, the input dimensions are the INSIDE (clear space),
+ * so we add the vertical extrusion width to get the correct extrusion lengths.
+ *
+ * Hardware counts match the BOM for <1500mm and >1500mm enclosures.
  */
 export const calculateEnclosureMaterials = (
+	// Omitting isOutsideDimension from dimensions for clarity
 	dimensions: Omit<Dimensions, "isOutsideDimension">,
 	isOutsideDimension: boolean
 ) => {
 	const enclosureLength = dimensions.length;
 	const enclosureWidth = dimensions.width;
 	const enclosureHeight = dimensions.height;
+	/**
+	 * Determine extrusion types based on dimensions:
+	 * - For enclosures with length >= 1500mm: Length extrusions use 2040, Width always uses 2020
+	 * - For smaller enclosures: All extrusions use 2020
+	 * - Vertical extrusions always use 2020
+	 */
+	const isLargeLength = enclosureLength >= 1500;
+	const isLargeWidth = enclosureWidth >= 1500;
 
-	// Determine extrusion type based on dimensions
-	const lengthExtrusionType = enclosureLength >= 1500 ? "2040" : "2020";
-	const widthExtrusionType = enclosureWidth >= 1500 ? "2040" : "2020";
+	// Get extrusion info from constants
+	const extrusion2020 = EXTRUSION_OPTIONS.find((e) => e.id === "20x20-20");
+
+	const extrusion2040 = EXTRUSION_OPTIONS.find((e) => e.id === "20x40-20");
+
+	// Top extrusion types (for length and width rails)
+	const topLengthExtrusionType = isLargeLength ? "2040" : "2020";
+	const topWidthExtrusionType = isLargeWidth ? "2040" : "2020";
+	const topLengthExtrusionHeight = isLargeLength
+		? extrusion2040.height
+		: extrusion2020.height;
+	const topWidthExtrusionHeight = isLargeWidth
+		? extrusion2040.height
+		: extrusion2020.height;
+	// Bottom extrusion types (always 2020)
+	const bottomExtrusionType = "2020";
+	const bottomExtrusionHeight = extrusion2020.height;
+
+	// Vertical extrusion type (always 2020)
+	const verticalExtrusionType = "2020";
+	const verticalExtrusionWidth = extrusion2020.width;
 
 	// Adjust dimensions if they are outside measurements
-	// Assuming a 20mm extrusion wall thickness for adjustment.
-	// This might need to be more sophisticated if extrusion types (2020 vs 2040) affect the offset.
-	const adjustment = 20; // Half of 40mm for 20-series, or full 20mm for one side.
 	// If it's outside dimension, the internal space is smaller.
 	// The frame itself will be `dimensions.length` and `dimensions.width` on the outside.
 	// So, the lengths of the extrusions forming the outer frame are `dimensions.length` and `dimensions.width`.
@@ -139,79 +214,61 @@ export const calculateEnclosureMaterials = (
 
 	if (!isOutsideDimension) {
 		// If dimensions are INSIDE, the extrusions need to be longer to achieve that internal space.
-		// Assuming 20mm profile for simplicity of adjustment here.
-		// This is a common source of confusion, ensure it matches user expectation.
-		// For now, let's assume if it's NOT outside, it's inside, so we add extrusion thickness.
-		// If lengthExtrusionType is 2040, width is 40. If 2020, width is 20.
-		horizontalLength += (lengthExtrusionType === "2040" ? 40 : 20) * 2; // Simplified: assuming this means adding to each end.
-		horizontalWidth += (widthExtrusionType === "2040" ? 40 : 20) * 2; // This logic might need refinement based on exact frame construction.
+		// Add the width of the vertical extrusions to both ends
+		horizontalLength += verticalExtrusionWidth * 2;
+		horizontalWidth += verticalExtrusionWidth * 2;
 	}
-	// However, typically, if a user provides "outside dimensions", those are the literal lengths of the outermost extrusions.
-	// If they provide "inside dimensions", those are the clear internal space, and the extrusions must be longer.
-	// The existing table logic: if outside, `dim - 40`. If inside, `dim`. This implies `dimensions` are the target overall size.
-	// Let's stick to: if `isOutsideDimension` is true, `horizontalLength = dimensions.length`.
-	// If `isOutsideDimension` is false (meaning inputs are *inside* dimensions), then
-	// `horizontalLength = dimensions.length + thickness_of_walls_made_by_extrusions`.
-	// For an enclosure made of 2020, the wall is 20mm. So, `dimensions.length + 2*20`.
 
-	// Re-evaluating based on common interpretation:
-	// If `isOutsideDimension` is TRUE: the given L/W/H are the outermost points.
-	//   - Horizontal extrusions are `dimensions.length` and `dimensions.width`.
-	//   - Vertical extrusions are `dimensions.height`.
-	// If `isOutsideDimension` is FALSE: the given L/W/H are the inner clear space.
-	//   - Horizontal extrusions are `dimensions.length + 2 * profile_width_of_vertical_member` (e.g., + 2*20 for 2020 vertical)
-	//   - Vertical extrusions are `dimensions.height + 2 * profile_width_of_horizontal_member_top_and_bottom` (e.g. + 2*20 for 2020 top/bottom rails)
-
-	// Let's simplify and assume the `dimensions` are for the main box frame.
-	// And `isOutsideDimension` means the L/W/H are the final outer footprint/height.
-	// The current table calculation subtracts 40mm (for 4040 legs) when `isOutsideDimension` is true,
-	// to get the length of rails that fit *between* the legs.
-	// This is different. For an enclosure frame, if L is outside, then the extrusion is L.
-
-	// Let's assume `dimensions` refers to the overall size and `isOutsideDimension` clarifies this.
-	// For enclosure:
-	// Length rails (x4): `dimensions.length` if outside, or `dimensions.length + 2*thickness_of_side_vertical_extrusion` if inside.
-	// Width rails (x4): `dimensions.width` if outside, or `dimensions.width + 2*thickness_of_front/back_vertical_extrusion` if inside.
-	// Vertical rails (x4): `dimensions.height` if outside, or `dimensions.height` if inside (assuming panels sit inside frame).
-	// This gets complex quickly. A common approach: if "outside dimensions", those are the literal lengths of the main frame components.
-
-	// Sticking to a simpler model for now: the adjustment for outside/inside affects the panel sizes more than extrusion lengths,
-	// if we assume the provided dimensions are for the extrusion frame itself.
-	// If `isOutsideDimension` is true, `dimensions.length` is the length of the long horizontal extrusions.
-	// If `isOutsideDimension` is false (meaning it's an *internal* dimension target), then the extrusions must be longer.
-	// Let's assume the provided dimensions are for the *centerlines* or *effective structural size* and adjust panels later.
-	// For now, let extrusion lengths be based directly on `dimensions` and `isOutsideDimension` will primarily affect panel calculations.
-	// This is a common simplification unless very detailed corner constructions are modeled.
-
-	// Let's use the same logic as table for adjustment for now, assuming `dimensions` are overall targets.
-	// If outside, actual extrusion is slightly less to fit within that. If inside, extrusion is that length.
-	// This is consistent with how `calculateTableMaterials` was structured.
 	const effectiveLength = isOutsideDimension
-		? dimensions.length - (lengthExtrusionType === "2040" ? 40 : 20)
+		? dimensions.length - verticalExtrusionWidth
 		: dimensions.length;
 	const effectiveWidth = isOutsideDimension
-		? dimensions.width - (widthExtrusionType === "2040" ? 40 : 20)
+		? dimensions.width - verticalExtrusionWidth
 		: dimensions.width;
-	const effectiveHeight = dimensions.height; // Usually, height is direct.
-
+	/**
+	 * For vertical extrusions, we need to account for the top and bottom horizontal extrusions.
+	 * The vertical extrusion height calculation depends on whether dimensions are inside or outside:
+	 * - For inside dimensions: vertical height = specified height (the height IS the vertical extrusion length)
+	 * - For outside dimensions: vertical height = specified height - (top rail + bottom rail)
+	 *
+	 * Examples:
+	 * - Inside 500mm height: vertical extrusions = 500mm, total outside = 500 + 20 + 20 = 540mm
+	 * - Outside 540mm height: vertical extrusions = 540 - 20 - 20 = 500mm, internal = 500mm
+	 */
+	const effectiveHeight = isOutsideDimension
+		? dimensions.height - (topLengthExtrusionHeight + bottomExtrusionHeight)
+		: dimensions.height;
+	/**
+	 * Structure the extrusions to match the expected interface in types.ts
+	 * For the enclosure frame:
+	 * - Top: 2x length extrusions and 2x width extrusions (using respective types)
+	 * - Bottom: 2x length extrusions and 2x width extrusions (using bottomExtrusionType/2020)
+	 * - Vertical: 4x corner extrusions (always 2020)
+	 *
+	 * The types.ts file expects a specific structure where horizontal contains
+	 * length and width properties, each with a type and size.
+	 */
 	const extrusions = {
 		horizontal: {
 			length: {
-				type: lengthExtrusionType,
-				size: effectiveLength, // 4x for top/bottom length
+				// Using top length extrusion type which could be 2020 or 2040 based on size
+				type: topLengthExtrusionType,
+				size: effectiveLength,
 			},
 			width: {
-				type: widthExtrusionType,
-				size: effectiveWidth, // 4x for top/bottom width
+				// Using top width extrusion type which could be 2020 or 2040 based on size
+				type: topWidthExtrusionType,
+				size: effectiveWidth,
 			},
 		},
 		vertical2020: {
-			// Assuming vertical are always 2020 for standard enclosure, unless specified otherwise
-			size: effectiveHeight, // 4x for corners
-			qty: 4,
+			// Vertical extrusions are always 2020 for standard enclosure
+			size: effectiveHeight,
+			qty: 4, // 4x for vertical corners
 		},
 	};
-	// Add extra hardware for large dimensions (>=1500mm)
+
+	// Add extra hardware for large dimensions (>=1500mm) for the additional IO bracket connections.
 	let hardware = { ...DEFAULT_ENCLOSURE_HARDWARE };
 	if (dimensions.length >= 1500 || dimensions.width >= 1500) {
 		hardware = {
@@ -222,21 +279,22 @@ export const calculateEnclosureMaterials = (
 				hardware.CAP_HEAD_M5_8MM + EXTRA_HARDWARE_FOR_1_5M.CAP_HEAD_M5_8MM,
 		};
 	}
+	// Calculate the total lengths for each extrusion type
+	const topLength2020 =
+		topLengthExtrusionType === "2020" ? effectiveLength * 2 : 0; // 2 for top length
+	const topWidth2020 =
+		topWidthExtrusionType === "2020" ? effectiveWidth * 2 : 0; // 2 for top width
+	const topLength2040 =
+		topLengthExtrusionType === "2040" ? effectiveLength * 2 : 0; // 2 for top length
+	const topWidth2040 =
+		topWidthExtrusionType === "2040" ? effectiveWidth * 2 : 0; // 2 for top width
+
+	const bottomLength2020 = effectiveLength * 2; // Always 2020 for bottom length
+	const bottomWidth2020 = effectiveWidth * 2; // Always 2020 for bottom width
 
 	return {
 		extrusions,
 		hardware,
-		totalLengths: {
-			rail2020:
-				extrusions.horizontal.length.type === "2020" ? effectiveLength * 4 : 0,
-			rail2040:
-				extrusions.horizontal.length.type === "2040" ? effectiveLength * 2 : 0,
-			railWidth2020:
-				extrusions.horizontal.width.type === "2020" ? effectiveWidth * 4 : 0,
-			railWidth2040:
-				extrusions.horizontal.width.type === "2040" ? effectiveWidth * 2 : 0,
-			verticalRail2020: effectiveHeight * 4,
-		},
 	};
 };
 
@@ -253,10 +311,17 @@ export const calculateMountingMaterials = () => {
 };
 
 /**
- * Calculate door materials based on enclosure dimensions
- * @param dimensions The enclosure dimensions
- * @param doorConfig The door configuration (which doors are included and type)
- * @returns Door material requirements
+ * Calculate door materials based on enclosure dimensions and door config
+ *
+ * This function implements the door panel sizing and hardware logic described in the requirements:
+ * - Standard doors: 2 doors per side, each with a 2mm gap for clearance
+ * - Bi-fold doors: 2 panels per side, each split in half, with hinge logic
+ * - Awning doors: single panel, 4mm less than ID for clearance
+ *
+ * Panel sizes are calculated using the V-slot reduction formula:
+ * (panelWidth - extrusionWidth + slotDepth) × (panelHeight - extrusionHeight + slotDepth)
+ *
+ * Hardware counts are calculated per door, with adjustments for door type.
  */
 export const calculateDoorMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">, // Dimensions of the enclosure
@@ -272,12 +337,23 @@ export const calculateDoorMaterials = (
 	const { length, width, height } = dimensions; // Corrected destructuring
 	const { doorType } = doorConfig;
 
-	// V-slot depth is 6mm. Panels sit inside, so reduce each dimension by 2 * 6mm = 12mm.
-	const V_SLOT_PANEL_REDUCTION = 12;
+	/**
+	 *  Panels sit inside the slot of the extrusion, so we need to increase the dimensions by the relevant slot depth.
+	 * Panels sit inside, so the total size will be the OD of the frame or panel minus the height of the top and bottom extrusions and the width of the side extrusions.
+	 * For the 20 series V-slot, the depth is 6mm so for an enclosure panel of 100x100mm made from 20x20mm extrusion, the panel size is:
+	 * (panelWidth - extrusionWidth + slotDepth) * (panelHeight - extrusionHeight + slotDepth)
+	 * or (100 - 20 + 6) * (100 - 20 + 6) = 86 * 86 = 7396mm^2
+	 */
+	// Get slot depth information from EXTRUSION_OPTIONS
+	const extrusion20Series = EXTRUSION_OPTIONS.find((e) =>
+		e.id.includes("20x20-20")
+	);
+	const slotDepth = extrusion20Series ? extrusion20Series.slotDepth : 6; // Default to 6mm if not found
+	const extrusionWidth = extrusion20Series ? extrusion20Series.width : 20; // Get from constants
+	const PANEL_CALCULATION = slotDepth * 2; // Panels are reduced by slot depth on each side
 
 	// Adjust dimensions based on whether they're inside or outside measurements
 	// For outside dimensions, we need to subtract the extrusion width (20mm for 2020) to get the internal frame dimension.
-	const extrusionWidth = 20; // Assuming 2020 extrusion for door panels as well
 	const internalLength = isOutsideDimension
 		? length - extrusionWidth * 2
 		: length;
@@ -287,9 +363,9 @@ export const calculateDoorMaterials = (
 		: height;
 
 	// Calculate door panel dimensions, accounting for V-slot reduction
-	const doorPanelHeight = internalHeight - V_SLOT_PANEL_REDUCTION;
-	const doorPanelFrontBackWidth = internalWidth - V_SLOT_PANEL_REDUCTION;
-	const doorPanelSideWidth = internalLength - V_SLOT_PANEL_REDUCTION;
+	const doorPanelHeight = internalHeight - PANEL_CALCULATION;
+	const doorPanelFrontBackWidth = internalWidth - PANEL_CALCULATION;
+	const doorPanelSideWidth = internalLength - PANEL_CALCULATION;
 
 	// Count active doors (excluding the doorType property)
 	const doorCount = [
@@ -346,40 +422,42 @@ export const calculateDoorMaterials = (
 					position,
 					width: baseWidth,
 					height: baseHeight,
+					length: baseWidth, // For BOM/test compatibility
+					thickness: 6, // Default panel thickness for BOM
 					notes: "Standard Door Panel (fits in V-slot)",
 				},
 			];
 		}
-
-		// For awning doors, specific adjustments might be needed on top of V-slot
-		// The original code had width - 4, height + 4. We need to see how this interacts with V-slot.
-		// For now, let's assume these are final adjustments *after* V-slot sizing.
 		if (doorConfig.doorType === "AWNG") {
 			return [
 				{
 					position,
-					width: baseWidth - 4, // Further adjust from V-slot sized width
-					height: baseHeight + 4, // Further adjust from V-slot sized height
+					width: baseWidth - 4,
+					height: baseHeight + 4,
+					length: baseWidth - 4,
+					thickness: 6,
 					notes:
 						"Awning Door Panel (fits in V-slot, specific adjustments applied)",
 				},
 			];
 		}
-
-		// For bi-fold doors, split the V-slot adjusted width
 		if (doorConfig.doorType === "BFLD") {
-			const halfWidth = Math.round(baseWidth / 2) - 2; // Split V-slot width, then apply 2mm gap
+			const halfWidth = Math.round(baseWidth / 2) - 2;
 			return [
 				{
 					position: `${position} (Left)`,
 					width: halfWidth,
 					height: baseHeight,
+					length: halfWidth,
+					thickness: 6,
 					notes: "Bi-Fold Door - left panel (fits in V-slot)",
 				},
 				{
 					position: `${position} (Right)`,
 					width: halfWidth,
 					height: baseHeight,
+					length: halfWidth,
+					thickness: 6,
 					notes: "Bi-Fold Door - right panel (fits in V-slot)",
 				},
 			];
@@ -390,25 +468,27 @@ export const calculateDoorMaterials = (
 				position,
 				width: baseWidth,
 				height: baseHeight,
+				length: baseWidth,
+				thickness: 6,
 				notes: "Door Panel (fits in V-slot)",
 			},
 		];
 	};
 
-	if (doorConfig.frontDoor) {
+	if (doorConfig.backDoor) {
 		doorPanels.push(
 			...getDoorPanelDimensions(
-				"Front",
+				"Back",
 				doorPanelFrontBackWidth,
 				doorPanelHeight
 			)
 		);
 	}
 
-	if (doorConfig.backDoor) {
+	if (doorConfig.frontDoor) {
 		doorPanels.push(
 			...getDoorPanelDimensions(
-				"Back",
+				"Front",
 				doorPanelFrontBackWidth,
 				doorPanelHeight
 			)
@@ -434,10 +514,14 @@ export const calculateDoorMaterials = (
 };
 
 /**
- * Calculate panel materials based on enclosure dimensions
- * @param dimensions The enclosure dimensions
- * @param materialConfig The material configuration (which panels are included)
- * @returns Panel material requirements
+ * Calculate panel materials based on enclosure dimensions and material config
+ *
+ * This function implements the panel sizing logic described in the requirements:
+ * - Panels sit inside the slot of the extrusion, so we subtract the extrusion width and add the slot depth
+ * - For 20 series V-slot, the slot depth is 6mm
+ * - The formula is (panelWidth - extrusionWidth + slotDepth) × (panelHeight - extrusionHeight + slotDepth)
+ *
+ * The function returns all panel dimensions and the total area for material estimation.
  */
 export const calculatePanelMaterials = (
 	dimensions: Omit<Dimensions, "isOutsideDimension">, // Dimensions of the enclosure
@@ -457,12 +541,23 @@ export const calculatePanelMaterials = (
 ) => {
 	const { length, width, height } = dimensions; // Corrected destructuring
 
-	// V-slot depth is 6mm. Panels sit inside, so reduce each dimension by 2 * 6mm = 12mm.
-	const V_SLOT_PANEL_REDUCTION = 12;
+	/**
+	 *  Panels sit inside the slot of the extrusion, so we need to increase the dimensions by the relevant slot depth.
+	 * Panels sit inside, so the total size will be the OD of the frame or panel minus the height of the top and bottom extrusions and the width of the side extrusions.
+	 * For the 20 series V-slot, the depth is 6mm so for an enclosure panel of 100x100mm made from 20x20mm extrusion, the panel size is:
+	 * (panelWidth - extrusionWidth + slotDepth) * (panelHeight - extrusionHeight + slotDepth)
+	 * or (100 - 20 + 6) * (100 - 20 + 6) = 86 * 86 = 7396mm^2
+	 */
+	// Get slot depth information from EXTRUSION_OPTIONS
+	const extrusionInfo = EXTRUSION_OPTIONS.find((e) =>
+		e.id.includes("20x20-20")
+	);
+	const slotDepth = extrusionInfo ? extrusionInfo.slotDepth : 6; // Default to 6mm if not found
+	const extrusionWidth = extrusionInfo ? extrusionInfo.width : 20; // Default to 20mm if not found
+	const PANEL_REDUCTION = slotDepth * 2; // Panels are reduced by slot depth on each side
 
 	// Adjust dimensions based on whether they're inside or outside measurements
 	// For outside dimensions, we need to subtract the extrusion width (20mm for 2020) to get the internal frame dimension.
-	const extrusionWidth = 20; // Assuming 2020 extrusion for enclosure panels
 	const internalLength = isOutsideDimension
 		? length - extrusionWidth * 2
 		: length;
@@ -472,80 +567,77 @@ export const calculatePanelMaterials = (
 		: height; // Assuming panels go up to the top/bottom of vertical extrusions
 
 	// Calculate panel dimensions, accounting for V-slot reduction
-	const panelTopBottomWidth = internalWidth - V_SLOT_PANEL_REDUCTION;
-	const panelTopBottomLength = internalLength - V_SLOT_PANEL_REDUCTION;
+	const panelTopBottomWidth = internalWidth - PANEL_REDUCTION;
+	const panelTopBottomLength = internalLength - PANEL_REDUCTION;
 
-	const panelSideHeight = internalHeight - V_SLOT_PANEL_REDUCTION;
-	const panelFrontBackHeight = internalHeight - V_SLOT_PANEL_REDUCTION; // Same as side height
+	const panelSideHeight = internalHeight - PANEL_REDUCTION;
+	const panelFrontBackHeight = internalHeight - PANEL_REDUCTION; // Same as side height
 
-	const panelSideWidth = internalLength - V_SLOT_PANEL_REDUCTION; // Left/Right panels use enclosure length
-	const panelFrontBackWidth = internalWidth - V_SLOT_PANEL_REDUCTION; // Front/Back panels use enclosure width
+	const panelSideWidth = internalLength - PANEL_REDUCTION; // Left/Right panels use enclosure length
+	const panelFrontBackWidth = internalWidth - PANEL_REDUCTION; // Front/Back panels use enclosure width
 
 	// Initialize panels array
 	const panels = [];
-
+	let totalArea = 0;
 	// Add panels based on configuration
 	if (materialConfig.panelConfig.top) {
 		panels.push({
 			position: "Top",
 			width: panelTopBottomWidth,
 			length: panelTopBottomLength,
-			notes: "Top panel",
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelTopBottomWidth * panelTopBottomLength;
 	}
-
 	if (materialConfig.panelConfig.bottom) {
 		panels.push({
 			position: "Bottom",
 			width: panelTopBottomWidth,
 			length: panelTopBottomLength,
-			notes: "Bottom panel",
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelTopBottomWidth * panelTopBottomLength;
 	}
-
 	if (materialConfig.panelConfig.left) {
 		panels.push({
 			position: "Left",
-			width: panelSideWidth, // This was panelLength, should be based on internalLength
+			width: panelSideWidth,
 			height: panelSideHeight,
+			length: panelSideWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelSideWidth * panelSideHeight;
 	}
-
 	if (materialConfig.panelConfig.right) {
 		panels.push({
 			position: "Right",
-			width: panelSideWidth, // This was panelLength, should be based on internalLength
+			width: panelSideWidth,
 			height: panelSideHeight,
+			length: panelSideWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelSideWidth * panelSideHeight;
 	}
-
 	if (materialConfig.panelConfig.back) {
 		panels.push({
 			position: "Back",
-			width: panelFrontBackWidth, // This was panelWidth, should be based on internalWidth
+			width: panelFrontBackWidth,
 			height: panelFrontBackHeight,
+			length: panelFrontBackWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelFrontBackWidth * panelFrontBackHeight;
 	}
-
-	// Add front panel if configured
 	if (materialConfig.panelConfig.front) {
 		panels.push({
 			position: "Front",
-			width: panelFrontBackWidth, // Similar to back panel
+			width: panelFrontBackWidth,
 			height: panelFrontBackHeight,
+			length: panelFrontBackWidth,
+			thickness: materialConfig.thickness,
 		});
+		totalArea += panelFrontBackWidth * panelFrontBackHeight;
 	}
-
-	// Calculate total area for material estimation
-	const totalArea = panels.reduce((sum, panel) => {
-		// For top/bottom panels
-		if (panel.position === "Top" || panel.position === "Bottom") {
-			return sum + (panel.width || 0) * (panel.length || 0);
-		}
-		// For side panels
-		return sum + (panel.width || 0) * (panel.height || 0);
-	}, 0);
-
 	return {
 		material: {
 			type: materialConfig.type,
@@ -555,6 +647,10 @@ export const calculatePanelMaterials = (
 		totalArea,
 	};
 };
+
+// All cost/cost breakdown logic has been removed from this file.
+// All calculation functions below only return BOM-relevant data: part, SKU, qty, description/length.
+// This file is now focused solely on generating a Bill of Materials (BOM) for WooCommerce import.
 
 // Export constants for testing
 export const CONSTANTS = {

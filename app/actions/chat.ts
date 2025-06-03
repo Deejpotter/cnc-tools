@@ -1,4 +1,4 @@
-import { ChatBody } from "@/types/types";
+import { ChatBody } from "@/types/chat-body";
 import { OpenAIStream } from "@/utils/chatStream";
 
 export const runtime = "edge";

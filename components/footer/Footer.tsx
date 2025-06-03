@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+// NOTE: All internal navigation uses Next.js's Link component for optimal routing and prefetching.
+// If you use this component outside Next.js, replace Link with your router's link component.
 import Link from "next/link";
 
 const Footer: React.FC = () => {

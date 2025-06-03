@@ -1,15 +1,17 @@
 /**
  * Process Invoices server actions
- * Updated: 24/05/25
+ * Updated: 02/06/2025
  * Author: Deej Potter
- * Description: Handles invoice processing, including PDF extraction and AI item extraction.
- * Uses Next.js 14 server actions, pdf-parse, and OpenAI API for item extraction.
+ * Description: Handles invoice processing, including PDF extraction using pdf-ts and AI item extraction.
+ * Uses Next.js 14 server actions and OpenAI API for item extraction.
+ * Enhanced to support both PDF and text file imports using pdf-ts library.
  */
 
 "use server";
 
 import { OpenAI } from "openai";
-import ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
+import { pdfToText } from "pdf-ts"; // Import pdf-ts for PDF text extraction
+import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import {
 	addItemToDatabase,
 	updateItemInDatabase,
@@ -40,7 +42,8 @@ export interface ExtractedItem {
 
 /**
  * Process invoice file and extract items using AI
- * @param formData Form data containing the invoice file
+ * Enhanced to support both PDF and text files using pdf-ts library
+ * @param formData Form data containing the invoice file (PDF or text)
  * @returns Array of shipping items with dimensions
  */
 export async function processInvoice(
@@ -49,31 +52,112 @@ export async function processInvoice(
 	try {
 		const file = formData.get("invoice") as File;
 		if (!file) {
+			console.error(
+				"No file provided in formData. formData keys:",
+				Array.from(formData.keys())
+			);
 			throw new Error("No file provided");
 		}
 
-		// First try PDF extraction
-		const buffer = await file.arrayBuffer();
-		const pdfText = await extractPdfText(buffer);
+		console.log(
+			`Processing file: ${file.name} (${file.type}, ${file.size} bytes)`
+		);
 
 		let textContent: string;
 
-		if (pdfText) {
-			console.log("PDF Content:", pdfText);
-			textContent = pdfText;
+		// Check file type and extract text accordingly
+		if (
+			file.type === "application/pdf" ||
+			file.name.toLowerCase().endsWith(".pdf")
+		) {
+			// Handle PDF files using pdf-ts
+			console.log("Processing PDF file with pdf-ts library");
+			try {
+				// Convert File to ArrayBuffer for pdf-ts
+				const arrayBuffer = await file.arrayBuffer();
+				if (!arrayBuffer) {
+					throw new Error("Failed to read PDF file as ArrayBuffer");
+				}
+				const uint8Array = new Uint8Array(arrayBuffer);
+
+				// Extract text from PDF using pdf-ts
+				textContent = await pdfToText(uint8Array);
+				if (!textContent) {
+					throw new Error("pdfToText returned empty or undefined text");
+				}
+				console.log("PDF text extraction successful");
+			} catch (pdfError) {
+				console.error("PDF extraction error:", pdfError);
+				throw new Error(
+					`Failed to extract text from PDF: ${
+						pdfError instanceof Error
+							? pdfError.message
+							: JSON.stringify(pdfError)
+					}`
+				);
+			}
 		} else {
-			textContent = await file.text();
-			console.log("Raw Text Content:", textContent);
+			// Handle text files (existing functionality)
+			console.log("Processing text file");
+			try {
+				textContent = await file.text();
+				if (!textContent) {
+					throw new Error("Text file is empty or unreadable");
+				}
+			} catch (txtErr) {
+				console.error("Text file extraction error:", txtErr);
+				throw new Error(
+					`Failed to extract text from file: ${
+						txtErr instanceof Error ? txtErr.message : JSON.stringify(txtErr)
+					}`
+				);
+			}
 		}
 
-		// Process with AI to extract items
-		const extractedItems = await processWithAI(textContent);
-		if (!extractedItems?.length) {
-			throw new Error("No items found in invoice");
+		// Defensive: Ensure textContent is a string before accessing .length
+		if (typeof textContent !== "string") {
+			console.error("Extracted file content is not a string:", textContent);
+			throw new Error("Extracted file content is not a string");
+		}
+		console.log("Extracted text content length:", textContent.length);
+
+		if (!textContent || !textContent.trim()) {
+			console.error("File appears to be empty or unreadable after extraction.");
+			throw new Error("File appears to be empty or unreadable");
+		}
+
+		// Process with AI to extract items (same for both PDF and text)
+		let extractedItems: ExtractedItem[] = [];
+		try {
+			extractedItems = await processWithAI(textContent);
+		} catch (aiErr) {
+			console.error("AI extraction failed:", aiErr);
+			throw new Error(
+				"Failed to extract items from invoice text. AI error: " +
+					(aiErr instanceof Error ? aiErr.message : JSON.stringify(aiErr))
+			);
+		}
+		// Defensive: Ensure extractedItems is an array
+		if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
+			console.error(
+				"No items found in invoice (AI returned no items or invalid format)"
+			);
+			throw new Error(
+				"No items found in invoice (AI returned no items or invalid format)"
+			);
 		}
 
 		// Get full ShippingItem objects, either from DB or by creating new ones
-		const shippingItemsFromInvoice = await getItemDimensions(extractedItems);
+		let shippingItemsFromInvoice: ShippingItem[] = [];
+		try {
+			shippingItemsFromInvoice = await getItemDimensions(extractedItems);
+		} catch (dimErr) {
+			console.error("Error getting item dimensions:", dimErr);
+			throw new Error(
+				"Failed to get item dimensions: " +
+					(dimErr instanceof Error ? dimErr.message : JSON.stringify(dimErr))
+			);
+		}
 		console.log(
 			"Shipping items from invoice processing:",
 			shippingItemsFromInvoice
@@ -82,46 +166,17 @@ export async function processInvoice(
 		// The result from getItemDimensions is already Promise<ShippingItem[]>
 		return shippingItemsFromInvoice;
 	} catch (error) {
-		console.error("Invoice processing error:", error);
+		console.error("Invoice processing error (outer catch):", error);
 		throw new Error(
-			error instanceof Error ? error.message : "Failed to process invoice"
+			(error instanceof Error ? error.message : JSON.stringify(error)) +
+				"\nIf this is a 502 Bad Gateway or TypeError, check server logs for more details."
 		);
 	}
 }
 
 /**
- * Extract text content from PDF using pdf.js
- * @param buffer PDF file buffer
- * @returns Extracted text content
- */
-async function extractPdfText(buffer: ArrayBuffer): Promise<string | null> {
-	try {
-		const loadingTask = pdfjs.getDocument({
-			data: new Uint8Array(buffer),
-			useWorkerFetch: false,
-			isEvalSupported: false,
-		});
-
-		const pdf = await loadingTask.promise;
-		let text = "";
-
-		for (let i = 1; i <= pdf.numPages; i++) {
-			const page = await pdf.getPage(i);
-			const content = await page.getTextContent();
-			text +=
-				content.items.map((item) => (item as TextItem).str).join(" ") + "\n";
-		}
-
-		// Only return if we actually got some text
-		return text.trim() || null;
-	} catch (error) {
-		console.error("PDF extraction error:", error);
-		return null;
-	}
-}
-
-/**
  * Process text content with OpenAI to extract item details
+ * Enhanced to work with text extracted from both PDF and text files
  */
 async function processWithAI(text: string): Promise<ExtractedItem[]> {
 	try {
@@ -132,7 +187,7 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 				{
 					role: "system",
 					content:
-						"Extract item details from invoice text. Return only the structured data.",
+						"Extract item details from invoice text. Return only the structured data. Make sure you get the SKU and quantity exactly correct.",
 				},
 				{
 					role: "user",
@@ -210,13 +265,24 @@ async function estimateItemDimensions(
 				{
 					role: "system",
 					content: `
-                        Estimate dimensions for hardware items in millimeters.
+                        Estimate dimensions for hardware items in millimeters and weights in grams.
                         Consider:
                         - Standard hardware sizes
                         - Packaging for multi-packs
                         - Common engineering dimensions
                         - Item descriptions and SKUs
                         Return conservative estimates that would fit the items.
+												
+												Here are some weights per mm for common extrusion profiles:
+												- 20 x 20mm - 20 Series: 0.49g/mm
+												- 20 x 40mm - 20 Series: 0.8g/mm
+												- 20 x 60mm - 20 Series: 1.08g/mm
+												- 20 x 80mm - 20 Series: 1.56g/mm
+												- 40 x 40mm - 20 Series: 1.08g/mm
+												- C-beam - 20 Series: 2.065g/mm
+												- C-beam HEAVY - 20 Series: 3.31g/mm
+												- 40 x 40mm - 40 Series: 1.57g/mm
+												- 40 x 80mm - 40 Series: 2.86g/mm
                     `,
 				},
 				{
@@ -447,38 +513,11 @@ async function getItemDimensions(
 }
 
 /**
- * Process invoice text and extract items using AI
- * @param invoiceText The extracted text content from the invoice PDF
- * @returns Array of shipping items with dimensions
- *
- * NOTE: The client is now responsible for extracting PDF text using pdfjs-dist (pdf.js).
+ * Error Handling Notes (2025-06-03):
+ * - All file extraction and AI steps are wrapped in try/catch with clear error messages.
+ * - If a file is missing, not a string, or empty, a descriptive error is thrown.
+ * - PDF extraction errors are logged and surfaced with context.
+ * - AI extraction and dimension estimation errors are logged and surfaced with context.
+ * - All errors are caught at the top level and rethrown with a user-friendly message.
+ * - If a 502 Bad Gateway or TypeError occurs, the error message will now include more context for debugging.
  */
-export async function processInvoiceText(
-	invoiceText: string
-): Promise<ShippingItem[]> {
-	try {
-		if (!invoiceText || typeof invoiceText !== "string") {
-			throw new Error("No invoice text provided");
-		}
-
-		// Process with AI to extract items
-		const extractedItems = await processWithAI(invoiceText);
-		if (!extractedItems?.length) {
-			throw new Error("No items found in invoice");
-		}
-
-		// Get full ShippingItem objects, either from DB or by creating new ones
-		const shippingItemsFromInvoice = await getItemDimensions(extractedItems);
-		console.log(
-			"Shipping items from invoice processing:",
-			shippingItemsFromInvoice
-		);
-
-		return shippingItemsFromInvoice;
-	} catch (error) {
-		console.error("Invoice processing error:", error);
-		throw new Error(
-			error instanceof Error ? error.message : "Failed to process invoice"
-		);
-	}
-}

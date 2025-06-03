@@ -9,8 +9,8 @@
  * It uses a set of extreme points (corners) to determine where to place items in the box.
  */
 
-import type ShippingItem from "@/interfaces/box-shipping-calculator/ShippingItem";
-import type ShippingBox from "@/interfaces/box-shipping-calculator/ShippingBox";
+import type ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+import type ShippingBox from "@/types/box-shipping-calculator/ShippingBox";
 
 // Define the interface for multi-box packing results
 export interface MultiBoxPackingResult {

@@ -23,8 +23,6 @@ export default function TableEnclosureCalculatorPage() {
 	return (
 		<LayoutContainer>
 			<div className="table-enclosure-calculator">
-				<h1 className="mb-4">Table and Enclosure Calculator</h1>
-
 				{/* Client Component Calculator */}
 				<Suspense
 					fallback={
