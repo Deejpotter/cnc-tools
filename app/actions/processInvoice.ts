@@ -122,6 +122,14 @@ export async function processInvoice(
 		let extractedItems: ExtractedItem[] = [];
 		try {
 			extractedItems = await processWithAI(textContent);
+			if (!Array.isArray(extractedItems)) {
+				console.error("AI did not return an array of items:", extractedItems);
+				throw new Error("AI did not return an array of items");
+			}
+			if (extractedItems.length === 0) {
+				console.error("AI returned an empty array of items.");
+				throw new Error("No items found in invoice (AI returned empty array)");
+			}
 		} catch (aiErr) {
 			console.error("AI extraction failed:", aiErr);
 			throw new Error(
@@ -129,10 +137,12 @@ export async function processInvoice(
 					(aiErr instanceof Error ? aiErr.message : JSON.stringify(aiErr))
 			);
 		}
-		// Defensive: Ensure extractedItems is an array
+
+		// Defensive: Ensure extractedItems is an array and not undefined/null
 		if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
 			console.error(
-				"No items found in invoice (AI returned no items or invalid format)"
+				"No items found in invoice (AI returned no items or invalid format)",
+				extractedItems
 			);
 			throw new Error(
 				"No items found in invoice (AI returned no items or invalid format)"
@@ -143,6 +153,17 @@ export async function processInvoice(
 		let shippingItemsFromInvoice: ShippingItem[] = [];
 		try {
 			shippingItemsFromInvoice = await getItemDimensions(extractedItems);
+			if (!Array.isArray(shippingItemsFromInvoice)) {
+				console.error(
+					"getItemDimensions did not return an array:",
+					shippingItemsFromInvoice
+				);
+				throw new Error("getItemDimensions did not return an array");
+			}
+			if (shippingItemsFromInvoice.length === 0) {
+				console.error("getItemDimensions returned an empty array.");
+				throw new Error("No shipping items found after dimension lookup");
+			}
 		} catch (dimErr) {
 			console.error("Error getting item dimensions:", dimErr);
 			throw new Error(
