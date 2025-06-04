@@ -292,9 +292,20 @@ export const calculateEnclosureMaterials = (
 	const bottomLength2020 = effectiveLength * 2; // Always 2020 for bottom length
 	const bottomWidth2020 = effectiveWidth * 2; // Always 2020 for bottom width
 
+	// The Results type requires a totalLengths property for the enclosure, which is used for BOM and test validation.
+	// This property sums the total length of each extrusion type used in the enclosure frame.
+	const totalLengths = {
+		rail2020: topLength2020 + topWidth2020 + bottomLength2020 + bottomWidth2020,
+		rail2040: topLength2040 + topWidth2040, // Only top rails can be 2040
+		railWidth2020: topWidth2020 + bottomWidth2020, // All width rails that are 2020
+		railWidth2040: topWidth2040, // All width rails that are 2040
+		verticalRail2020: effectiveHeight * 4, // 4 verticals, always 2020
+	};
+
 	return {
 		extrusions,
 		hardware,
+		totalLengths, // Required for Results type and BOM/test validation
 	};
 };
 
