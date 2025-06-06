@@ -1,21 +1,8 @@
 /**
  * PdfImport Component
- * Author: Deej Potter (refactored by Copilot)
+ * Author: Deej Potter
  * Description: Reusable component for importing and extracting text from PDF or text files using pdf-ts.
  * This component is designed to be used anywhere in the app where PDF/text import is needed.
- *
- * Props:
- * - onTextExtracted: (text: string) => void
- *     Called with the extracted text content from the file (PDF or text).
- * - onError: (error: string) => void
- *     Called with an error message if extraction fails.
- * - label?: string
- *     Optional label to display in the UI.
- * - accept?: string
- *     Optional accept string for file input (default: '.pdf,.txt,.text')
- *
- * Usage Example:
- * <PdfImport onTextExtracted={handleText} onError={handleError} label="Import Invoice" />
  */
 
 "use client";
@@ -24,6 +11,15 @@ import React, { useRef, useState } from "react";
 import { pdfToText } from "pdf-ts";
 import { Upload, Check } from "lucide-react";
 
+/**
+ * Props for the PdfImport component.
+ * @property {function} onTextExtracted - Callback function to handle extracted text.
+ * @property {function} onError - Callback function to handle errors.
+ * @property {string} [label] - Custom label for the import button.
+ * @property {string} [accept] - Accepted file types for import.
+ * @example
+ * <PdfImport onTextExtracted={handleText} onError={handleError} label="Import Invoice" />
+ */
 interface PdfImportProps {
 	onTextExtracted: (text: string) => void;
 	onError: (error: string) => void;

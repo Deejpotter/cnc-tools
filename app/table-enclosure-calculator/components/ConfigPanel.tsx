@@ -14,6 +14,10 @@ import type {
 	TableConfig,
 	MaterialConfig,
 	DoorConfig,
+	DimensionsWithoutFlag,
+	ValidationErrors,
+	PanelPositions,
+	DoorConfigFlags,
 } from "@/types/box-shipping-calculator/box-shipping-types";
 import {
 	DoorType,
@@ -21,27 +25,10 @@ import {
 } from "@/types/box-shipping-calculator/box-shipping-types";
 
 /**
- * Interface for input validation errors
- */
-interface ValidationErrors {
-	table?: {
-		length?: string;
-		width?: string;
-		height?: string;
-	};
-	enclosure?: {
-		length?: string;
-		width?: string;
-		height?: string;
-	};
-	general?: string[];
-}
-
-/**
- * The props for the ConfigPanel component.
+ * The props for the ConfigPanel component using enhanced utility types.
  * @property {TableConfig} config - The configuration object for the table and enclosure.
- * @property {Omit<Dimensions, "isOutsideDimension">} tableDimensions - The dimensions of the table.
- * @property {Omit<Dimensions, "isOutsideDimension">} enclosureDimensions - The dimensions of the enclosure.
+ * @property {DimensionsWithoutFlag} tableDimensions - The dimensions of the table.
+ * @property {DimensionsWithoutFlag} enclosureDimensions - The dimensions of the enclosure.
  * @property {MaterialConfig} materialConfig - The material configuration object.
  * @property {function} handleConfigChange - Function to handle changes in the configuration.
  * @property {function} handleTableDimensionChange - Function to handle changes in table dimensions.
@@ -49,8 +36,8 @@ interface ValidationErrors {
  */
 interface ConfigPanelProps {
 	config: TableConfig;
-	tableDimensions: Omit<Dimensions, "isOutsideDimension">;
-	enclosureDimensions: Omit<Dimensions, "isOutsideDimension">;
+	tableDimensions: DimensionsWithoutFlag;
+	enclosureDimensions: DimensionsWithoutFlag;
 	materialConfig: MaterialConfig;
 	handleConfigChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	handleTableDimensionChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

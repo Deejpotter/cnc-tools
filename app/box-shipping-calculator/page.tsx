@@ -1,10 +1,10 @@
 /**
- * Box Shipping Calculator Page Component
+ * Box Shipping Calculator Page
  * Updated: 07/05/25
  * Author: Deej Potter
- * Description: This component provides a user interface for calculating the best box size for shipping items.
- * It includes features for importing items from a Maker Store invoice, selecting items, and manually adding new items.
- * The component uses the unified data access layer for data operations.
+ * Description: Main UI for the box shipping calculator. Orchestrates invoice import, item management, and box calculation.
+ *
+ * Reasoning: Invoice import is chunked into fast, sequential server actions to avoid timeouts and make each step debuggable and retryable. UI state and progress are updated at each step for a responsive user experience.
  */
 
 "use client";
@@ -24,16 +24,14 @@ import {
 	addItemToDatabase,
 	syncWithRemoteDatabase,
 } from "@/app/actions/data-actions";
-import { processInvoice } from "@/app/actions/processInvoice";
+import {
+	extractInvoiceItems,
+	getItemDimensionsServer,
+} from "@/app/actions/processInvoice";
 import PdfImport from "@/components/PdfImport";
 
 /**
  * Box Shipping Calculator Page Component
- * This is the main page component that combines all functionality for the shipping calculator:
- * 1. Invoice import and processing
- * 2. Item selection and management
- * 3. Box size calculation
- * 4. Manual item addition
  */
 const BoxShippingCalculatorPage: React.FC = () => {
 	// State Management
@@ -45,6 +43,10 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	const [importError, setImportError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSyncing, setIsSyncing] = useState(false);
+	const [importStep, setImportStep] = useState<
+		null | "extract" | "items" | "dimensions"
+	>(null);
+	const [importProgress, setImportProgress] = useState<string | null>(null);
 
 	/**
 	 * Effect hook to load initial items and initialize sample data if needed
@@ -203,32 +205,54 @@ const BoxShippingCalculatorPage: React.FC = () => {
 
 	/**
 	 * Handler for when text is extracted from a PDF or text file via PdfImport.
-	 * This function processes the text directly with the invoice processing server action.
+	 * Implements the chunked server action workflow for serverless robustness:
+	 * 1. Calls extractInvoiceItems to extract items from the text (fast, <10s)
+	 * 2. Calls getItemDimensionsServer to get ShippingItem objects (fast, <10s)
+	 * 3. Updates UI and state at each step, with error handling and progress feedback
+	 *
+	 * Rationale: This approach avoids serverless/API timeouts and makes each step debuggable and retryable.
+	 *
 	 * @param text The extracted text content from the file
 	 */
 	const handleTextExtracted = async (text: string) => {
+		setImportStep("extract");
+		setImportProgress("Extracting items from invoice text...");
+		setImportError(null);
 		try {
-			// Create a new File object from the extracted text (simulate a text file upload)
-			const blob = new Blob([text], { type: "text/plain" });
-			const file = new File([blob], "extracted-invoice.txt", {
-				type: "text/plain",
-			});
-			const formData = new FormData();
-			formData.append("invoice", file);
-
-			// Process the extracted text with our invoice processing server action
-			const items = await processInvoice(formData);
-
-			if (items.length === 0) {
-				setImportError("No items found in invoice");
-			} else {
-				handleInvoiceItems(items);
+			// Step 1: Extract items from text
+			const extractedItems = await extractInvoiceItems(text);
+			if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
+				setImportError("No items found in invoice.");
+				setImportStep(null);
+				setImportProgress(null);
+				return;
 			}
+			setImportStep("items");
+			setImportProgress("Looking up or estimating item dimensions...");
+
+			// Step 2: Get full ShippingItem objects (with dimensions)
+			const shippingItems = await getItemDimensionsServer(extractedItems);
+			if (!Array.isArray(shippingItems) || shippingItems.length === 0) {
+				setImportError("No items with dimensions found in invoice.");
+				setImportStep(null);
+				setImportProgress(null);
+				return;
+			}
+			setImportStep("dimensions");
+			setImportProgress("Import complete!");
+			// Pass to handler to update state/UI
+			handleInvoiceItems(shippingItems);
+			setTimeout(() => {
+				setImportStep(null);
+				setImportProgress(null);
+			}, 1000);
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : "Failed to process invoice";
 			console.error("Invoice processing error:", error);
 			setImportError(errorMessage);
+			setImportStep(null);
+			setImportProgress(null);
 		}
 	};
 
@@ -285,6 +309,9 @@ const BoxShippingCalculatorPage: React.FC = () => {
 									label="Import Maker Store Invoice (PDF or Text)"
 									accept=".pdf,.txt,.text"
 								/>
+								{importProgress && (
+									<p className="mt-3 text-info">{importProgress}</p>
+								)}
 								{importError && (
 									<p className="mt-3 text-danger">{importError}</p>
 								)}

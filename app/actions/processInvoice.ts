@@ -33,137 +33,50 @@ export interface ExtractedItem {
 }
 
 /**
- * Process invoice file and extract items using AI
- * Enhanced to support both PDF and text files using pdf-ts library
+ * Step 1: Extract text from invoice file (PDF or text)
+ * This server action runs quickly and returns the extracted text.
  * @param formData Form data containing the invoice file (PDF or text)
- * @returns Array of shipping items with dimensions
+ * @returns Extracted text content
  */
-export async function processInvoice(
-	formData: FormData
-): Promise<ShippingItem[]> {
-	try {
-		const file = formData.get("invoice") as File;
-		if (!file) {
-			console.error(
-				"No file provided in formData. formData keys:",
-				Array.from(formData.keys())
-			);
-			throw new Error("No file provided");
-		}
-
-		console.log(
-			`Processing file: ${file.name} (${file.type}, ${file.size} bytes)`
-		);
-
-		let textContent: string;
-
-		// Check file type and extract text accordingly
-		if (
-			file.type === "application/pdf" ||
-			file.name.toLowerCase().endsWith(".pdf")
-		) {
-			// Handle PDF files using pdf-ts
-			console.log("Processing PDF file with pdf-ts library");
-			try {
-				// Convert File to ArrayBuffer for pdf-ts
-				const arrayBuffer = await file.arrayBuffer();
-				if (!arrayBuffer) {
-					throw new Error("Failed to read PDF file as ArrayBuffer");
-				}
-				const uint8Array = new Uint8Array(arrayBuffer);
-
-				// Extract text from PDF using pdf-ts
-				textContent = await pdfToText(uint8Array);
-				if (!textContent) {
-					throw new Error("pdfToText returned empty or undefined text");
-				}
-				console.log("PDF text extraction successful");
-			} catch (pdfError) {
-				console.error("PDF extraction error:", pdfError);
-				throw new Error(
-					`Failed to extract text from PDF: ${
-						pdfError instanceof Error
-							? pdfError.message
-							: JSON.stringify(pdfError)
-					}`
-				);
-			}
-		} else {
-			// Handle text files (existing functionality)
-			console.log("Processing text file");
-			try {
-				textContent = await file.text();
-				if (!textContent) {
-					throw new Error("Text file is empty or unreadable");
-				}
-			} catch (txtErr) {
-				console.error("Text file extraction error:", txtErr);
-				throw new Error(
-					`Failed to extract text from file: ${
-						txtErr instanceof Error ? txtErr.message : JSON.stringify(txtErr)
-					}`
-				);
-			}
-		}
-
-		// Defensive: Ensure textContent is a string before accessing .length
-		if (typeof textContent !== "string") {
-			console.error("Extracted file content is not a string:", textContent);
-			throw new Error("Extracted file content is not a string");
-		}
-		console.log("Extracted text content length:", textContent.length);
-
-		if (!textContent || !textContent.trim()) {
-			console.error("File appears to be empty or unreadable after extraction.");
-			throw new Error("File appears to be empty or unreadable");
-		}
-
-		// Process with AI to extract items (same for both PDF and text)
-		let extractedItems: ExtractedItem[] = [];
-		try {
-			extractedItems = await processWithAI(textContent);
-		} catch (aiErr) {
-			console.error("AI extraction failed:", aiErr);
-			throw new Error(
-				"Failed to extract items from invoice text. AI error: " +
-					(aiErr instanceof Error ? aiErr.message : JSON.stringify(aiErr))
-			);
-		}
-		// Defensive: Ensure extractedItems is an array
-		if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
-			console.error(
-				"No items found in invoice (AI returned no items or invalid format)"
-			);
-			throw new Error(
-				"No items found in invoice (AI returned no items or invalid format)"
-			);
-		}
-
-		// Get full ShippingItem objects, either from DB or by creating new ones
-		let shippingItemsFromInvoice: ShippingItem[] = [];
-		try {
-			shippingItemsFromInvoice = await getItemDimensions(extractedItems);
-		} catch (dimErr) {
-			console.error("Error getting item dimensions:", dimErr);
-			throw new Error(
-				"Failed to get item dimensions: " +
-					(dimErr instanceof Error ? dimErr.message : JSON.stringify(dimErr))
-			);
-		}
-		console.log(
-			"Shipping items from invoice processing:",
-			shippingItemsFromInvoice
-		);
-
-		// The result from getItemDimensions is already Promise<ShippingItem[]>
-		return shippingItemsFromInvoice;
-	} catch (error) {
-		console.error("Invoice processing error (outer catch):", error);
-		throw new Error(
-			(error instanceof Error ? error.message : JSON.stringify(error)) +
-				"\nIf this is a 502 Bad Gateway or TypeError, check server logs for more details."
-		);
+export async function extractInvoiceText(formData: FormData): Promise<string> {
+	const file = formData.get("invoice") as File;
+	if (!file) {
+		throw new Error("No file provided");
 	}
+	let textContent: string;
+	if (
+		file.type === "application/pdf" ||
+		file.name.toLowerCase().endsWith(".pdf")
+	) {
+		// PDF extraction
+		const arrayBuffer = await file.arrayBuffer();
+		if (!arrayBuffer) throw new Error("Failed to read PDF file as ArrayBuffer");
+		const uint8Array = new Uint8Array(arrayBuffer);
+		textContent = await pdfToText(uint8Array);
+		if (!textContent)
+			throw new Error("pdfToText returned empty or undefined text");
+	} else {
+		// Text file extraction
+		textContent = await file.text();
+		if (!textContent) throw new Error("Text file is empty or unreadable");
+	}
+	if (typeof textContent !== "string")
+		throw new Error("Extracted file content is not a string");
+	if (!textContent.trim())
+		throw new Error("File appears to be empty or unreadable");
+	return textContent;
+}
+
+/**
+ * Step 2: Extract item details from invoice text using AI
+ * This server action runs quickly for small/medium text, but should be chunked for large text.
+ * @param text Extracted invoice text
+ * @returns Array of extracted items
+ */
+export async function extractInvoiceItems(
+	text: string
+): Promise<ExtractedItem[]> {
+	return await processWithAI(text);
 }
 
 /**
@@ -487,12 +400,55 @@ async function getItemDimensions(
 	return finalShippingItems;
 }
 
+// Export getItemDimensions as a server action for client use
+export async function getItemDimensionsServer(
+	itemsFromInvoice: ExtractedItem[]
+): Promise<ShippingItem[]> {
+	return await getItemDimensions(itemsFromInvoice);
+}
+
 /**
- * Error Handling Notes (2025-06-03):
- * - All file extraction and AI steps are wrapped in try/catch with clear error messages.
- * - If a file is missing, not a string, or empty, a descriptive error is thrown.
- * - PDF extraction errors are logged and surfaced with context.
- * - AI extraction and dimension estimation errors are logged and surfaced with context.
- * - All errors are caught at the top level and rethrown with a user-friendly message.
- * - If a 502 Bad Gateway or TypeError occurs, the error message will now include more context for debugging.
+ * @deprecated Use the chunked workflow: extractInvoiceText -> extractInvoiceItems -> getItemDimensionsServer
+ * This monolithic orchestrator is kept for legacy/fallback only.
  */
+export async function processInvoice(
+	formData: FormData
+): Promise<ShippingItem[]> {
+	try {
+		// Step 1: Extract text from file
+		const textContent = await extractInvoiceText(formData);
+
+		// Step 2: Extract items from text (for large text, client should chunk and call extractInvoiceItems in pieces)
+		let extractedItems: ExtractedItem[] = [];
+		try {
+			extractedItems = await extractInvoiceItems(textContent);
+		} catch (aiErr) {
+			throw new Error(
+				"Failed to extract items from invoice text. AI error: " +
+					(aiErr instanceof Error ? aiErr.message : JSON.stringify(aiErr))
+			);
+		}
+		if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
+			throw new Error(
+				"No items found in invoice (AI returned no items or invalid format)"
+			);
+		}
+
+		// Step 3: Get full ShippingItem objects, either from DB or by creating new ones
+		let shippingItemsFromInvoice: ShippingItem[] = [];
+		try {
+			shippingItemsFromInvoice = await getItemDimensions(extractedItems);
+		} catch (dimErr) {
+			throw new Error(
+				"Failed to get item dimensions: " +
+					(dimErr instanceof Error ? dimErr.message : JSON.stringify(dimErr))
+			);
+		}
+		return shippingItemsFromInvoice;
+	} catch (error) {
+		throw new Error(
+			(error instanceof Error ? error.message : JSON.stringify(error)) +
+				"\nIf this is a 502 Bad Gateway or TypeError, check server logs for more details."
+		);
+	}
+}

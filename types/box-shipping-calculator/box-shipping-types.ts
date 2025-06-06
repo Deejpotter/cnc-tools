@@ -12,6 +12,18 @@ export enum DoorType {
 }
 
 /**
+ * Utility types for enhanced type safety
+ */
+export type DimensionsWithoutFlag = Omit<Dimensions, "isOutsideDimension">;
+export type DimensionsRequired = Required<Dimensions>;
+export type DimensionsMeasurements = Pick<
+	Dimensions,
+	"length" | "width" | "height"
+>;
+export type DoorConfigFlags = Omit<DoorConfig, "doorType">;
+export type PanelPositions = keyof MaterialConfig["panelConfig"];
+
+/**
  * Door type display names for user-friendly interface
  */
 export const DoorTypeDisplayNames = {
@@ -93,6 +105,13 @@ export interface MaterialConfig {
 		front: boolean;
 	};
 }
+
+/**
+ * Utility types for Material Configuration
+ */
+export type PanelConfig = MaterialConfig["panelConfig"];
+export type MaterialConfigWithoutPanels = Omit<MaterialConfig, "panelConfig">;
+export type PanelConfigPartial = Partial<PanelConfig>;
 
 /**
  * Interface for calculation results
@@ -194,3 +213,36 @@ export interface Results {
 		totalArea: number;
 	};
 }
+
+/**
+ * Utility types for Results
+ */
+export type TableResults = NonNullable<Results["table"]>;
+export type EnclosureResults = NonNullable<Results["enclosure"]>;
+export type DoorResults = NonNullable<Results["doors"]>;
+export type PanelResults = NonNullable<Results["panels"]>;
+export type ResultsPartial = Partial<Results>;
+
+/**
+ * Enhanced Event Handler Types using utility types
+ */
+export type FormChangeHandler = React.ChangeEvent<HTMLInputElement>;
+export type SelectChangeHandler = React.ChangeEvent<HTMLSelectElement>;
+export type TextAreaChangeHandler = React.ChangeEvent<HTMLTextAreaElement>;
+
+// Generic form element change handler
+export type FormElementChangeHandler<T = HTMLInputElement> =
+	React.ChangeEvent<T>;
+
+/**
+ * Validation Error Types using utility types
+ */
+export interface ValidationErrors {
+	table?: Partial<Record<keyof DimensionsMeasurements, string>>;
+	enclosure?: Partial<Record<keyof DimensionsMeasurements, string>>;
+	general?: string[];
+}
+
+export type ValidationErrorsPartial = Partial<ValidationErrors>;
+export type DimensionValidationErrors = ValidationErrors["table"];
+export type GeneralValidationErrors = NonNullable<ValidationErrors["general"]>;

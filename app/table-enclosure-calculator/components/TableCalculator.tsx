@@ -63,22 +63,13 @@ const {
 	DOOR_HARDWARE,
 } = CONSTANTS;
 
-/**
- * Interface for input validation errors
- */
-interface ValidationErrors {
-	table?: {
-		length?: string;
-		width?: string;
-		height?: string;
-	};
-	enclosure?: {
-		length?: string;
-		width?: string;
-		height?: string;
-	};
-	general?: string[];
-}
+// Import utility types for enhanced type safety
+import type {
+	DimensionsWithoutFlag,
+	ValidationErrors,
+	DimensionsMeasurements,
+	FormElementChangeHandler,
+} from "@/types/box-shipping-calculator/box-shipping-types";
 
 /**
  * TableCalculator component

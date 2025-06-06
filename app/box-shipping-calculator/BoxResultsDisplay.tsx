@@ -121,7 +121,6 @@ export function BoxResultsDisplay({ packingResult }: BoxResultsDisplayProps) {
 	return (
 		<div className="box-results mt-4">
 			<h3 className="h4 mb-3">Box Packing Results</h3>
-
 			{packingResult.success ? (
 				<>
 					{packingResult.shipments.length === 0 ? (
@@ -135,7 +134,6 @@ export function BoxResultsDisplay({ packingResult }: BoxResultsDisplayProps) {
 								Items will be packed into{" "}
 								<strong>{packingResult.shipments.length}</strong> box(es).
 							</p>
-
 							<div className="row">
 								{packingResult.shipments.map((shipment, index) => (
 									<div key={index} className="col-md-6 col-lg-4 mb-3">
@@ -328,7 +326,6 @@ function UnfitItemsCard({ items }: { items: ShippingItem[] }) {
 
 	return (
 		<div className="card border-danger mt-3">
-			{" "}
 			<div className="card-header bg-danger text-white">
 				<AlertCircle size={18} className="me-2" />
 				Items That Don&apos;t Fit
@@ -345,7 +342,6 @@ function UnfitItemsCard({ items }: { items: ShippingItem[] }) {
 							</tr>
 						</thead>
 						<tbody>
-							{" "}
 							{items.map((item) => (
 								<tr key={String(item._id)}>
 									<td>{item.name}</td>
