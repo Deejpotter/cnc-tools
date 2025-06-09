@@ -165,3 +165,73 @@ To learn more about Next.js, check out the following resources:
 ## License
 
 See the [LICENSE](LICENSE) file for details.
+
+## Backend Integration (Express API)
+
+This app uses an Express backend for all API requests during development and production. To configure the frontend to use your backend:
+
+- Set the API base URL as an environment variable:
+  - For Next.js: `NEXT_PUBLIC_API_URL=http://localhost:5000` (replace 5000 with your backend port if different)
+
+All API requests should use this base URL. Example:
+
+```js
+fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`)
+```
+
+## Authentication (Clerk.dev)
+
+This app uses Clerk.dev for authentication and user management. Auth0 and Netlify Identity are no longer supported.
+
+### Setup
+
+- Install Clerk for Next.js:
+
+```bash
+yarn add @clerk/nextjs@latest
+```
+
+- Add a `middleware.ts` file at the project root with:
+
+```typescript
+import { clerkMiddleware } from "@clerk/nextjs/server";
+export default clerkMiddleware();
+export const config = {
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
+};
+```
+
+- Wrap your app in `<ClerkProvider>` in `app/layout.tsx`.
+- Use Clerk's React components (`<SignInButton>`, `<SignUpButton>`, `<UserButton>`, `<SignedIn>`, `<SignedOut>`) for authentication UI.
+- For protected API calls, use Clerk's `getToken()` or `useAuth()` to get the JWT and include it in the `Authorization` header.
+- The Express backend must validate Clerk JWTs for protected endpoints.
+- See CodingConventions.md for usage details and Clerk docs for backend validation examples.
+
+## Clerk.dev Authentication Migration (June 9, 2025)
+
+- This app now uses Clerk.dev for authentication and authorization with the Next.js App Router.
+- To set up Clerk:
+  1. Create a Clerk account and application at [https://clerk.com/](https://clerk.com/)
+  2. Add your Clerk publishable and secret keys to your `.env` file:
+     - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+     - CLERK_SECRET_KEY
+  3. Install Clerk for Next.js:
+     - yarn add @clerk/nextjs@latest
+  4. Add `middleware.ts` at the project root using `clerkMiddleware()` from `@clerk/nextjs/server` (see CodingConventions.md for details).
+  5. Wrap your app in `<ClerkProvider>` in `app/layout.tsx` and use Clerk's built-in components for authentication UI.
+  6. Remove all Auth0/Netlify Identity code and use Clerk's hooks/components instead.
+
+## Frontend/Backend Split
+
+- All business logic, database access, and sensitive operations are now handled by the Express backend.
+- The frontend only communicates with the backend via API endpoints.
+- All server actions and server code have been removed from the frontend.
+
+## Server Actions Migration
+
+- As of June 9, 2025, all server logic (data, chat, invoice, and database actions) has been moved to the Express backend.
+- The Next.js frontend now communicates exclusively with the backend via API endpoints using fetch and the NEXT_PUBLIC_API_URL environment variable.
+- All previous server actions in /app/actions have been removed or refactored to use backend API calls.

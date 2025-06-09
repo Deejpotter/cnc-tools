@@ -18,6 +18,7 @@ import {
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import "@/styles/ChatInterface.scss";
 import FileUpload from "./FileUpload";
+import { useAuth } from "@clerk/nextjs";
 
 /**
  * Handles the chat interface for the chatbot.
@@ -26,8 +27,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 	setShowConversations,
 	showConversations,
 }) => {
-	// Get API URL from environment variable. If not set, use an empty string which will try to access the same domain.
 	const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+	const { getToken } = useAuth(); // Clerk: getToken for authenticated API requests
 	// State to hold all chat messages
 	const [messages, setMessages] = useState<
 		Array<{ type: "user" | "bot"; content: string }>
@@ -40,7 +41,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 	}, [messages]);
 
 	// Function to handle form submission
-  const handleFormSubmit = async (
+	const handleFormSubmit = async (
 		innerHtml: string,
 		textContent: string,
 		innerText: string,
@@ -52,15 +53,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 			{ type: "user", content: `You: ${textContent}` },
 		]);
 
-		// Try the request to the bot API using the user's message.
 		try {
+			const jwt = await getToken();
 			const response = await fetch(`${apiUrl}/ask`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(jwt ? { Authorization: `Bearer ${jwt}` } : {}), // Add Clerk JWT if available
+				},
 				body: JSON.stringify({ user_message: textContent }),
 			});
 
-			// If the request is successful, add the bot's response to the chat.
 			if (response.ok) {
 				const data = await response.json();
 				setMessages((prev) => [
@@ -73,12 +76,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 		}
 	};
 
-	// Function to handle reinitialization
 	const handleReinitializeClick = async () => {
 		try {
+			const jwt = await getToken();
 			const response = await fetch(`${apiUrl}/reinitialize`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: {
+					"Content-Type": "application/json",
+					...(jwt ? { Authorization: `Bearer ${jwt}` } : {}), // Add Clerk JWT if available
+				},
 			});
 
 			if (response.ok) {

@@ -15,6 +15,7 @@
       - [2.1.2 Authentication System](#212-authentication-system)
         - [Key Implementation Details](#key-implementation-details)
         - [Local Development](#local-development)
+        - [Clerk.dev Integration](#clerkdev-integration)
       - [2.1.3 Global Style and Layout Setup](#213-global-style-and-layout-setup)
     - [2.2. Sub Projects (Mini-Apps)](#22-sub-projects-mini-apps)
       - [2.2.1 CNC Technical AI Chatbot (page.tsx)](#221-cnc-technical-ai-chatbot-pagetsx)
@@ -74,25 +75,22 @@ The initial phase is focused on setting up the primary interface elements such a
 
 #### 2.1.2 Authentication System
 
-- Implementing an authentication system using Netlify Identity to manage user access and personalization across the app.
-- The system includes session persistence, ensuring users remain logged in across page reloads and browser sessions.
-- Utilizes Netlify Identity for seamless integration of user management and authentication processes.
-- Provides a consistent user experience in both development and production environments.
+### Clerk.dev Integration
+
+- Clerk.dev is used for authentication and user management in the Next.js App Router frontend.
+- The app uses the official Clerk Next.js SDK (`@clerk/nextjs`).
+- The app is wrapped in `<ClerkProvider>` in `app/layout.tsx`.
+- Clerk's React components (`<SignInButton>`, `<SignUpButton>`, `<UserButton>`, `<SignedIn>`, `<SignedOut>`) are used for authentication UI.
+- A `middleware.ts` file at the project root uses `clerkMiddleware()` for route protection.
+- For protected API calls, use Clerk's `getToken()` or `useAuth()` to get the JWT and include it in the `Authorization` header.
+- The backend must validate Clerk JWTs for protected endpoints.
+- See Clerk docs for more details and backend validation examples.
 
 ##### Key Implementation Details
 
-- **AuthContext**: A React context is used for managing global authentication state across the application.
-- **AuthProvider**: A component that wraps the entire application to provide authentication state to all components.
-- **useAuth**: A custom hook created for easy access to authentication functionalities like login, logout, and user state.
-- **Session Persistence**: Implemented using `netlifyIdentity.currentUser()` within `AuthProvider` to check and set the user's logged-in state on app initialization.
-- **Netlify Identity Configuration**: Configured to handle user authentication seamlessly, including handling different scenarios in development and production environments.
-
-##### Local Development
-
-- For local development, email login is used instead of OAuth providers to simplify the testing and development process.
-- Noted that using OAuth providers like Google requires setting proper callback URLs and may not function as expected in local development environments.
-
-This authentication setup ensures that user credentials and sessions are handled securely while providing a smooth user experience.
+- Clerk is now the only authentication provider. All legacy AuthContext, AuthProvider, useAuth, and Netlify Identity code has been removed.
+- All authentication state and UI is handled by Clerk's hooks and components.
+- For protected API calls, always use Clerk's getToken() or useAuth() to get the JWT.
 
 #### 2.1.3 Global Style and Layout Setup
 

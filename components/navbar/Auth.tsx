@@ -1,39 +1,46 @@
 "use client";
 import React from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import Gravatar from "./Gravatar";
+import {
+	SignInButton,
+	SignUpButton,
+	SignedIn,
+	SignedOut,
+	UserButton,
+	useUser,
+} from "@clerk/nextjs";
 
 const Auth = () => {
-	const { user, login, signup, logout } = useAuth();
+	const { user, isSignedIn } = useUser();
 
 	return (
 		<div className="navbar-nav">
-			{user ? (
+			<SignedIn>
 				<div className="nav-item d-flex align-items-center">
-					<Gravatar email={user.email} className="rounded-circle mx-1 shadow" />
-					<button
-						onClick={logout}
-						className="btn btn-sm btn-outline-danger shadow"
-					>
-						Logout
-					</button>
+					{/* Clerk user object: use primaryEmailAddress or username as fallback */}
+					<Gravatar
+						email={
+							user?.primaryEmailAddress?.emailAddress || user?.username || ""
+						}
+						className="rounded-circle mx-1 shadow"
+					/>
+					<UserButton afterSignOutUrl="/" />
 				</div>
-			) : (
+			</SignedIn>
+			<SignedOut>
 				<div className="nav-item">
-					<button
-						onClick={login}
-						className="btn btn-sm btn-outline-secondary shadow mx-1"
-					>
-						Login
-					</button>
-					<button
-						onClick={signup}
-						className="btn btn-sm btn-outline-secondary shadow"
-					>
-						Sign up
-					</button>
+					<SignInButton mode="modal">
+						<button className="btn btn-sm btn-outline-secondary shadow mx-1">
+							Login
+						</button>
+					</SignInButton>
+					<SignUpButton mode="modal">
+						<button className="btn btn-sm btn-outline-secondary shadow">
+							Sign up
+						</button>
+					</SignUpButton>
 				</div>
-			)}
+			</SignedOut>
 		</div>
 	);
 };

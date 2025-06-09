@@ -15,10 +15,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
-import {
-	updateItemInDatabase,
-	deleteItemFromDatabase,
-} from "@/app/actions/data-actions";
 
 /**
  * Props interface for ItemSelectAndCalculate component
@@ -86,7 +82,12 @@ export default function ItemSelectAndCalculate({
 	/**
 	 * Filter and sort available items based on current criteria
 	 * Uses useMemo to cache the processed items until dependencies change
-	 */ const processedItems = useMemo(() => {
+	 *
+	 * Debug: Log the availableItems and processedItems to verify weights before rendering.
+	 */
+	const processedItems = useMemo(() => {
+		// Debug: Log availableItems to verify weights before filtering/sorting
+		console.log("[ItemSelectAndCalculate] availableItems:", availableItems);
 		// First filter items based on search term, weight filter, and deleted status
 		let filtered = availableItems.filter((item) => {
 			// Skip deleted items
@@ -109,7 +110,7 @@ export default function ItemSelectAndCalculate({
 		});
 
 		// Then sort the filtered items
-		return filtered.sort((a, b) => {
+		const sorted = filtered.sort((a, b) => {
 			switch (sortBy) {
 				case "weight":
 					return a.weight - b.weight;
@@ -121,6 +122,9 @@ export default function ItemSelectAndCalculate({
 					return a.name.localeCompare(b.name);
 			}
 		});
+		// Debug: Log processedItems to verify weights after filtering/sorting
+		console.log("[ItemSelectAndCalculate] processedItems:", sorted);
+		return sorted;
 	}, [availableItems, searchTerm, sortBy, filterBy, deletedItemIds]);
 
 	/**
@@ -255,72 +259,35 @@ export default function ItemSelectAndCalculate({
 
 			// Reset editing state immediately to provide responsive UI
 			setEditingItemId(null);
-			setEditingItemData(null); // Update the database in the background without awaiting completion
-			// This prevents UI lag while still ensuring data persistence
-			updateItemInDatabase(processedItem)
+			setEditingItemData(null); // Update the database in the background using backend API
+			updateItemInBackend(processedItem)
 				.then(() => {
-					// Silently remove from pending updates when complete
 					setPendingUpdates((prev) =>
 						prev.filter((id) => id !== String(processedItem._id))
 					);
-
-					// We don't call onItemsChange() here since that would cause a full refresh
-					// Our UI is already updated with the correct data, so we just need to
-					// persist it to the database without refreshing the whole component
 				})
 				.catch((error) => {
 					console.error("Background item update failed:", error);
-					// Could implement retry logic here or notify user of sync issues
 				});
 		} catch (error) {
 			console.error("Failed to update item:", error);
 			throw error;
 		}
 	};
-	// Batch-related functions have been removed to simplify the interface
-	/**
-	 * Handle item deletion
-	 * Updates the UI immediately and syncs to database in background
-	 * This approach prevents UI disruption while ensuring data persistence
-	 * @param itemId ID of the item to delete
-	 */ const handleDeleteItem = async (itemId: string) => {
+
+	const handleDeleteItem = async (itemId: string) => {
 		if (!window.confirm("Are you sure you want to delete this item?")) {
 			return;
 		}
-
 		try {
-			// Mark item as being deleted (shows spinner)
 			setIsDeleting(itemId);
-
-			// Add to deleted items list for immediate UI update
 			setDeletedItemIds((prev) => [...prev, itemId]);
-
-			// Remove item from selected items immediately if it exists there
-			if (selectedItems.some((item) => String(item._id) === itemId)) {
-				onSelectedItemsChange(
-					selectedItems.filter((item) => String(item._id) !== itemId)
-				);
-			}
-
-			// Update the database in the background without awaiting completion
-			// This prevents UI lag while still ensuring data persistence
-			deleteItemFromDatabase(itemId)
-				.then(() => {
-					// Background processing complete
-					// No need to update the UI further since the item is already filtered out by deletedItemIds
-				})
-				.catch((error) => {
-					console.error("Background item deletion failed:", error);
-					alert("Failed to delete item. Please try again.");
-					// Remove from deleted items to show it again in the UI if the deletion failed
-					setDeletedItemIds((prev) => prev.filter((id) => id !== itemId));
-				})
-				.finally(() => {
-					setIsDeleting(null);
-				});
+			// Delete from backend API
+			await deleteItemInBackend(itemId);
+			// Optionally call onItemsChange() if you want to refresh from DB
 		} catch (error) {
 			console.error("Failed to delete item:", error);
-			alert("Failed to delete item. Please try again.");
+		} finally {
 			setIsDeleting(null);
 		}
 	};
@@ -703,4 +670,22 @@ export default function ItemSelectAndCalculate({
 			</div>
 		</div>
 	);
+}
+
+// Remove server action imports and use backend API endpoints for item update/delete
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+// Helper: Update item in backend
+async function updateItemInBackend(item) {
+	const res = await fetch(`${API_URL}/api/items/${item._id}`, {
+		method: "PUT",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(item),
+	});
+	return await res.json();
+}
+// Helper: Delete item in backend
+async function deleteItemInBackend(id) {
+	const res = await fetch(`${API_URL}/api/items/${id}`, { method: "DELETE" });
+	return await res.json();
 }

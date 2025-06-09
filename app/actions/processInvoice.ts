@@ -91,8 +91,20 @@ async function processWithAI(text: string): Promise<ExtractedItem[]> {
 			messages: [
 				{
 					role: "system",
-					content:
-						"Extract item details from invoice text. Return only the structured data. Make sure you get the SKU and quantity exactly correct.",
+					content: `Extract item details from invoice text. Return only the structured data. Make sure you get the SKU and quantity exactly correct.
+					
+						The SKU and LCN can be very similar, so ensure you extract the SKU correctly:
+
+						LCN: D-06-V
+						LCN: E-06-T
+						LCN: G09
+
+						SKU: ELEC-VFD-1500
+						SKU: TR-BS-SFU1204-300
+						SKU: LR-40-8-4080-S-3050
+
+						I want the SKU.
+						`,
 				},
 				{
 					role: "user",
@@ -294,93 +306,82 @@ async function getItemDimensions(
 	const dbResponse = await getAllDocuments<ShippingItem>("Items");
 	const existingDbItems =
 		dbResponse.success && dbResponse.data ? dbResponse.data : [];
+	// --- SKU normalization and DB lookup must be consistent ---
+	// Always normalize SKUs (trim and uppercase) for both DB and invoice items before matching.
+	// This prevents accidental duplicate estimation and DB pollution.
 	const dbItemsBySku = new Map(
-		existingDbItems.map((item) => [item.sku.trim().toUpperCase(), item]) // Standardize SKU to uppercase for lookup
+		existingDbItems.map((item) => [item.sku.trim().toUpperCase(), item])
 	);
 
 	const finalShippingItems: ShippingItem[] = [];
 
+	// Diagnostic: Log all normalized SKUs from DB and invoice before matching
+	const dbSkus = Array.from(dbItemsBySku.keys());
+	const invoiceSkus = Array.from(aggregatedInvoiceItems.values()).map((item) =>
+		item.sku.trim().toUpperCase()
+	);
+	console.debug("[getItemDimensions] DB SKUs:", dbSkus);
+	console.debug("[getItemDimensions] Invoice SKUs:", invoiceSkus);
+
 	// 3. Process aggregated invoice items
 	// Convert Map iterator to an array to avoid downlevelIteration issues
-	for (const invoiceItem of Array.from(aggregatedInvoiceItems.values())) {
-		const dbItem = dbItemsBySku.get(invoiceItem.sku); // SKU is already trimmed and uppercased
+	for (const invoiceItemRaw of Array.from(aggregatedInvoiceItems.values())) {
+		// Always normalize SKU for lookup and estimation
+		const normalizedSku = invoiceItemRaw.sku.trim().toUpperCase();
+		const dbItem = dbItemsBySku.get(normalizedSku);
+		const invoiceItem = { ...invoiceItemRaw, sku: normalizedSku };
 
 		if (dbItem) {
-			console.log(
-				`SKU ${invoiceItem.sku} found in database. Using existing data for item: ${dbItem.name}`
-			);
+			// If the item already exists in the DB, always use the DB record and never add a duplicate.
 			finalShippingItems.push({
 				...dbItem, // Includes _id, name, length, width, height, sku, createdAt, updatedAt, deletedAt from DB
 				quantity: invoiceItem.quantity, // Aggregated quantity from the current invoice
-				weight: dbItem.weight, // Prioritize DB weight over invoice extracted weight
+				weight: dbItem.weight, // Always trust DB weight
 			});
-		} else {
-			console.log(
-				`SKU ${invoiceItem.sku} not found in database. Estimating dimensions for: ${invoiceItem.name}`
+			continue; // Skip adding a new item to the DB
+		}
+
+		// If the item does not exist in the DB, estimate dimensions and add it
+		const [estimatedItemDetails] = await estimateItemDimensions([invoiceItem]);
+
+		if (!estimatedItemDetails) {
+			continue; // Skip if estimation fails
+		}
+
+		// Validate estimated weight: clamp to 100g for small hardware if suspiciously high
+		let safeWeight = estimatedItemDetails.weight;
+		if (
+			safeWeight > 1000 &&
+			!/extrusion|beam|motor|psu|power|controller|vfd|spindle|linear|lead|box|enclosure/i.test(
+				estimatedItemDetails.name
+			)
+		) {
+			// For small hardware, clamp to 100g max
+			safeWeight = 100;
+		}
+
+		const newItemDataForDb = {
+			name: estimatedItemDetails.name,
+			sku: estimatedItemDetails.sku.trim().toUpperCase(),
+			length: estimatedItemDetails.length,
+			width: estimatedItemDetails.width,
+			height: estimatedItemDetails.height,
+			weight: safeWeight,
+			deletedAt: null,
+		};
+
+		try {
+			const creationResponse = await addItemToDatabase(
+				newItemDataForDb as Omit<ShippingItem, "_id">
 			);
-			const [estimatedItemDetails] = await estimateItemDimensions([
-				invoiceItem,
-			]);
 
-			if (!estimatedItemDetails) {
-				console.error(
-					`Failed to estimate dimensions for SKU: ${invoiceItem.sku}. Skipping item.`
-				);
-				continue;
-			}
-
-			const newItemDataForDb: Omit<
-				ShippingItem,
-				"_id" | "createdAt" | "updatedAt" | "deletedAt"
-			> & { deletedAt: null | Date } = {
-				name: estimatedItemDetails.name,
-				sku: estimatedItemDetails.sku.trim().toUpperCase(), // Standardize SKU to uppercase before saving
-				length: estimatedItemDetails.length,
-				width: estimatedItemDetails.width,
-				height: estimatedItemDetails.height,
-				weight: estimatedItemDetails.weight,
-				deletedAt: null,
-			};
-
-			try {
-				const creationResponse = await addItemToDatabase(
-					newItemDataForDb as Omit<ShippingItem, "_id">
-				);
-
-				if (creationResponse.success && creationResponse.data) {
-					const newlyAddedItem = creationResponse.data;
-					console.log(
-						`New item ${newlyAddedItem.name} (SKU: ${newlyAddedItem.sku}) added to database with ID: ${newlyAddedItem._id}`
-					);
-					finalShippingItems.push({
-						...newlyAddedItem,
-						quantity: invoiceItem.quantity,
-					});
-				} else {
-					console.error(
-						`Failed to add new item SKU ${invoiceItem.sku} to database: ${creationResponse.error}. Using temporary item.`
-					);
-					const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
-					finalShippingItems.push({
-						_id: tempId,
-						name: newItemDataForDb.name,
-						sku: newItemDataForDb.sku,
-						length: newItemDataForDb.length,
-						width: newItemDataForDb.width,
-						height: newItemDataForDb.height,
-						weight: newItemDataForDb.weight,
-						quantity: invoiceItem.quantity,
-						createdAt: new Date(), // Corrected to Date object
-						updatedAt: new Date(), // Corrected to Date object
-						deletedAt: null,
-					});
-				}
-			} catch (error) {
-				console.error(
-					`Exception while adding new item SKU ${invoiceItem.sku} to database:`,
-					error
-				);
-				const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
+			if (creationResponse.success && creationResponse.data) {
+				finalShippingItems.push({
+					...creationResponse.data,
+					quantity: invoiceItem.quantity,
+				});
+			} else {
+				const tempId = `temp_${Date.now()}_${invoiceItem.sku}`;
 				finalShippingItems.push({
 					_id: tempId,
 					name: newItemDataForDb.name,
@@ -390,11 +391,26 @@ async function getItemDimensions(
 					height: newItemDataForDb.height,
 					weight: newItemDataForDb.weight,
 					quantity: invoiceItem.quantity,
-					createdAt: new Date(), // Corrected to Date object
-					updatedAt: new Date(), // Corrected to Date object
+					createdAt: new Date(),
+					updatedAt: new Date(),
 					deletedAt: null,
 				});
 			}
+		} catch (error) {
+			const tempId = `temp_exc_${Date.now()}_${invoiceItem.sku}`;
+			finalShippingItems.push({
+				_id: tempId,
+				name: newItemDataForDb.name,
+				sku: newItemDataForDb.sku,
+				length: newItemDataForDb.length,
+				width: newItemDataForDb.width,
+				height: newItemDataForDb.height,
+				weight: newItemDataForDb.weight,
+				quantity: invoiceItem.quantity,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				deletedAt: null,
+			});
 		}
 	}
 	return finalShippingItems;
@@ -449,6 +465,21 @@ export async function processInvoice(
 		throw new Error(
 			(error instanceof Error ? error.message : JSON.stringify(error)) +
 				"\nIf this is a 502 Bad Gateway or TypeError, check server logs for more details."
+		);
+	}
+}
+
+// Defensive helper: Check for suspicious weights and log source
+function logSuspiciousWeight(item, source) {
+	if (
+		item.weight > 1000 &&
+		!/extrusion|beam|motor|psu|power|controller|vfd|spindle|linear|lead|box|enclosure/i.test(
+			item.name
+		)
+	) {
+		console.warn(
+			`[processInvoice] Suspiciously high weight (${item.weight}g) for item '${item.name}' (SKU: ${item.sku}) from ${source}.`,
+			item
 		);
 	}
 }

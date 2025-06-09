@@ -258,3 +258,42 @@ Example:
 5. **Testing**: Write tests following the testing conventions outlined above
 6. **File Headers**: Include consistent file headers in all files as specified above
 7. **Documentation**: Keep README files and inline documentation up to date
+
+## API Integration Conventions
+
+- Always use the environment variable `NEXT_PUBLIC_API_URL` as the base for all API requests.
+- For protected endpoints, include the Auth0 access token in the `Authorization` header: `Authorization: Bearer <token>`.
+- Unprotected endpoints (such as `/api/health`) do not require authentication.
+- All API responses should be handled as JSON.
+- Handle errors by checking for `error` and `message` fields in the response.
+- Document any new endpoints and update this file and the README as needed.
+
+## Environment Variables
+
+- Store API URLs and other secrets in environment variables, never hard-code them.
+- For Next.js, use `NEXT_PUBLIC_` prefix for variables that need to be exposed to the browser.
+
+## Server Actions & API Conventions
+
+- All server logic (data, chat, invoice, and database actions) must reside in the backend (Express API).
+- The frontend must only use fetch/axios to call backend API endpoints, never direct database or server logic.
+- Remove or refactor all server actions in /app/actions to use backend endpoints.
+
+## Clerk.dev Authentication Conventions (Updated 09/06/2025)
+
+- Use @clerk/nextjs for authentication in the frontend (App Router only).
+- Add `middleware.ts` at the project root using `clerkMiddleware()` from `@clerk/nextjs/server`.
+- Wrap your app with `ClerkProvider` in `app/layout.tsx`.
+- Use Clerk's built-in components: SignInButton, SignUpButton, UserButton, SignedIn, SignedOut.
+- Use Clerk's `useAuth()` and `useUser()` hooks for authentication state and user info.
+- All API calls requiring authentication must include the Clerk JWT in the Authorization header (see Clerk docs for how to get the token).
+- Required environment variables: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.
+- Remove all Auth0/Netlify Identity code and variables.
+- All protected endpoints in the backend must validate Clerk JWTs.
+- All legacy authentication code and references must be removed from the codebase and documentation.
+
+## Frontend/Backend Split
+
+- All business logic, database access, and sensitive operations must be handled by the backend.
+- The frontend should only communicate with the backend via API endpoints.
+- Do not use Next.js server actions for business logic or data access.

@@ -29,11 +29,25 @@ const ItemEditModal: React.FC<ItemEditModalProps> = ({
 	/**
 	 * Handle form submission
 	 * Validates input and calls onSave callback
+	 * Adds debug logging to trace weight changes
 	 */
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		setError(null);
 		setIsSaving(true);
+
+		// Debug: Log the weight before saving
+		console.debug("[ItemEditModal] Saving item:", {
+			_id: editedItem._id,
+			name: editedItem.name,
+			weight: editedItem.weight,
+		});
+		if (!editedItem.weight || editedItem.weight === 0) {
+			console.warn(
+				`[ItemEditModal] WARNING: Attempting to save item with zero or missing weight!`,
+				editedItem
+			);
+		}
 
 		try {
 			await onSave(editedItem);

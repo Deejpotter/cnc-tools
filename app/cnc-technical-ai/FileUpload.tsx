@@ -1,14 +1,22 @@
 import { useDropzone } from "react-dropzone";
+import { useAuth } from "@clerk/nextjs";
 
 const FileUpload = ({ uploadEndpoint }) => {
+	const { getToken } = useAuth(); // Clerk: getToken for authenticated API requests
+
+	// Handles file upload to the backend API using the provided endpoint.
 	const handleUpload = async (file) => {
 		const formData = new FormData();
 		formData.append("file", file);
 
 		try {
+			const jwt = await getToken();
 			const response = await fetch(uploadEndpoint, {
 				method: "POST",
 				body: formData,
+				headers: {
+					...(jwt ? { Authorization: `Bearer ${jwt}` } : {}), // Add Clerk JWT if available
+				},
 			});
 
 			if (response.ok) {

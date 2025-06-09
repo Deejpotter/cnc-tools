@@ -19,16 +19,48 @@ import {
 	packItemsIntoMultipleBoxes,
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
-import {
-	getAvailableItems,
-	addItemToDatabase,
-	syncWithRemoteDatabase,
-} from "@/app/actions/data-actions";
-import {
-	extractInvoiceItems,
-	getItemDimensionsServer,
-} from "@/app/actions/processInvoice";
 import PdfImport from "@/components/PdfImport";
+
+// All data operations now use backend API endpoints instead of Next.js server actions.
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+// Helper: Fetch all available items from backend
+async function fetchAvailableItems() {
+	const res = await fetch(`${API_URL}/api/items`);
+	return await res.json();
+}
+// Helper: Add a new item to backend
+async function addItemToBackend(item) {
+	const res = await fetch(`${API_URL}/api/items`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(item),
+	});
+	return await res.json();
+}
+// Helper: Sync with remote database
+async function syncWithBackend() {
+	const res = await fetch(`${API_URL}/api/sync`, { method: "POST" });
+	return await res.json();
+}
+// Helper: Extract invoice items from backend
+async function extractInvoiceItemsFromBackend(text: string) {
+	const res = await fetch(`${API_URL}/api/invoice/extract-items`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ text }),
+	});
+	return await res.json();
+}
+// Helper: Get item dimensions from backend
+async function getItemDimensionsFromBackend(items) {
+	const res = await fetch(`${API_URL}/api/invoice/item-dimensions`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ items }),
+	});
+	return await res.json();
+}
 
 /**
  * Box Shipping Calculator Page Component
@@ -61,13 +93,43 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * Handles loading/reloading items from the database
 	 * Used when items are updated, deleted, or added
 	 * Shows loading state during fetch and handles errors
+	 *
+	 * Debug: Log the items loaded from the database to verify weights and data integrity.
 	 */
 	const loadItems = async () => {
 		setIsLoading(true);
 		try {
-			const response = await getAvailableItems();
+			const response = await fetchAvailableItems();
 			if (response.success && response.data) {
+				// Debug: Log all item weights loaded from DB
+				console.debug(
+					"[loadItems] Items loaded from DB:",
+					response.data.map((item) => ({
+						sku: item.sku,
+						name: item.name,
+						weight: item.weight,
+					}))
+				);
+				// Warn if any item has zero or missing weight
+				response.data.forEach((item) => {
+					if (!item.weight || item.weight === 0) {
+						console.warn(
+							`[loadItems] WARNING: Item with SKU ${item.sku} has zero or missing weight!`,
+							item
+						);
+					}
+				});
 				setItems(response.data);
+				// Debug: Confirm items state after set
+				setTimeout(() => {
+					console.debug(
+						"[loadItems] Items state after set:",
+						response.data.map((item) => ({
+							sku: item.sku,
+							weight: item.weight,
+						}))
+					);
+				}, 0);
 			} else {
 				setImportError(response.error || "Failed to load items");
 				setItems([]); // Clear items on error
@@ -87,7 +149,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 */
 	const handleAddItem = async (item: Omit<ShippingItem, "_id">) => {
 		try {
-			const response = await addItemToDatabase(item);
+			const response = await addItemToBackend(item);
 			if (response.success && response.data) {
 				setItems((prevItems) => [...prevItems, response.data]);
 				setImportError(null);
@@ -188,16 +250,15 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	const handleSync = async () => {
 		try {
 			setIsSyncing(true);
-			const response = await syncWithRemoteDatabase();
+			const response = await syncWithBackend();
 			if (response.success) {
-				await loadItems(); // Reload items after successful sync
-				setImportError(null);
+				// Optionally show a success message
 			} else {
 				setImportError(response.message || "Sync failed");
 			}
 		} catch (error) {
-			console.error("Failed to sync with remote database:", error);
-			setImportError("Failed to sync with remote database");
+			console.error("Sync failed:", error);
+			setImportError("Sync failed");
 		} finally {
 			setIsSyncing(false);
 		}
@@ -219,38 +280,43 @@ const BoxShippingCalculatorPage: React.FC = () => {
 		setImportProgress("Extracting items from invoice text...");
 		setImportError(null);
 		try {
-			// Step 1: Extract items from text
-			const extractedItems = await extractInvoiceItems(text);
-			if (!Array.isArray(extractedItems) || extractedItems.length === 0) {
+			// Step 1: Extract items from text using backend API
+			const extractedItemsResponse = await extractInvoiceItemsFromBackend(text);
+			if (
+				!extractedItemsResponse.success ||
+				!Array.isArray(extractedItemsResponse.data) ||
+				extractedItemsResponse.data.length === 0
+			) {
 				setImportError("No items found in invoice.");
 				setImportStep(null);
 				setImportProgress(null);
 				return;
 			}
+			const extractedItems = extractedItemsResponse.data;
 			setImportStep("items");
 			setImportProgress("Looking up or estimating item dimensions...");
 
-			// Step 2: Get full ShippingItem objects (with dimensions)
-			const shippingItems = await getItemDimensionsServer(extractedItems);
-			if (!Array.isArray(shippingItems) || shippingItems.length === 0) {
+			// Step 2: Get full ShippingItem objects (with dimensions) from backend API
+			const dimensionsResponse = await getItemDimensionsFromBackend(
+				extractedItems
+			);
+			if (
+				!dimensionsResponse.success ||
+				!Array.isArray(dimensionsResponse.data) ||
+				dimensionsResponse.data.length === 0
+			) {
 				setImportError("No items with dimensions found in invoice.");
 				setImportStep(null);
 				setImportProgress(null);
 				return;
 			}
-			setImportStep("dimensions");
-			setImportProgress("Import complete!");
-			// Pass to handler to update state/UI
+			const shippingItems = dimensionsResponse.data;
 			handleInvoiceItems(shippingItems);
-			setTimeout(() => {
-				setImportStep(null);
-				setImportProgress(null);
-			}, 1000);
+			setImportStep("dimensions");
+			setImportProgress(null);
 		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : "Failed to process invoice";
-			console.error("Invoice processing error:", error);
-			setImportError(errorMessage);
+			console.error("Invoice import failed:", error);
+			setImportError("Invoice import failed");
 			setImportStep(null);
 			setImportProgress(null);
 		}

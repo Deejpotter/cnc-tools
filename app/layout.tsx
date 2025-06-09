@@ -14,7 +14,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import { ItemProvider } from "../contexts/ItemContext";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { ClerkProvider } from "@clerk/nextjs";
 
 // Uses next/font to load the Nunito Sans font from Google Fonts.
 const nunito = Nunito({ subsets: ["latin"] });
@@ -52,10 +52,7 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="en">
-			{/* The head element is built-in to Next.js and is used to provide metadata to the page.*/}
-			{/* The AuthProvider component is used to provide the authentication context to the components. */}
-			<AuthProvider>
-				{/* The ItemProvider component is used to provide the item context to the components. */}
+			<ClerkProvider>
 				<ItemProvider>
 					<body className={nunito.className}>
 						{/* Render the Navbar component then render the children components. */}
@@ -68,7 +65,7 @@ export default function RootLayout({
 						<Footer />
 					</body>
 				</ItemProvider>
-			</AuthProvider>
+			</ClerkProvider>
 		</html>
 	);
 }
