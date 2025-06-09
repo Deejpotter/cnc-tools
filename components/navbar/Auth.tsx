@@ -1,3 +1,8 @@
+// This component is now redundant because Clerk's built-in UI components (SignInButton, SignUpButton, UserButton, SignedIn, SignedOut) provide all required authentication functionality and UI.
+// If you want to customize the auth UI further, you can do so directly where you use these Clerk components (e.g., in Navbar.tsx).
+// For now, this file is deprecated and can be safely removed from the codebase.
+// See codeupdates.md for details.
+
 "use client";
 import React from "react";
 import Gravatar from "./Gravatar";

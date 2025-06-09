@@ -7,6 +7,24 @@
 -->
 # Code Updates Log
 
+## (completed) - June 9, 2025 (Backend Integration Test: Fetch Shipping Items)
+
+- ✅ Successfully tested the integration between `cnc-tools` frontend and `technical-ai` backend for fetching shipping items.
+- ✅ Verified `GET /api/shipping/items` endpoint in `technical-ai` returns shipping items from database.
+- ✅ Verified `fetchAvailableItems` function in `cnc-tools/app/box-shipping-calculator/page.tsx` correctly fetches data.
+- ✅ Confirmed both dev servers running and live data fetching works - shipping items visible in Box Shipping Calculator interface.
+- ✅ Environment variable `NEXT_PUBLIC_API_URL=http://localhost:5000` properly configured.
+- ✅ API endpoints updated to use `/api/shipping/` prefix instead of `/api/items`.
+
+---
+
+## (completed) - June 9, 2025 (Component Library Deletion)
+
+- Removed all references to the (now deleted) `@deejpotter/component-library`.
+- The component library was deprecated and has been removed from the workspace.
+
+---
+
 ## (completed) - June 9, 2025 (Clerk.dev Migration)
 
 - Migrated authentication from Auth0/Netlify Identity to Clerk.dev using the official Next.js App Router integration. Deprecated and removed AuthContext.tsx and all legacy auth code. All authentication now uses ClerkProvider, Clerk middleware, and Clerk UI components. All protected API calls use Clerk JWT. All documentation and code tracking updated for Clerk. All tests and build pass.
@@ -43,6 +61,42 @@
 - Removing all server actions and server code from the frontend; all business logic and data access will be handled by the Express backend.
 - Updating documentation (README.md, CodingConventions.md) to reflect Auth0 usage and the new frontend/backend split.
 - Will mark as (completed) after all changes and tests pass.
+
+---
+
+## (in progress) - June 9, 2025 (Clerk Key Build Failure)
+
+- Netlify build failed due to missing `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (publishableKey) for Clerk.dev.
+- Solution: Add both `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` to local `.env` and Netlify environment variables (Site settings > Build & deploy > Environment > Environment variables).
+- Documented this requirement in README.md and CodingConventions.md.
+- Will mark as (completed) after confirming successful Netlify build and local test/build pass.
+
+---
+
+## (in progress) - June 9, 2025 (Remove custom Auth component, use Clerk UI directly)
+
+- Deprecated and removed the custom Auth component from the navigation. All authentication UI is now handled by Clerk's built-in components (SignInButton, SignUpButton, UserButton, SignedIn, SignedOut) directly in Navbar.tsx.
+- Updated Navbar.tsx to remove all references to Auth and use Clerk UI directly.
+- Updated README.md and CodingConventions.md to clarify this change and document the new convention.
+- Mark as (completed) after tests/build pass and code is reviewed.
+
+---
+
+## (in progress) - June 9, 2025 (Fix build error: remove authProps and Auth references from Navbar.tsx)
+
+- Removed all references to 'authProps' and 'Auth' from components/navbar/Navbar.tsx.
+- Updated NavbarProps interface and related comments to clarify that authentication is now handled directly by Clerk components (SignedIn, SignedOut, SignInButton, SignUpButton, UserButton).
+- This resolves a build error caused by a missing 'Auth' symbol and documents the migration away from a custom Auth component.
+
+---
+
+## (in progress) - June 9, 2025 (Box Shipping Calculator API Integration)
+
+- Added NEXT_PUBLIC_API_URL to .env for backend API integration.
+- Updated all box shipping calculator API calls to use /api/shipping/items and related endpoints to match backend.
+- Added/updated detailed comments in API helper functions to clarify integration and endpoint usage.
+- Confirmed backend GET /api/shipping/items is available; POST/PUT/DELETE endpoints for items are not yet implemented in backend (future work).
+- Next: Test frontend fetching logic, improve error handling, and update documentation after validation.
 
 ---
 

@@ -4,7 +4,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import Auth from "./Auth";
+// Import Clerk UI components directly
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 
 /**
  * Generic navigation item type for portability.
@@ -20,14 +21,13 @@ export interface NavItem {
  * NavbarProps defines the props required for the Navbar component.
  * - brand: Branding text or element for the navbar.
  * - navItems: Array of navigation items (links, dropdowns, etc.).
- * - authProps: Props to pass to the Auth component (optional).
- * - showAuth: Whether to show the Auth section (default: true if authProps provided)
+ *
+ * NOTE (2025-06-09): The authentication UI is now handled directly by Clerk components (SignedIn, SignedOut, SignInButton, SignUpButton, UserButton).
+ * The previous 'Auth' component and 'authProps' prop have been removed for clarity and maintainability.
  */
 export interface NavbarProps {
 	brand: React.ReactNode;
 	navItems: NavItem[];
-	authProps?: React.ComponentProps<typeof Auth>;
-	showAuth?: boolean;
 }
 
 /**
@@ -40,8 +40,6 @@ export interface NavbarProps {
 const Navbar = ({
 	brand,
 	navItems,
-	authProps,
-	showAuth = true,
 }: NavbarProps) => {
 	// State for managing the collapsed state of the navbar. Initially set to true (collapsed).
 	const [isNavCollapsed, setIsNavCollapsed] = useState(true);
@@ -176,12 +174,25 @@ const Navbar = ({
 				</div>
 				{/* Auth section (optional, customizable) */}
 				{/* To customize Auth, pass props here if your Auth component supports them. Replace or remove as needed for your project. */}
-				{showAuth &&
-					(authProps && typeof authProps === "object" ? (
-						<Auth {...authProps} />
-					) : (
-						<Auth />
-					))}
+				<SignedIn>
+					<div className="nav-item d-flex align-items-center">
+						<UserButton afterSignOutUrl="/" />
+					</div>
+				</SignedIn>
+				<SignedOut>
+					<div className="nav-item">
+						<SignInButton mode="modal">
+							<button className="btn btn-sm btn-outline-secondary shadow mx-1">
+								Login
+							</button>
+						</SignInButton>
+						<SignUpButton mode="modal">
+							<button className="btn btn-sm btn-outline-secondary shadow">
+								Sign up
+							</button>
+						</SignUpButton>
+					</div>
+				</SignedOut>
 			</div>
 		</nav>
 	);

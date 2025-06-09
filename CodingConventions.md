@@ -261,12 +261,10 @@ Example:
 
 ## API Integration Conventions
 
-- Always use the environment variable `NEXT_PUBLIC_API_URL` as the base for all API requests.
-- For protected endpoints, include the Auth0 access token in the `Authorization` header: `Authorization: Bearer <token>`.
-- Unprotected endpoints (such as `/api/health`) do not require authentication.
-- All API responses should be handled as JSON.
-- Handle errors by checking for `error` and `message` fields in the response.
-- Document any new endpoints and update this file and the README as needed.
+- All frontend API calls for the Box Shipping Calculator use the `NEXT_PUBLIC_API_URL` environment variable.
+- Endpoints for item management and box calculations are under `/api/shipping/` (e.g., `/api/shipping/items`).
+- Always update the API URL in `.env` if the backend service location changes.
+- Add detailed comments to API helper functions to clarify endpoint usage and expected responses.
 
 ## Environment Variables
 
@@ -284,8 +282,7 @@ Example:
 - Use @clerk/nextjs for authentication in the frontend (App Router only).
 - Add `middleware.ts` at the project root using `clerkMiddleware()` from `@clerk/nextjs/server`.
 - Wrap your app with `ClerkProvider` in `app/layout.tsx`.
-- Use Clerk's built-in components: SignInButton, SignUpButton, UserButton, SignedIn, SignedOut.
-- Use Clerk's `useAuth()` and `useUser()` hooks for authentication state and user info.
+- Use Clerk's built-in components: SignInButton, SignUpButton, UserButton, SignedIn, SignedOut directly in your navigation or UI. Do not use a custom Auth component.
 - All API calls requiring authentication must include the Clerk JWT in the Authorization header (see Clerk docs for how to get the token).
 - Required environment variables: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY.
 - Remove all Auth0/Netlify Identity code and variables.

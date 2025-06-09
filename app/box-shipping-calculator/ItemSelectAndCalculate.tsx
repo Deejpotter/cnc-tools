@@ -673,19 +673,33 @@ export default function ItemSelectAndCalculate({
 }
 
 // Remove server action imports and use backend API endpoints for item update/delete
+// These functions integrate with the technical-ai backend service
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Helper: Update item in backend
+/**
+ * Update an existing shipping item in the backend database
+ * Endpoint: PUT /api/shipping/items/:id (Note: This endpoint may need to be implemented in backend)
+ * @param item - The shipping item to update (includes _id)
+ * Returns: { success: boolean, data: ShippingItem, error?: string }
+ */
 async function updateItemInBackend(item) {
-	const res = await fetch(`${API_URL}/api/items/${item._id}`, {
+	const res = await fetch(`${API_URL}/api/shipping/items/${item._id}`, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(item),
 	});
 	return await res.json();
 }
-// Helper: Delete item in backend
+
+/**
+ * Delete a shipping item from the backend database
+ * Endpoint: DELETE /api/shipping/items/:id (Note: This endpoint may need to be implemented in backend)
+ * @param id - The ID of the shipping item to delete
+ * Returns: { success: boolean, error?: string }
+ */
 async function deleteItemInBackend(id) {
-	const res = await fetch(`${API_URL}/api/items/${id}`, { method: "DELETE" });
+	const res = await fetch(`${API_URL}/api/shipping/items/${id}`, {
+		method: "DELETE",
+	});
 	return await res.json();
 }

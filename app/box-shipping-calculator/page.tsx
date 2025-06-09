@@ -22,44 +22,104 @@ import {
 import PdfImport from "@/components/PdfImport";
 
 // All data operations now use backend API endpoints instead of Next.js server actions.
+// These functions integrate with the technical-ai backend service running on localhost:5000
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-// Helper: Fetch all available items from backend
+/**
+ * Fetch all available shipping items from the backend database
+ * Endpoint: GET /api/shipping/items
+ * Returns: { success: boolean, data: ShippingItem[], error?: string }
+ */
 async function fetchAvailableItems() {
-	const res = await fetch(`${API_URL}/api/items`);
+	const res = await fetch(`${API_URL}/api/shipping/items`);
 	return await res.json();
 }
-// Helper: Add a new item to backend
+
+/**
+ * Add a new shipping item to the backend database
+ * Endpoint: POST /api/shipping/items (Note: This endpoint may need to be implemented in backend)
+ * @param item - The shipping item to add (without _id)
+ * Returns: { success: boolean, data: ShippingItem, error?: string }
+ */
 async function addItemToBackend(item) {
-	const res = await fetch(`${API_URL}/api/items`, {
+	const res = await fetch(`${API_URL}/api/shipping/items`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(item),
 	});
 	return await res.json();
 }
-// Helper: Sync with remote database
-async function syncWithBackend() {
-	const res = await fetch(`${API_URL}/api/sync`, { method: "POST" });
+
+/**
+ * Get available shipping boxes from backend
+ * Endpoint: GET /api/shipping/boxes
+ * Returns: ShippingBox[] array
+ */
+async function fetchAvailableBoxes() {
+	const res = await fetch(`${API_URL}/api/shipping/boxes`);
 	return await res.json();
 }
-// Helper: Extract invoice items from backend
-async function extractInvoiceItemsFromBackend(text: string) {
-	const res = await fetch(`${API_URL}/api/invoice/extract-items`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ text }),
-	});
-	return await res.json();
-}
-// Helper: Get item dimensions from backend
-async function getItemDimensionsFromBackend(items) {
-	const res = await fetch(`${API_URL}/api/invoice/item-dimensions`, {
+
+/**
+ * Calculate best box for given items using backend service
+ * Endpoint: POST /api/shipping/calculate-best-box
+ * @param items - Array of shipping items with quantities
+ * Returns: BoxCalculationResult
+ */
+async function calculateBestBoxFromBackend(items) {
+	const res = await fetch(`${API_URL}/api/shipping/calculate-best-box`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ items }),
 	});
 	return await res.json();
+}
+
+/**
+ * Pack items into multiple boxes using backend service
+ * Endpoint: POST /api/shipping/pack-multiple-boxes
+ * @param items - Array of shipping items with quantities
+ * Returns: MultiBoxPackingResult
+ */
+async function packItemsIntoMultipleBoxesFromBackend(items) {
+	const res = await fetch(`${API_URL}/api/shipping/pack-multiple-boxes`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ items }),
+	});
+	return await res.json();
+}
+
+/**
+ * Extract invoice items from text using backend AI service
+ * Endpoint: POST /api/shipping/extract-invoice-items (Note: This endpoint may need to be implemented)
+ * @param text - The text content from the invoice
+ * Returns: { success: boolean, data: Array, error?: string }
+ */
+async function extractInvoiceItemsFromBackend(text: string) {
+	// For now, return a mock response since this endpoint may not be implemented yet
+	// TODO: Implement this endpoint in the backend
+	return {
+		success: false,
+		data: [],
+		error: "Invoice extraction endpoint not yet implemented in backend",
+	};
+}
+
+/**
+ * Get item dimensions from backend using SKUs
+ * Endpoint: POST /api/shipping/get-item-dimensions (Note: This endpoint may need to be implemented)
+ * @param extractedItems - Array of items with SKUs and quantities
+ * Returns: { success: boolean, data: ShippingItem[], error?: string }
+ */
+async function getItemDimensionsFromBackend(extractedItems: any[]) {
+	// For now, return a mock response since this endpoint may not be implemented yet
+	// TODO: Implement this endpoint in the backend
+	return {
+		success: false,
+		data: [],
+		error: "Item dimensions lookup endpoint not yet implemented in backend",
+	};
 }
 
 /**
@@ -234,7 +294,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			);
 		}
 	};
-
 	/**
 	 * Handler for calculating the optimal box size
 	 * @param itemsToCalculate Array of items to calculate box size for
@@ -242,6 +301,24 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
 		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
 		setPackingResult(result);
+	};
+
+	/**
+	 * Sync with backend database by reloading all items
+	 * This function refreshes the local items state from the backend database
+	 * Useful when items may have been updated by other processes or users
+	 */
+	const syncWithBackend = async () => {
+		const response = await fetchAvailableItems();
+		if (response.success && response.data) {
+			setItems(response.data);
+			return { success: true, message: "Items synced successfully" };
+		} else {
+			return {
+				success: false,
+				message: response.error || "Failed to sync items",
+			};
+		}
 	};
 
 	/**

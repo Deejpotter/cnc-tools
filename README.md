@@ -60,7 +60,6 @@ This project is built with:
 
 - [Next.js](https://nextjs.org/) - React framework with server actions for backend functionality
 - [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
-- Custom Bootstrap implementation for responsive design
 - MongoDB - Database for storing application data
 - Jest and React Testing Library - For comprehensive test coverage
 
@@ -179,33 +178,34 @@ All API requests should use this base URL. Example:
 fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`)
 ```
 
+## Backend API Integration
+
+- The Box Shipping Calculator and other tools fetch data from the technical-ai backend service.
+- The backend API URL is set via the `.env` file using the `NEXT_PUBLIC_API_URL` variable (e.g., `NEXT_PUBLIC_API_URL=http://localhost:5000`).
+- All item fetching and box calculation logic uses `/api/shipping/items` and related endpoints.
+- If you encounter issues with data loading, ensure the backend is running and the API URL is correct.
+
 ## Authentication (Clerk.dev)
 
 This app uses Clerk.dev for authentication and user management. Auth0 and Netlify Identity are no longer supported.
 
-### Setup
+### Required Environment Variables
 
-- Install Clerk for Next.js:
+You **must** set the following Clerk keys for both local development and production (Netlify):
 
-```bash
-yarn add @clerk/nextjs@latest
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
+CLERK_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
 ```
 
-- Add a `middleware.ts` file at the project root with:
+- Get your keys from the [Clerk dashboard](https://dashboard.clerk.com/last-active?path=api-keys).
+- In production (Netlify), add these as environment variables in your site settings.
+- If these are missing, the app will fail to build and Clerk authentication will not work.
 
-```typescript
-import { clerkMiddleware } from "@clerk/nextjs/server";
-export default clerkMiddleware();
-export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
-};
-```
+### Usage
 
-- Wrap your app in `<ClerkProvider>` in `app/layout.tsx`.
-- Use Clerk's React components (`<SignInButton>`, `<SignUpButton>`, `<UserButton>`, `<SignedIn>`, `<SignedOut>`) for authentication UI.
+- Use Clerk's built-in UI components (`<SignInButton>`, `<SignUpButton>`, `<UserButton>`, `<SignedIn>`, `<SignedOut>`) directly in your navigation or anywhere you need authentication UI.
+- The custom `Auth` component is now deprecated and has been removed from the navigation. All authentication UI is handled by Clerk's official components.
 - For protected API calls, use Clerk's `getToken()` or `useAuth()` to get the JWT and include it in the `Authorization` header.
 - The Express backend must validate Clerk JWTs for protected endpoints.
 - See CodingConventions.md for usage details and Clerk docs for backend validation examples.
