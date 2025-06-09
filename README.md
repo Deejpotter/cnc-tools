@@ -194,8 +194,8 @@ This app uses Clerk.dev for authentication and user management. Auth0 and Netlif
 You **must** set the following Clerk keys for both local development and production (Netlify):
 
 ```env
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
-CLERK_SECRET_KEY=sk_test_YOUR_SECRET_KEY_HERE
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY_HERE
+CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
 ```
 
 - Get your keys from the [Clerk dashboard](https://dashboard.clerk.com/last-active?path=api-keys).
