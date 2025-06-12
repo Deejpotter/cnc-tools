@@ -3,7 +3,6 @@ import React from "react";
 import LayoutContainer from "@/components/LayoutContainer";
 import StepsPerMmSection from "./StepsPerMmSection";
 import FlowCompensationSection from "./FlowCompensationSection";
-// import StartupGcodeGeneratorSection from "./StartupGcodeGeneratorSection";
 
 /**
  * Functional component for CNC Calibration Tool.
@@ -31,13 +30,11 @@ const CncCalibrationTool: React.FC = () => {
 							</div>
 						</div>
 					</div>
-				</div>
-
+				</div>{" "}
 				{/* Steps Per MM Section - imported as separate component */}
 				<div className="mb-5">
 					<StepsPerMmSection />
 				</div>
-
 				{/* Flow Compensation Section - imported as separate component */}
 				<div className="mb-5">
 					<FlowCompensationSection />

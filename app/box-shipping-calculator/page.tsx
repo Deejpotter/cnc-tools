@@ -10,7 +10,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+import ShippingItem, {
+	SelectedShippingItem,
+} from "@/types/box-shipping-calculator/ShippingItem";
 import ItemAddForm from "./ItemAddForm";
 import ItemSelectAndCalculate from "./ItemSelectAndCalculate";
 import BoxResultsDisplay from "./BoxResultsDisplay";
@@ -19,7 +21,7 @@ import {
 	packItemsIntoMultipleBoxes,
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
-import PdfImport from "@/components/PdfImport";
+import PdfImport from "@/components/PdfImport.backend";
 
 // All data operations now use backend API endpoints instead of Next.js server actions.
 // These functions integrate with the technical-ai backend service running on localhost:5000
@@ -37,7 +39,7 @@ async function fetchAvailableItems() {
 
 /**
  * Add a new shipping item to the backend database
- * Endpoint: POST /api/shipping/items (Note: This endpoint may need to be implemented in backend)
+ * Endpoint: POST /api/shipping/items
  * @param item - The shipping item to add (without _id)
  * Returns: { success: boolean, data: ShippingItem, error?: string }
  */
@@ -92,34 +94,32 @@ async function packItemsIntoMultipleBoxesFromBackend(items) {
 
 /**
  * Extract invoice items from text using backend AI service
- * Endpoint: POST /api/shipping/extract-invoice-items (Note: This endpoint may need to be implemented)
+ * Endpoint: POST /api/shipping/extract-invoice-items
  * @param text - The text content from the invoice
  * Returns: { success: boolean, data: Array, error?: string }
  */
 async function extractInvoiceItemsFromBackend(text: string) {
-	// For now, return a mock response since this endpoint may not be implemented yet
-	// TODO: Implement this endpoint in the backend
-	return {
-		success: false,
-		data: [],
-		error: "Invoice extraction endpoint not yet implemented in backend",
-	};
+	const res = await fetch(`${API_URL}/api/shipping/extract-invoice-items`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ text }),
+	});
+	return await res.json();
 }
 
 /**
  * Get item dimensions from backend using SKUs
- * Endpoint: POST /api/shipping/get-item-dimensions (Note: This endpoint may need to be implemented)
+ * Endpoint: POST /api/shipping/get-item-dimensions
  * @param extractedItems - Array of items with SKUs and quantities
  * Returns: { success: boolean, data: ShippingItem[], error?: string }
  */
 async function getItemDimensionsFromBackend(extractedItems: any[]) {
-	// For now, return a mock response since this endpoint may not be implemented yet
-	// TODO: Implement this endpoint in the backend
-	return {
-		success: false,
-		data: [],
-		error: "Item dimensions lookup endpoint not yet implemented in backend",
-	};
+	const res = await fetch(`${API_URL}/api/shipping/get-item-dimensions`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ extractedItems }),
+	});
+	return await res.json();
 }
 
 /**
@@ -129,16 +129,14 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	// State Management
 	// ---------------
 	const [items, setItems] = useState<ShippingItem[]>([]);
-	const [selectedItems, setSelectedItems] = useState<ShippingItem[]>([]);
+	const [selectedItems, setSelectedItems] = useState<SelectedShippingItem[]>(
+		[]
+	);
 	const [packingResult, setPackingResult] =
 		useState<MultiBoxPackingResult | null>(null);
 	const [importError, setImportError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSyncing, setIsSyncing] = useState(false);
-	const [importStep, setImportStep] = useState<
-		null | "extract" | "items" | "dimensions"
-	>(null);
-	const [importProgress, setImportProgress] = useState<string | null>(null);
 
 	/**
 	 * Effect hook to load initial items and initialize sample data if needed
@@ -259,14 +257,14 @@ const BoxShippingCalculatorPage: React.FC = () => {
 							// Ensure quantities are numbers before adding
 							quantity:
 								(Number(currentItem.quantity) || 0) +
-								(Number(invoiceItem.quantity) || 0),
+								(Number((invoiceItem as any).quantity) || 0),
 						};
 					} else {
 						// Item is not in selectedItems, add it.
 						// The invoiceItem should already have the correct quantity from the invoice.
 						updatedSelectedItems.push({
 							...invoiceItem,
-							quantity: Number(invoiceItem.quantity) || 1,
+							quantity: Number((invoiceItem as any).quantity) || 1,
 						});
 					}
 				});
@@ -340,64 +338,10 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			setIsSyncing(false);
 		}
 	};
-
 	/**
-	 * Handler for when text is extracted from a PDF or text file via PdfImport.
-	 * Implements the chunked server action workflow for serverless robustness:
-	 * 1. Calls extractInvoiceItems to extract items from the text (fast, <10s)
-	 * 2. Calls getItemDimensionsServer to get ShippingItem objects (fast, <10s)
-	 * 3. Updates UI and state at each step, with error handling and progress feedback
-	 *
-	 * Rationale: This approach avoids serverless/API timeouts and makes each step debuggable and retryable.
-	 *
-	 * @param text The extracted text content from the file
+	 * Handler for when invoice items are directly extracted (new backend approach)
+	 * The new PdfImport component handles the entire PDF-to-ShippingItems workflow
 	 */
-	const handleTextExtracted = async (text: string) => {
-		setImportStep("extract");
-		setImportProgress("Extracting items from invoice text...");
-		setImportError(null);
-		try {
-			// Step 1: Extract items from text using backend API
-			const extractedItemsResponse = await extractInvoiceItemsFromBackend(text);
-			if (
-				!extractedItemsResponse.success ||
-				!Array.isArray(extractedItemsResponse.data) ||
-				extractedItemsResponse.data.length === 0
-			) {
-				setImportError("No items found in invoice.");
-				setImportStep(null);
-				setImportProgress(null);
-				return;
-			}
-			const extractedItems = extractedItemsResponse.data;
-			setImportStep("items");
-			setImportProgress("Looking up or estimating item dimensions...");
-
-			// Step 2: Get full ShippingItem objects (with dimensions) from backend API
-			const dimensionsResponse = await getItemDimensionsFromBackend(
-				extractedItems
-			);
-			if (
-				!dimensionsResponse.success ||
-				!Array.isArray(dimensionsResponse.data) ||
-				dimensionsResponse.data.length === 0
-			) {
-				setImportError("No items with dimensions found in invoice.");
-				setImportStep(null);
-				setImportProgress(null);
-				return;
-			}
-			const shippingItems = dimensionsResponse.data;
-			handleInvoiceItems(shippingItems);
-			setImportStep("dimensions");
-			setImportProgress(null);
-		} catch (error) {
-			console.error("Invoice import failed:", error);
-			setImportError("Invoice import failed");
-			setImportStep(null);
-			setImportProgress(null);
-		}
-	};
 
 	// Render loading state while fetching initial data
 	if (isLoading) {
@@ -444,17 +388,15 @@ const BoxShippingCalculatorPage: React.FC = () => {
 					{/* Invoice Import Section */}
 					<div className="col-12 mb-4">
 						<div className="card h-100 shadow bg-light">
+							{" "}
 							<div className="card-body">
-								<h2 className="card-title mb-3">Import from Invoice</h2>
+								<h2 className="card-title mb-3">Import from Invoice</h2>{" "}
 								<PdfImport
-									onTextExtracted={handleTextExtracted}
+									onItemsExtracted={handleInvoiceItems}
 									onError={setImportError}
 									label="Import Maker Store Invoice (PDF or Text)"
 									accept=".pdf,.txt,.text"
 								/>
-								{importProgress && (
-									<p className="mt-3 text-info">{importProgress}</p>
-								)}
 								{importError && (
 									<p className="mt-3 text-danger">{importError}</p>
 								)}
@@ -470,7 +412,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 									availableItems={items}
 									selectedItems={selectedItems}
 									onSelectedItemsChange={setSelectedItems}
-									onCalculateBox={handleCalculateBox}
+									onCalculateBox={(items) => handleCalculateBox(items)}
 									onItemsChange={loadItems}
 								/>
 							</div>

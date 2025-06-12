@@ -270,12 +270,22 @@ Example:
 
 - Store API URLs and other secrets in environment variables, never hard-code them.
 - For Next.js, use `NEXT_PUBLIC_` prefix for variables that need to be exposed to the browser.
+- `NEXT_PUBLIC_API_URL`: This variable should store the base URL for the backend API (e.g., `http://localhost:5000` for local development). It is used by client-side code to make API requests.
 
-## Server Actions & API Conventions
+## Authentication and Authorization
 
-- All server logic (data, chat, invoice, and database actions) must reside in the backend (Express API).
-- The frontend must only use fetch/axios to call backend API endpoints, never direct database or server logic.
-- Remove or refactor all server actions in /app/actions to use backend endpoints.
+- User authentication is handled by Clerk.dev.
+- Role-based access control in the frontend should utilize the `publicMetadata` field from the Clerk user object.
+  - `user.publicMetadata.isAdmin === true` indicates an administrative user.
+  - `user.publicMetadata.isMaster === true` (in conjunction with a specific User ID check) indicates a master administrative user with elevated privileges.
+- Always use `useUser` and `useAuth` hooks from `@clerk/nextjs` for accessing user information and authentication tokens.
+
+## API Communication
+
+- All frontend API calls for the Box Shipping Calculator use the `NEXT_PUBLIC_API_URL` environment variable.
+- Endpoints for item management and box calculations are under `/api/shipping/` (e.g., `/api/shipping/items`).
+- Always update the API URL in `.env` if the backend service location changes.
+- Add detailed comments to API helper functions to clarify endpoint usage and expected responses.
 
 ## Clerk.dev Authentication Conventions (Updated 09/06/2025)
 
@@ -289,8 +299,25 @@ Example:
 - All protected endpoints in the backend must validate Clerk JWTs.
 - All legacy authentication code and references must be removed from the codebase and documentation.
 
-## Frontend/Backend Split
+### Admin Roles using publicMetadata
 
-- All business logic, database access, and sensitive operations must be handled by the backend.
-- The frontend should only communicate with the backend via API endpoints.
-- Do not use Next.js server actions for business logic or data access.
+User roles for the admin section are managed using Clerk's `publicMetadata`:
+
+- `isAdmin` (boolean): Grants general admin privileges. Set to `true` for admin users.
+- `isMaster` (boolean): Grants master admin privileges (e.g., user management). Set to `true` for master admin users. The master admin role is additionally restricted to a specific user ID (`user_2yFautivzaceEYXXlepE2IMUsEE`) in the application code.
+
+This metadata should be set directly in the Clerk.dev dashboard for the respective users.
+
+## Admin & Role-Based Access Conventions
+
+- Use Clerk's `publicMetadata` for role-based access:
+  - `user.publicMetadata.isAdmin === true` for admin access.
+  - `user.publicMetadata.isMaster === true` (and specific userId) for master admin access.
+- Always check both `isMaster` and userId for master admin features.
+- Set these fields in the Clerk dashboard for each user as needed.
+
+## API URL Convention
+
+- All frontend API calls must use the `NEXT_PUBLIC_API_URL` environment variable.
+- Never hard-code backend URLs in the codebase.
+- Update `.env.local` if the backend location changes.

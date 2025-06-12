@@ -1,11 +1,47 @@
 <!--
  * codeupdates.md
- * Updated: 09/06/2025
+ * Updated: 11/06/2025
  * Author: Deej Potter
  * Description: Log of all major codebase changes, especially authentication and API integration migrations. Used by AI agents and developers to track progress and ensure all changes are tested and documented.
  Delete completed entries to keep the log current. Keep the last 5 entries for reference.
 -->
 # Code Updates Log
+
+## (in progress) - June 11, 2025 (PDF Invoice Processing - CNC Tools Frontend)
+
+- **Goal**: Update `cnc-tools/components/PdfImport.backend.tsx` to send PDF files directly to the `technical-ai` Express backend for processing.
+- This approach leverages the `technical-ai` backend for robust, long-running tasks (PDF parsing, AI interaction) to avoid potential Next.js API route timeouts.
+- The component will use a `NEXT_PUBLIC_TECHNICAL_AI_API_URL` environment variable to target the Express server.
+- **Next Steps**:
+  - Implement the direct API call in `PdfImport.backend.tsx`.
+  - Ensure Clerk JWT is passed for authentication.
+  - Handle the structured JSON response from `technical-ai`.
+
+## (paused) - June 11, 2025 (Box Shipping Calculator Implementation)
+
+- This task is currently paused to prioritize the PDF Invoice Processing feature.
+- Backend: Initial tests for `packItemsIntoMultipleBoxes` created in `technical-ai` project.
+- Frontend: Starting implementation of UI for item input and results display in `cnc-tools/app/box-shipping-calculator/page.tsx`.
+
+## (in progress) - June 11, 2025 (Testing Admin Functionality)
+
+- Running `yarn build` in `cnc-tools` to test the recent admin section and user management UI implementation.
+- Next steps: Manually test admin features with dev servers if build is successful.
+
+---
+
+## (completed) - June 10, 2025 (Admin Section & User Management UI)
+
+- Implemented a two-tiered admin system (Admin and Master Admin) in the frontend and backend.
+- Admins (`publicMetadata.isAdmin: true`) have access to general admin tools.
+- Master Admin (`publicMetadata.isMaster: true` and specific userId) can manage user roles via the admin UI.
+- `/admin` page now includes user management UI for Master Admins, calling backend endpoints `/api/users/list-users` and `/api/users/update-user-role`.
+- Navbar shows "Admin" link for users with `isAdmin` or `isMaster`.
+- All API calls use `NEXT_PUBLIC_API_URL` from environment variables.
+- Clerk metadata (`isAdmin`, `isMaster`) must be set in the Clerk dashboard for correct access control.
+- See README.md for details on configuration and usage.
+
+---
 
 ## (completed) - June 9, 2025 (Backend Integration Test: Fetch Shipping Items)
 

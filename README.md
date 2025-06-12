@@ -38,6 +38,33 @@ This application contains several mini-apps:
 
 - **Price Difference Tool** - Compare prices and calculate differences between products or services
 
+## Admin Panel
+
+The CNC Tools application includes an Admin Panel accessible via the `/admin` route. This panel provides administrative functionalities based on user roles defined in Clerk's `publicMetadata`.
+
+### Roles
+
+- **Admin**: Users with `publicMetadata.isAdmin: true`. These users can access general administrative tools and features within the admin panel.
+- **Master Admin**: A specific user designated by their User ID (currently `user_2yFautivzaceEYXXlepE2IMUsEE`) who also has `publicMetadata.isMaster: true` (and typically `isAdmin: true` as well). Master Admins have extended privileges, including:
+  - **User Management**: Ability to view a list of all users.
+  - **Role Management**: Ability to promote/demote users to/from Admin by updating their `publicMetadata.isAdmin` flag via the admin UI.
+
+### Accessing the Admin Panel
+
+- The "Admin" link appears in the navigation bar if the logged-in user has either `isAdmin: true` or `isMaster: true` in their `publicMetadata`.
+- Direct navigation to `/admin` is also supported, with access checks performed on the page.
+
+### Configuration & Troubleshooting
+
+- Set `NEXT_PUBLIC_API_URL` in your `.env.local` to point to the backend API (e.g., `NEXT_PUBLIC_API_URL=http://localhost:5000`).
+- User roles (`isAdmin`, `isMaster`) must be configured in the Clerk dashboard by setting the appropriate `publicMetadata` for each user.
+  - For the Master Admin: `{ "isAdmin": true, "isMaster": true }`
+  - For regular Admins: `{ "isAdmin": true }`
+- If user management features do not work, check that:
+  - The backend is running and accessible at the API URL.
+  - The logged-in user has the correct Clerk metadata.
+  - Environment variables are set correctly in both frontend and backend.
+
 ## Getting Started
 
 First, run the development server:
@@ -170,7 +197,8 @@ See the [LICENSE](LICENSE) file for details.
 This app uses an Express backend for all API requests during development and production. To configure the frontend to use your backend:
 
 - Set the API base URL as an environment variable:
-  - For Next.js: `NEXT_PUBLIC_API_URL=http://localhost:5000` (replace 5000 with your backend port if different)
+  - For Next.js: `NEXT_PUBLIC_API_URL=http://localhost:5000` (or whatever your backend URL is)
+- This variable should be set in your `.env` file for local development and in your production environment variables on Netlify or Vercel.
 
 All API requests should use this base URL. Example:
 
@@ -209,3 +237,12 @@ CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
 - For protected API calls, use Clerk's `getToken()` or `useAuth()` to get the JWT and include it in the `Authorization` header.
 - The Express backend must validate Clerk JWTs for protected endpoints.
 - See CodingConventions.md for usage details and Clerk docs for backend validation examples.
+
+### Admin Section
+
+An admin section is available at `/admin`. Access is managed via Clerk user `publicMetadata`:
+
+- **Admin Access**: Set `publicMetadata.isAdmin = true` for a user in the Clerk dashboard.
+- **Master Admin Access**: Set `publicMetadata.isAdmin = true` AND `publicMetadata.isMaster = true` for the master user in the Clerk dashboard or you can add a new master admin by elevating an existing admin user to master status via the admin UI.
+
+Master admins have access to user management features, while general admins can perform other administrative tasks.

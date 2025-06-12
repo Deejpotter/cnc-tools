@@ -13,19 +13,29 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+import ShippingItem, {
+	SelectedShippingItem,
+} from "@/types/box-shipping-calculator/ShippingItem";
 import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
 
 /**
  * Props interface for ItemSelectAndCalculate component
  * Defines the expected properties and callbacks for the component
+ *
+ * - availableItems: All items from DB (ShippingItem[])
+ * - selectedItems: UI state, includes quantity (SelectedShippingItem[])
+ * - onSelectedItemsChange: callback for UI state (SelectedShippingItem[])
+ * - onCalculateBox: callback for calculation, strips quantity before sending to backend (ShippingItem[])
  */
 interface ItemSelectAndCalculateProps {
-	availableItems: ShippingItem[]; // List of all available items
-	selectedItems: ShippingItem[]; // Currently selected items for calculation
-	onSelectedItemsChange: (items: ShippingItem[]) => void; // Callback when selected items change
-	onCalculateBox: (items: ShippingItem[]) => void; // Callback to trigger box calculation
-	onItemsChange: () => void; // Callback when items are modified/deleted/added
+	availableItems: ShippingItem[];
+	selectedItems: SelectedShippingItem[];
+	onSelectedItemsChange: (items: SelectedShippingItem[]) => void;
+	/**
+	 * Callback to trigger box calculation. Only ShippingItem[] (no quantity) is sent to backend.
+	 */
+	onCalculateBox: (items: ShippingItem[]) => void;
+	onItemsChange: () => void;
 }
 
 /**
@@ -239,13 +249,13 @@ export default function ItemSelectAndCalculate({
 			// Update any selected items that match this ID first (immediate UI update)
 			if (
 				selectedItems.some(
-					(item) => String(item._id) === String(processedItem._id)
+					(item) => String(item._id) === String(updatedItem._id)
 				)
 			) {
 				onSelectedItemsChange(
 					selectedItems.map((item) =>
-						String(item._id) === String(processedItem._id)
-							? { ...processedItem, quantity: item.quantity }
+						String(item._id) === String(updatedItem._id)
+							? { ...updatedItem, quantity: item.quantity }
 							: item
 					)
 				);
@@ -661,7 +671,9 @@ export default function ItemSelectAndCalculate({
 					{/* Calculate Button */}
 					<button
 						className="btn btn-primary mt-3"
-						onClick={() => onCalculateBox(selectedItems)}
+						onClick={() =>
+							onCalculateBox(selectedItems.map(({ quantity, ...item }) => item))
+						}
 						disabled={selectedItems.length === 0}
 					>
 						Calculate Box Size

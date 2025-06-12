@@ -11,23 +11,14 @@ import { MongoDocument } from "@/types/mongodb/mongo-types";
 
 /**
  * ShippingItem interface represents an item that can be shipped.
- * Extends MongoDocument to include standard MongoDB fields.
- * @extends MongoDocument
- * @example
- * {
- *  _id: "60d5f9b2c3f1a2b3c4d5e6f7",
- * name: "V-Slot Extrusion 2020 - 1.5m",
- * sku: "LR-2020-S-1500",
- * length: 1500,
- * width: 20,
- * height: 20,
- * weight: 1500,
- * createdAt: "2023-10-01T12:00:00Z",
- * updatedAt: "2023-10-01T12:00:00Z",
- * deletedAt: null,
- * quantity: 1
- * }
+ * This type is GLOBAL and stored in the database. It does NOT include quantity.
+ * If you need to track quantity (e.g., for UI state), use SelectedShippingItem below.
+ *
+ * Example usage:
+ *   - Use ShippingItem for all DB/API operations.
+ *   - Use SelectedShippingItem for UI state when the user selects items and specifies a quantity.
  */
+// The core ShippingItem type is for DB and API use only (no quantity field)
 export default interface ShippingItem extends MongoDocument {
 	/**
 	 * The user-friendly name of the item.
@@ -64,10 +55,16 @@ export default interface ShippingItem extends MongoDocument {
 	 * @example 1500
 	 */
 	weight: number;
+}
 
+/**
+ * SelectedShippingItem is used ONLY in the UI state for selected items.
+ * It extends ShippingItem and adds a quantity field (not stored in DB).
+ */
+export interface SelectedShippingItem extends ShippingItem {
 	/**
-	 * An optional quantity of the item for use in calculations.
-	 * @example 5
+	 * The quantity of the item selected by the user.
+	 * @example 3
 	 */
-	quantity?: number;
+	quantity: number; // UI-only, not persisted in DB
 }

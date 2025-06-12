@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 // Import Clerk UI components directly
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import {
+	SignedIn,
+	SignedOut,
+	SignInButton,
+	SignUpButton,
+	UserButton,
+	useUser,
+} from "@clerk/nextjs";
 
 /**
  * Generic navigation item type for portability.
@@ -39,7 +46,7 @@ export interface NavbarProps {
  */
 const Navbar = ({
 	brand,
-	navItems,
+	navItems: initialNavItems, // Rename prop to avoid conflict
 }: NavbarProps) => {
 	// State for managing the collapsed state of the navbar. Initially set to true (collapsed).
 	const [isNavCollapsed, setIsNavCollapsed] = useState(true);
@@ -49,6 +56,21 @@ const Navbar = ({
 	const [isScrolled, setIsScrolled] = useState(false);
 	// Get current pathname to highlight active links (Next.js only)
 	const pathname = usePathname();
+	const { user } = useUser(); // Get user from Clerk
+
+	// Dynamically build navItems based on user role
+	const [navItems, setNavItems] = useState<NavItem[]>(initialNavItems);
+
+	useEffect(() => {
+		const newNavItems = [...initialNavItems];
+		if (user && (user.publicMetadata.isAdmin || user.publicMetadata.isMaster)) {
+			// Check if Admin link already exists to avoid duplicates during HMR or re-renders
+			if (!newNavItems.find((item) => item.name === "Admin")) {
+				newNavItems.push({ name: "Admin", path: "/admin" });
+			}
+		}
+		setNavItems(newNavItems);
+	}, [user, initialNavItems]);
 
 	// Toggle the collapsed state of the navbar (for mobile)
 	const handleNavCollapse = () => setIsNavCollapsed(!isNavCollapsed);
