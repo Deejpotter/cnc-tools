@@ -48,24 +48,47 @@ export default function PdfImport({
 
 		try {
 			const formData = new FormData();
-			formData.append("file", file);
+			formData.append("invoiceFile", file);
 
 			const jwt = await getToken();
-			const localApiUrl = "/api/process-invoice"; // Updated to local API route
+			// Always send the Clerk JWT in the Authorization header for backend-protected endpoints.
+			// Use the backend API URL from env if set, otherwise fallback to local route (for dev/test).
+			const apiBase = process.env.NEXT_PUBLIC_TECHNICAL_AI_API_URL || "";
+			console.log("PdfImport.backend.tsx: apiBase:", apiBase); // <-- Add this log
+			const endpoint = apiBase
+				? `${apiBase}/api/invoice/process-pdf`
+				: "/api/invoice/process-pdf";
+			console.log("PdfImport.backend.tsx: endpoint:", endpoint); // <-- Add this log
 
 			setProgress("Processing invoice...");
-			const response = await fetch(
-				localApiUrl, // Use localApiUrl
-				{
-					method: "POST",
-					body: formData,
-					headers: {
-						...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
-					},
-				}
-			);
+			const response = await fetch(endpoint, {
+				method: "POST",
+				body: formData,
+				headers: {
+					...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+				},
+			});
 
-			if (response.ok) {
+			// Improved error handling: check for non-JSON responses (e.g., HTML error pages)
+			const contentType = response.headers.get("content-type");
+			if (!response.ok) {
+				let errorText = await response.text();
+				if (contentType && contentType.includes("application/json")) {
+					try {
+						const errorJson = JSON.parse(errorText);
+						throw new Error(errorJson.message || errorJson.error || "Unknown error");
+					} catch (e) {
+						throw new Error("Failed to parse error JSON: " + errorText);
+					}
+				} else {
+					// Most likely a 404 or server error returning HTML
+					throw new Error(
+						`Unexpected response from server (status ${response.status}):\n` + errorText
+					);
+				}
+			}
+
+			if (contentType && contentType.includes("application/json")) {
 				const result = await response.json();
 				if (result.success && result.data) {
 					onItemsExtracted(result.data);
@@ -79,9 +102,10 @@ export default function PdfImport({
 					throw new Error(result.message || "Processing failed");
 				}
 			} else {
-				const errorResult = await response.json();
+				// Not JSON, unexpected
+				const text = await response.text();
 				throw new Error(
-					errorResult.message || `Server error: ${response.status}`
+					`Unexpected non-JSON response from server (status ${response.status}):\n` + text
 				);
 			}
 		} catch (error) {

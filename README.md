@@ -246,3 +246,12 @@ An admin section is available at `/admin`. Access is managed via Clerk user `pub
 - **Master Admin Access**: Set `publicMetadata.isAdmin = true` AND `publicMetadata.isMaster = true` for the master user in the Clerk dashboard or you can add a new master admin by elevating an existing admin user to master status via the admin UI.
 
 Master admins have access to user management features, while general admins can perform other administrative tasks.
+
+## Clerk-Protected Backend API Calls
+
+- All frontend fetch/axios calls to backend endpoints protected by Clerk (requireAuth) must include the Clerk JWT in the Authorization header.
+- Use `getToken()` from Clerk's `useAuth()` in React components to get the JWT before making the request.
+- Use the `NEXT_PUBLIC_TECHNICAL_AI_API_URL` environment variable to target the backend Express server directly.
+- See `CodingConventions.md` for a code example and more details.
+
+* If you see a 404 and an HTML response from /api/invoice/process-pdf, the backend route is missing or the server is not running. See PdfImport.backend.tsx for robust error handling and troubleshooting tips.

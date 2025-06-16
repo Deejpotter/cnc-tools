@@ -321,3 +321,27 @@ This metadata should be set directly in the Clerk.dev dashboard for the respecti
 - All frontend API calls must use the `NEXT_PUBLIC_API_URL` environment variable.
 - Never hard-code backend URLs in the codebase.
 - Update `.env.local` if the backend location changes.
+
+## Clerk-Protected Backend API Calls
+
+- All frontend fetch/axios calls to backend endpoints protected by Clerk (requireAuth) must include the Clerk JWT in the Authorization header.
+- Use `getToken()` from Clerk's `useAuth()` in React components to get the JWT before making the request.
+- Always set the header: `Authorization: Bearer <jwt>`.
+- Use the `NEXT_PUBLIC_TECHNICAL_AI_API_URL` environment variable to target the backend Express server directly (not through Next.js API routes).
+- Example:
+
+```ts
+const { getToken } = useAuth();
+const jwt = await getToken();
+const apiBase = process.env.NEXT_PUBLIC_TECHNICAL_AI_API_URL || "";
+const endpoint = apiBase ? `${apiBase}/api/your-endpoint` : "/api/your-endpoint";
+fetch(endpoint, {
+  method: "POST",
+  headers: { Authorization: `Bearer ${jwt}` },
+  body: ...
+});
+```
+
+- See `PdfImport.backend.tsx` for a working example.
+
+- Always check for non-JSON responses in fetch/axios error handling, especially for protected endpoints. See PdfImport.backend.tsx for an example.

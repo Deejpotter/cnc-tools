@@ -7,6 +7,13 @@
 -->
 # Code Updates Log
 
+## (in progress) - June 12, 2025 (Clerk JWT in React Fetch for Backend API)
+
+- Updated `PdfImport.backend.tsx` to always send Clerk JWT in Authorization header for backend-protected endpoints.
+- Fetch now uses `NEXT_PUBLIC_TECHNICAL_AI_API_URL` if set, otherwise falls back to local API route for dev/test.
+- Added detailed comments to clarify why this is required and how to use the pattern for all Clerk-protected endpoints.
+- To avoid 401 errors, all React fetch/axios calls to backend must include the Clerk JWT in the Authorization header.
+
 ## (in progress) - June 11, 2025 (PDF Invoice Processing - CNC Tools Frontend)
 
 - **Goal**: Update `cnc-tools/components/PdfImport.backend.tsx` to send PDF files directly to the `technical-ai` Express backend for processing.
@@ -135,6 +142,12 @@
 - Next: Test frontend fetching logic, improve error handling, and update documentation after validation.
 
 ---
+
+## (in progress) - June 12, 2025 (PDF Processing 404/HTML error handling)
+
+- Added robust error handling to PdfImport.backend.tsx to catch and log non-JSON responses (e.g., HTML error pages from 404s).
+- Confirmed backend invoiceRoutes is mounted at /api/invoice and protected by Clerk.
+- If you see a 404 and an HTML response, the backend route is missing or the server is not running.
 
 (Older entries below this line)
 
