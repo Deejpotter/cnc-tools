@@ -254,4 +254,4 @@ Master admins have access to user management features, while general admins can 
 - Use the `NEXT_PUBLIC_TECHNICAL_AI_API_URL` environment variable to target the backend Express server directly.
 - See `CodingConventions.md` for a code example and more details.
 
-* If you see a 404 and an HTML response from /api/invoice/process-pdf, the backend route is missing or the server is not running. See PdfImport.backend.tsx for robust error handling and troubleshooting tips.
+- If you see a 404 and an HTML response from /api/invoice/process-pdf, the backend route is missing or the server is not running. See PdfImport.backend.tsx for robust error handling and troubleshooting tips.

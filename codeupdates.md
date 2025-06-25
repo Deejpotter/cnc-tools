@@ -1,11 +1,20 @@
 <!--
  * codeupdates.md
- * Updated: 11/06/2025
+ * Updated: 25/06/2025
  * Author: Deej Potter
  * Description: Log of all major codebase changes, especially authentication and API integration migrations. Used by AI agents and developers to track progress and ensure all changes are tested and documented.
  Delete completed entries to keep the log current. Keep the last 5 entries for reference.
 -->
 # Code Updates Log
+
+## (completed) - June 25, 2025 (Codebase Cleanup: Remove Deprecated Auth Files)
+
+- Deleted `contexts/AuthContext.tsx` and `components/navbar/Auth.tsx` (both deprecated after Clerk migration, now fully removed from the codebase).
+- Searched for and removed any references to these files in the project.
+- This is part of a broader codebase cleanup to remove dead code and clarify abstractions.
+- Next steps: Continue auditing for other unused or overly abstracted files, improve comments, and ensure all changes are tracked here.
+
+---
 
 ## (in progress) - June 12, 2025 (Clerk JWT in React Fetch for Backend API)
 
