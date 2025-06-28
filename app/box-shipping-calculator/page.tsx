@@ -394,7 +394,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 								<PdfImport
 									onItemsExtracted={handleInvoiceItems}
 									onError={setImportError}
-									label="Import Maker Store Invoice (PDF or Text)"
+									label="Import Invoice (PDF or Text)"
 									accept=".pdf,.txt,.text"
 								/>
 								{importError && (
