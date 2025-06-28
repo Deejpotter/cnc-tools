@@ -21,7 +21,7 @@ import {
 	packItemsIntoMultipleBoxes,
 	MultiBoxPackingResult,
 } from "@/app/box-shipping-calculator/BoxCalculations";
-import PdfImport from "@/components/PdfImport.backend";
+import PdfImport from "@/components/PdfImport";
 
 // All data operations now use backend API endpoints instead of Next.js server actions.
 // These functions integrate with the technical-ai backend service running on localhost:5000
