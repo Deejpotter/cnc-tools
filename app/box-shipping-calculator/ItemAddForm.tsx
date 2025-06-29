@@ -127,7 +127,6 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 			weight: Math.round(Number(weight)),
 			deletedAt: null,
 			updatedAt: new Date(),
-			quantity: 1,
 		};
 
 		// Add item and reset form with a small delay to show feedback
