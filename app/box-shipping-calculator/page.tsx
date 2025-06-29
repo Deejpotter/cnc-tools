@@ -93,36 +93,6 @@ async function packItemsIntoMultipleBoxesFromBackend(items) {
 }
 
 /**
- * Extract invoice items from text using backend AI service
- * Endpoint: POST /api/shipping/extract-invoice-items
- * @param text - The text content from the invoice
- * Returns: { success: boolean, data: Array, error?: string }
- */
-async function extractInvoiceItemsFromBackend(text: string) {
-	const res = await fetch(`${API_URL}/api/shipping/extract-invoice-items`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ text }),
-	});
-	return await res.json();
-}
-
-/**
- * Get item dimensions from backend using SKUs
- * Endpoint: POST /api/shipping/get-item-dimensions
- * @param extractedItems - Array of items with SKUs and quantities
- * Returns: { success: boolean, data: ShippingItem[], error?: string }
- */
-async function getItemDimensionsFromBackend(extractedItems: any[]) {
-	const res = await fetch(`${API_URL}/api/shipping/get-item-dimensions`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ extractedItems }),
-	});
-	return await res.json();
-}
-
-/**
  * Box Shipping Calculator Page Component
  */
 const BoxShippingCalculatorPage: React.FC = () => {
@@ -135,17 +105,9 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	const [packingResult, setPackingResult] =
 		useState<MultiBoxPackingResult | null>(null);
 	const [importError, setImportError] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
 	const [isSyncing, setIsSyncing] = useState(false);
 
-	/**
-	 * Effect hook to load initial items and initialize sample data if needed
-	 */
-	useEffect(() => {
-		// Load items from the database when the component mounts
-		loadItems();
-		// });
-	}, []);
+	// Removed blocking useEffect - items will be loaded by ItemSelectAndCalculate component
 
 	/**
 	 * Handles loading/reloading items from the database
@@ -155,7 +117,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	 * Debug: Log the items loaded from the database to verify weights and data integrity.
 	 */
 	const loadItems = async () => {
-		setIsLoading(true);
 		try {
 			const response = await fetchAvailableItems();
 			if (response.success && response.data) {
@@ -196,8 +157,6 @@ const BoxShippingCalculatorPage: React.FC = () => {
 			console.error("Failed to load items:", error);
 			setImportError("Error loading items from database.");
 			setItems([]); // Clear items on error
-		} finally {
-			setIsLoading(false);
 		}
 	};
 
@@ -221,82 +180,70 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	};
 
 	/**
-	 * Handler for importing items from a Maker Store invoice
-	 * @param newItems Array of ShippingItem objects from processInvoice, already checked against/added to DB
+	 * Handler for when an individual item is updated
+	 * Updates the item in the local state without needing to reload all items
+	 * @param updatedItem The updated item from the backend
 	 */
-	const handleInvoiceItems = async (newItems: ShippingItem[]) => {
-		// The `newItems` are already processed by `processInvoice` and `getItemDimensions`.
-		// This means they are either existing items from the DB (with updated quantities from the invoice)
-		// or new items that have been estimated and added to the DB.
+	const handleItemUpdate = (updatedItem: ShippingItem) => {
+		setItems((prevItems) =>
+			prevItems.map((item) =>
+				String(item._id) === String(updatedItem._id) ? updatedItem : item
+			)
+		);
+	};
+
+	/**
+	 * Handler for when an individual item is deleted
+	 * Removes the item from the local state without needing to reload all items
+	 * @param deletedItemId The ID of the deleted item
+	 */
+	const handleItemDelete = (deletedItemId: string) => {
+		setItems((prevItems) =>
+			prevItems.filter((item) => String(item._id) !== deletedItemId)
+		);
+	};
+
+	/**
+	 * Handler for when an invoice file is selected in the PdfImport component.
+	 * This function sends the file to the backend for processing.
+	 * @param file The invoice file (PDF or TXT)
+	 */
+	const handleFileSelect = async (file: File) => {
+		setImportError(null);
+		const formData = new FormData();
+		formData.append("invoice", file);
+
 		try {
-			// First, refresh the displayed list of available items from the database.
-			await loadItems();
-
-			// Now, add/update these invoice items in the selectedItems state.
-			setSelectedItems((prevSelectedItems) => {
-				const updatedSelectedItems = [...prevSelectedItems]; // Create a mutable copy
-
-				newItems.forEach((invoiceItem) => {
-					// Ensure invoiceItem._id is valid, as it's crucial for matching.
-					if (!invoiceItem._id) {
-						console.warn(
-							"Invoice item missing _id, cannot add to selection:",
-							invoiceItem
-						);
-						return; // Skip this item if it doesn't have an _id
-					}
-					const existingItemIndex = updatedSelectedItems.findIndex(
-						(selItem) => selItem._id === invoiceItem._id
-					);
-
-					if (existingItemIndex > -1) {
-						// Item already exists in selectedItems, so update its quantity
-						const currentItem = updatedSelectedItems[existingItemIndex];
-						updatedSelectedItems[existingItemIndex] = {
-							...currentItem,
-							// Ensure quantities are numbers before adding
-							quantity:
-								(Number(currentItem.quantity) || 0) +
-								(Number((invoiceItem as any).quantity) || 0),
-						};
-					} else {
-						// Item is not in selectedItems, add it.
-						// The invoiceItem should already have the correct quantity from the invoice.
-						updatedSelectedItems.push({
-							...invoiceItem,
-							quantity: Number((invoiceItem as any).quantity) || 1,
-						});
-					}
-				});
-
-				return updatedSelectedItems;
+			const res = await fetch(`${API_URL}/api/shipping/process-invoice`, {
+				method: "POST",
+				body: formData,
 			});
 
-			if (newItems.length > 0) {
-				setImportError(null); // Clear any previous import errors
-				// Optionally, provide a success message to the user here.
-			} else {
-				setImportError(
-					"No items were processed from the invoice. The invoice might be empty or items lacked SKUs."
+			const result = await res.json();
+
+			if (result.success) {
+				// Debug: Log what we received from backend
+				console.log(
+					"[Frontend] Received from backend:",
+					JSON.stringify(result.data, null, 2)
 				);
+				handleInvoiceItems(result.data);
+			} else {
+				setImportError(result.message || "Failed to process invoice.");
 			}
 		} catch (error) {
-			console.error(
-				"An error occurred while refreshing items and updating selection after invoice processing:",
-				error
-			);
+			console.error("An error occurred during invoice processing:", error);
 			setImportError(
-				error instanceof Error
-					? error.message
-					: "Failed to update item list and selection after invoice processing."
+				error instanceof Error ? error.message : "An unexpected error occurred."
 			);
 		}
 	};
+
 	/**
 	 * Handler for calculating the optimal box size
 	 * @param itemsToCalculate Array of items to calculate box size for
 	 */
-	const handleCalculateBox = (itemsToCalculate: ShippingItem[]) => {
+	const handleCalculateBox = (itemsToCalculate: SelectedShippingItem[]) => {
 		const result = packItemsIntoMultipleBoxes(itemsToCalculate);
 		setPackingResult(result);
 	};
@@ -340,24 +287,31 @@ const BoxShippingCalculatorPage: React.FC = () => {
 	};
 	/**
 	 * Handler for when invoice items are directly extracted (new backend approach)
-	 * The new PdfImport component handles the entire PDF-to-ShippingItems workflow
+	 * The backend returns ShippingItem[] (without quantity), so we add quantity here for UI state
 	 */
+	const handleInvoiceItems = (extractedItems: ShippingItem[]) => {
+		// Debug: Log the conversion process
+		console.log(
+			"[Frontend] Converting items to SelectedShippingItem[]:",
+			extractedItems
+		);
+
+		const newSelectedItems: SelectedShippingItem[] = extractedItems.map(
+			(item) => ({
+				...item,
+				quantity: 1, // Default quantity for UI state
+			})
+		);
+
+		// Debug: Log the final selected items
+		console.log("[Frontend] Final selected items:", newSelectedItems);
+
+		setSelectedItems(newSelectedItems);
+	};
 
 	// Render loading state while fetching initial data
-	if (isLoading) {
-		return (
-			<LayoutContainer>
-				<div className="container pb-5">
-					<h1 className="mb-4">Box Shipping Calculator</h1>
-					<div className="text-center">
-						<div className="spinner-border" role="status">
-							<span className="visually-hidden">Loading...</span>
-						</div>
-					</div>
-				</div>
-			</LayoutContainer>
-		);
-	}
+	// Note: Removed blocking loading - page now renders immediately
+	// Loading state moved to ItemSelectAndCalculate component
 
 	return (
 		<LayoutContainer>
@@ -392,7 +346,7 @@ const BoxShippingCalculatorPage: React.FC = () => {
 							<div className="card-body">
 								<h2 className="card-title mb-3">Import from Invoice</h2>{" "}
 								<PdfImport
-									onItemsExtracted={handleInvoiceItems}
+									onFileSelected={handleFileSelect}
 									onError={setImportError}
 									label="Import Invoice (PDF or Text)"
 									accept=".pdf,.txt,.text"
@@ -412,8 +366,10 @@ const BoxShippingCalculatorPage: React.FC = () => {
 									availableItems={items}
 									selectedItems={selectedItems}
 									onSelectedItemsChange={setSelectedItems}
-									onCalculateBox={(items) => handleCalculateBox(items)}
+									onCalculateBox={handleCalculateBox}
 									onItemsChange={loadItems}
+									onItemUpdate={handleItemUpdate}
+									onItemDelete={handleItemDelete}
 								/>
 							</div>
 						</div>

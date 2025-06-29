@@ -9,6 +9,7 @@
  */
 
 import type ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+import type { SelectedShippingItem } from "@/types/box-shipping-calculator/ShippingItem";
 import type ShippingBox from "@/types/box-shipping-calculator/ShippingBox";
 
 // Define the interface for multi-box packing results
@@ -16,9 +17,9 @@ export interface MultiBoxPackingResult {
 	success: boolean;
 	shipments: Array<{
 		box: ShippingBox;
-		packedItems: ShippingItem[];
+		packedItems: SelectedShippingItem[];
 	}>;
-	unfitItems: ShippingItem[];
+	unfitItems: SelectedShippingItem[];
 }
 
 // Constants for box preference calculation
@@ -409,14 +410,14 @@ function calculateBoxPreference(
  * Calculates the best box size for a single set of items.
  * This is a simplified version for checking if items fit in a single box.
  *
- * @param itemsToPack - Array of ShippingItems to pack.
+ * @param itemsToPack - Array of SelectedShippingItems to pack (includes quantity).
  * @returns Results of the packing attempt
  */
-export function findBestBox(itemsToPack: ShippingItem[]): {
+export function findBestBox(itemsToPack: SelectedShippingItem[]): {
 	success: boolean;
 	box: ShippingBox | null;
-	packedItems: ShippingItem[];
-	unfitItems: ShippingItem[];
+	packedItems: SelectedShippingItem[];
+	unfitItems: SelectedShippingItem[];
 } {
 	// Handle empty input gracefully
 	if (itemsToPack.length === 0) {
@@ -433,7 +434,9 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 	for (const item of itemsToPack) {
 		const quantity = item.quantity || 1;
 		for (let i = 0; i < quantity; i++) {
-			expandedItems.push({ ...item, quantity: 1 });
+			// Remove quantity when expanding to individual ShippingItem instances
+			const { quantity: _, ...shippingItem } = item;
+			expandedItems.push(shippingItem);
 		}
 	}
 	// Find the longest item dimension to help with box selection
@@ -504,7 +507,7 @@ export function findBestBox(itemsToPack: ShippingItem[]): {
 function groupPackedItemsByOriginal(
 	packedItems: PackedItem[],
 	originalItems: ShippingItem[]
-): ShippingItem[] {
+): SelectedShippingItem[] {
 	const itemCounts: { [key: string]: number } = {};
 
 	// Count packed items
@@ -516,7 +519,7 @@ function groupPackedItemsByOriginal(
 	}
 
 	// Recreate the original items with updated quantities
-	const result: ShippingItem[] = [];
+	const result: SelectedShippingItem[] = [];
 	for (const item of originalItems) {
 		const key = `${item._id || item.name}-${item.length}-${item.width}-${
 			item.height
@@ -543,7 +546,7 @@ function groupPackedItemsByOriginal(
  * @param items - The items to check
  * @returns Boolean indicating if the items have uniform dimensions
  */
-function itemsAreUniform(items: ShippingItem[]): boolean {
+function itemsAreUniform(items: SelectedShippingItem[]): boolean {
 	// Extract lengths of all items, considering quantity
 	let lengthsArray: number[] = [];
 	items.forEach((item) => {
@@ -570,7 +573,7 @@ function itemsAreUniform(items: ShippingItem[]): boolean {
  * @returns A MultiBoxPackingResult object with packing arrangement
  */
 export function packItemsIntoMultipleBoxes(
-	itemsToPack: ShippingItem[]
+	itemsToPack: SelectedShippingItem[]
 ): MultiBoxPackingResult {
 	// Handle empty input case
 	if (itemsToPack.length === 0) {
@@ -669,7 +672,7 @@ export function packItemsIntoMultipleBoxes(
 	}
 
 	// Expand items by quantity for individual packing
-	const expandedItems: ShippingItem[] = [];
+	const expandedItems: SelectedShippingItem[] = [];
 	for (const item of itemsToPack) {
 		const quantity = item.quantity || 1;
 		for (let i = 0; i < quantity; i++) {

@@ -25,17 +25,27 @@ import { Search, Plus, Minus, X, Edit, Trash2, Save } from "lucide-react";
  * - availableItems: All items from DB (ShippingItem[])
  * - selectedItems: UI state, includes quantity (SelectedShippingItem[])
  * - onSelectedItemsChange: callback for UI state (SelectedShippingItem[])
- * - onCalculateBox: callback for calculation, strips quantity before sending to backend (ShippingItem[])
+ * - onCalculateBox: callback for calculation, receives SelectedShippingItem[] with quantities
  */
 interface ItemSelectAndCalculateProps {
 	availableItems: ShippingItem[];
 	selectedItems: SelectedShippingItem[];
 	onSelectedItemsChange: (items: SelectedShippingItem[]) => void;
 	/**
-	 * Callback to trigger box calculation. Only ShippingItem[] (no quantity) is sent to backend.
+	 * Callback to trigger box calculation. Receives SelectedShippingItem[] with quantities.
 	 */
-	onCalculateBox: (items: ShippingItem[]) => void;
+	onCalculateBox: (items: SelectedShippingItem[]) => void;
 	onItemsChange: () => void;
+	/**
+	 * Optional callback for when an item is updated
+	 * If provided, will be called instead of onItemsChange for better performance
+	 */
+	onItemUpdate?: (updatedItem: ShippingItem) => void;
+	/**
+	 * Optional callback for when an item is deleted
+	 * If provided, will be called instead of onItemsChange for better performance
+	 */
+	onItemDelete?: (deletedItemId: string) => void;
 }
 
 /**
@@ -59,6 +69,8 @@ export default function ItemSelectAndCalculate({
 	onSelectedItemsChange,
 	onCalculateBox,
 	onItemsChange,
+	onItemUpdate,
+	onItemDelete,
 }: ItemSelectAndCalculateProps) {
 	// State Management
 	// ---------------
@@ -76,6 +88,39 @@ export default function ItemSelectAndCalculate({
 	const [deletedItemIds, setDeletedItemIds] = useState<string[]>([]); // IDs of deleted items to filter out of UI
 	const availableItemsRef = useRef<HTMLDivElement>(null); // Reference for scrolling back to position
 	const [scrollPosition, setScrollPosition] = useState(0); // Remember scroll position
+	// Loading state for items - this component now manages its own loading
+	const [isLoadingItems, setIsLoadingItems] = useState(true);
+	// Hydration fix: Track if component is mounted to prevent SSR/client mismatch
+	const [isMounted, setIsMounted] = useState(false);
+
+	/**
+	 * Handle hydration by setting mounted state
+	 */
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	/**
+	 * Load available items when component mounts
+	 * This moved from the parent page component to avoid blocking the entire page
+	 */
+	useEffect(() => {
+		if (!isMounted) return; // Don't load until component is mounted on client
+
+		const loadItemsOnMount = async () => {
+			if (availableItems.length === 0) {
+				setIsLoadingItems(true);
+				try {
+					await onItemsChange(); // Trigger parent to load items
+				} finally {
+					setIsLoadingItems(false);
+				}
+			} else {
+				setIsLoadingItems(false);
+			}
+		};
+		loadItemsOnMount();
+	}, [isMounted, availableItems.length, onItemsChange]);
 
 	/**
 	 * Calculate total weight of selected items including quantities
@@ -269,15 +314,25 @@ export default function ItemSelectAndCalculate({
 
 			// Reset editing state immediately to provide responsive UI
 			setEditingItemId(null);
-			setEditingItemData(null); // Update the database in the background using backend API
+			setEditingItemData(null);
+
+			// Update the database in the background using backend API
 			updateItemInBackend(processedItem)
-				.then(() => {
+				.then((response) => {
 					setPendingUpdates((prev) =>
 						prev.filter((id) => id !== String(processedItem._id))
 					);
+					// Use specific callback if available, otherwise reload all items
+					if (onItemUpdate && response.success && response.data) {
+						onItemUpdate(response.data);
+					} else {
+						onItemsChange();
+					}
 				})
 				.catch((error) => {
 					console.error("Background item update failed:", error);
+					// On error, trigger reload to ensure consistency
+					onItemsChange();
 				});
 		} catch (error) {
 			console.error("Failed to update item:", error);
@@ -292,11 +347,27 @@ export default function ItemSelectAndCalculate({
 		try {
 			setIsDeleting(itemId);
 			setDeletedItemIds((prev) => [...prev, itemId]);
+
 			// Delete from backend API
 			await deleteItemInBackend(itemId);
-			// Optionally call onItemsChange() if you want to refresh from DB
+
+			// Remove from selected items if it was selected
+			onSelectedItemsChange(
+				selectedItems.filter((item) => String(item._id) !== itemId)
+			);
+
+			// Use specific callback if available, otherwise reload all items
+			if (onItemDelete) {
+				onItemDelete(itemId);
+			} else {
+				// Trigger parent to reload items from database to reflect deletion
+				onItemsChange();
+			}
 		} catch (error) {
 			console.error("Failed to delete item:", error);
+			// On error, remove from local deleted items list and reload
+			setDeletedItemIds((prev) => prev.filter((id) => id !== itemId));
+			onItemsChange();
 		} finally {
 			setIsDeleting(null);
 		}
@@ -383,224 +454,246 @@ export default function ItemSelectAndCalculate({
 						style={{ maxHeight: "400px", overflowY: "auto" }}
 						ref={availableItemsRef}
 					>
-						{processedItems.map((item) => (
-							<div
-								key={String(item._id)}
-								className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
-									lastEditedItems.includes(String(item._id))
-										? "list-group-item-success"
-										: ""
-								}`}
-							>
-								{editingItemId === String(item._id) /* Inline Edit Mode */ ? (
+						{!isMounted || isLoadingItems ? (
+							/* Loading state - shown during SSR and while loading */
+							<div className="list-group-item text-center">
+								<div
+									className="spinner-border spinner-border-sm me-2"
+									role="status"
+								>
+									<span className="visually-hidden">Loading...</span>
+								</div>
+								Loading items...
+							</div>
+						) : (
+							/* Items list */
+							<>
+								{processedItems.map((item) => (
 									<div
-										className="w-100"
-										onKeyDown={(e) => handleKeyDown(e, item)}
+										key={String(item._id)}
+										className={`list-group-item list-group-item-action d-flex justify-content-between align-items-center ${
+											lastEditedItems.includes(String(item._id))
+												? "list-group-item-success"
+												: ""
+										}`}
 									>
-										<div className="mb-2">
-											<input
-												type="text"
-												className="form-control form-control-sm mb-2"
-												placeholder="Item name"
-												value={editingItemData?.name || ""}
-												onChange={(e) =>
-													setEditingItemData((prev) =>
-														prev ? { ...prev, name: e.target.value } : null
-													)
-												}
-												autoFocus
-											/>
-											<div className="row g-2 mb-2">
-												{" "}
-												<div className="col">
-													{" "}
+										{editingItemId ===
+										String(item._id) /* Inline Edit Mode */ ? (
+											<div
+												className="w-100"
+												onKeyDown={(e) => handleKeyDown(e, item)}
+											>
+												<div className="mb-2">
 													<input
-														type="number"
-														className="form-control form-control-sm"
-														placeholder="Length (mm)"
-														value={editingItemData?.length || 0}
-														step="1"
-														min="1"
-														pattern="[0-9]*"
-														onChange={(e) => {
-															const rawValue = Number(e.target.value);
-															const roundedValue = Math.round(rawValue);
-
+														type="text"
+														className="form-control form-control-sm mb-2"
+														placeholder="Item name"
+														value={editingItemData?.name || ""}
+														onChange={(e) =>
 															setEditingItemData((prev) =>
-																prev
-																	? {
-																			...prev,
-																			length: roundedValue,
-																	  }
-																	: null
-															);
-														}}
+																prev ? { ...prev, name: e.target.value } : null
+															)
+														}
+														autoFocus
 													/>
+													<div className="row g-2 mb-2">
+														{" "}
+														<div className="col">
+															{" "}
+															<input
+																type="number"
+																className="form-control form-control-sm"
+																placeholder="Length (mm)"
+																value={editingItemData?.length || 0}
+																step="1"
+																min="1"
+																pattern="[0-9]*"
+																onChange={(e) => {
+																	const rawValue = Number(e.target.value);
+																	const roundedValue = Math.round(rawValue);
+
+																	setEditingItemData((prev) =>
+																		prev
+																			? {
+																					...prev,
+																					length: roundedValue,
+																			  }
+																			: null
+																	);
+																}}
+															/>
+														</div>{" "}
+														<div className="col">
+															{" "}
+															<input
+																type="number"
+																className="form-control form-control-sm"
+																placeholder="Width (mm)"
+																value={editingItemData?.width || 0}
+																step="1"
+																min="1"
+																pattern="[0-9]*"
+																onChange={(e) => {
+																	const rawValue = Number(e.target.value);
+																	const roundedValue = Math.round(rawValue);
+
+																	setEditingItemData((prev) =>
+																		prev
+																			? {
+																					...prev,
+																					width: roundedValue,
+																			  }
+																			: null
+																	);
+																}}
+															/>
+														</div>{" "}
+														<div className="col">
+															{" "}
+															<input
+																type="number"
+																className="form-control form-control-sm"
+																placeholder="Height (mm)"
+																value={editingItemData?.height || 0}
+																step="1"
+																min="1"
+																pattern="[0-9]*"
+																onChange={(e) => {
+																	const rawValue = Number(e.target.value);
+																	const roundedValue = Math.round(rawValue);
+
+																	setEditingItemData((prev) =>
+																		prev
+																			? {
+																					...prev,
+																					height: roundedValue,
+																			  }
+																			: null
+																	);
+																}}
+															/>
+														</div>{" "}
+														<div className="col">
+															<input
+																type="number"
+																className="form-control form-control-sm"
+																placeholder="Weight (g)"
+																value={editingItemData?.weight || 0}
+																step="1"
+																min="1"
+																pattern="[0-9]*"
+																onChange={(e) => {
+																	const rawValue = Number(e.target.value);
+																	const roundedValue = Math.round(rawValue);
+
+																	setEditingItemData((prev) =>
+																		prev
+																			? { ...prev, weight: roundedValue }
+																			: null
+																	);
+																}}
+															/>
+														</div>
+													</div>
+													<input
+														type="text"
+														className="form-control form-control-sm"
+														placeholder="SKU (optional)"
+														value={editingItemData?.sku || ""}
+														onChange={(e) =>
+															setEditingItemData((prev) =>
+																prev ? { ...prev, sku: e.target.value } : null
+															)
+														}
+													/>{" "}
 												</div>{" "}
-												<div className="col">
-													{" "}
-													<input
-														type="number"
-														className="form-control form-control-sm"
-														placeholder="Width (mm)"
-														value={editingItemData?.width || 0}
-														step="1"
-														min="1"
-														pattern="[0-9]*"
-														onChange={(e) => {
-															const rawValue = Number(e.target.value);
-															const roundedValue = Math.round(rawValue);
-
-															setEditingItemData((prev) =>
-																prev
-																	? {
-																			...prev,
-																			width: roundedValue,
-																	  }
-																	: null
-															);
-														}}
-													/>
-												</div>{" "}
-												<div className="col">
-													{" "}
-													<input
-														type="number"
-														className="form-control form-control-sm"
-														placeholder="Height (mm)"
-														value={editingItemData?.height || 0}
-														step="1"
-														min="1"
-														pattern="[0-9]*"
-														onChange={(e) => {
-															const rawValue = Number(e.target.value);
-															const roundedValue = Math.round(rawValue);
-
-															setEditingItemData((prev) =>
-																prev
-																	? {
-																			...prev,
-																			height: roundedValue,
-																	  }
-																	: null
-															);
-														}}
-													/>
-												</div>{" "}
-												<div className="col">
-													<input
-														type="number"
-														className="form-control form-control-sm"
-														placeholder="Weight (g)"
-														value={editingItemData?.weight || 0}
-														step="1"
-														min="1"
-														pattern="[0-9]*"
-														onChange={(e) => {
-															const rawValue = Number(e.target.value);
-															const roundedValue = Math.round(rawValue);
-
-															setEditingItemData((prev) =>
-																prev ? { ...prev, weight: roundedValue } : null
-															);
-														}}
-													/>
+												<div className="d-flex justify-content-between align-items-center">
+													<small className="text-muted">
+														Tab to navigate fields, Enter to save, Esc to cancel
+													</small>
+													<div>
+														<button
+															className="btn btn-sm btn-outline-secondary me-2"
+															onClick={cancelEdit}
+														>
+															Cancel
+														</button>
+														<button
+															className="btn btn-sm btn-success"
+															onClick={() =>
+																editingItemData &&
+																handleUpdateItem(editingItemData)
+															}
+														>
+															<Save size={16} className="me-1" />
+															Save
+														</button>
+													</div>
 												</div>
 											</div>
-											<input
-												type="text"
-												className="form-control form-control-sm"
-												placeholder="SKU (optional)"
-												value={editingItemData?.sku || ""}
-												onChange={(e) =>
-													setEditingItemData((prev) =>
-														prev ? { ...prev, sku: e.target.value } : null
-													)
-												}
-											/>{" "}
-										</div>{" "}
-										<div className="d-flex justify-content-between align-items-center">
-											<small className="text-muted">
-												Tab to navigate fields, Enter to save, Esc to cancel
-											</small>
-											<div>
-												<button
-													className="btn btn-sm btn-outline-secondary me-2"
-													onClick={cancelEdit}
-												>
-													Cancel
-												</button>
-												<button
-													className="btn btn-sm btn-success"
-													onClick={() =>
-														editingItemData && handleUpdateItem(editingItemData)
-													}
-												>
-													<Save size={16} className="me-1" />
-													Save
-												</button>
-											</div>
-										</div>
-									</div>
-								) : (
-									/* Normal View Mode */ <>
-										{" "}
-										<div className="flex-grow-1">
-											<h6 className="mb-1">
-												{item.name}
-												{pendingUpdates.includes(String(item._id)) && (
-													<small className="ms-2">
-														<span
-															className="spinner-border spinner-border-sm text-secondary"
-															style={{ width: "0.8rem", height: "0.8rem" }}
-														/>
+										) : (
+											/* Normal View Mode */ <>
+												{" "}
+												<div className="flex-grow-1">
+													<h6 className="mb-1">
+														{item.name}
+														{pendingUpdates.includes(String(item._id)) && (
+															<small className="ms-2">
+																<span
+																	className="spinner-border spinner-border-sm text-secondary"
+																	style={{ width: "0.8rem", height: "0.8rem" }}
+																/>
+															</small>
+														)}
+													</h6>
+													<small className="text-muted">
+														{item.length}x{item.width}x{item.height}mm |{" "}
+														{item.weight}g{item.sku && ` | SKU: ${item.sku}`}
 													</small>
-												)}
-											</h6>
-											<small className="text-muted">
-												{item.length}x{item.width}x{item.height}mm |{" "}
-												{item.weight}g{item.sku && ` | SKU: ${item.sku}`}
-											</small>
+												</div>
+												<div className="btn-group">
+													{/* Add Item Button */}
+													<button
+														className="btn btn-outline-primary btn-sm"
+														onClick={() => handleSelectItem(item)}
+														title="Add to selection"
+													>
+														<Plus size={16} />
+													</button>
+													{/* Edit Item Button */}
+													<button
+														className="btn btn-outline-secondary btn-sm"
+														onClick={() => handleEditItem(item)}
+														title="Edit item"
+													>
+														<Edit size={16} />
+													</button>
+													{/* Delete Item Button */}
+													<button
+														className="btn btn-outline-danger btn-sm"
+														onClick={() => handleDeleteItem(String(item._id))}
+														disabled={isDeleting === String(item._id)}
+														title="Delete item"
+													>
+														{isDeleting === String(item._id) ? (
+															<span className="spinner-border spinner-border-sm" />
+														) : (
+															<Trash2 size={16} />
+														)}
+													</button>
+												</div>
+											</>
+										)}
+									</div>
+								))}
+								{processedItems.length === 0 &&
+									isMounted &&
+									!isLoadingItems && (
+										<div className="list-group-item text-center text-muted">
+											No items found
 										</div>
-										<div className="btn-group">
-											{/* Add Item Button */}
-											<button
-												className="btn btn-outline-primary btn-sm"
-												onClick={() => handleSelectItem(item)}
-												title="Add to selection"
-											>
-												<Plus size={16} />
-											</button>
-											{/* Edit Item Button */}
-											<button
-												className="btn btn-outline-secondary btn-sm"
-												onClick={() => handleEditItem(item)}
-												title="Edit item"
-											>
-												<Edit size={16} />
-											</button>
-											{/* Delete Item Button */}
-											<button
-												className="btn btn-outline-danger btn-sm"
-												onClick={() => handleDeleteItem(String(item._id))}
-												disabled={isDeleting === String(item._id)}
-												title="Delete item"
-											>
-												{isDeleting === String(item._id) ? (
-													<span className="spinner-border spinner-border-sm" />
-												) : (
-													<Trash2 size={16} />
-												)}
-											</button>
-										</div>
-									</>
-								)}
-							</div>
-						))}
-						{processedItems.length === 0 && (
-							<div className="list-group-item text-center text-muted">
-								No items found
-							</div>
+									)}
+							</>
 						)}
 					</div>
 				</div>
@@ -671,9 +764,7 @@ export default function ItemSelectAndCalculate({
 					{/* Calculate Button */}
 					<button
 						className="btn btn-primary mt-3"
-						onClick={() =>
-							onCalculateBox(selectedItems.map(({ quantity, ...item }) => item))
-						}
+						onClick={() => onCalculateBox(selectedItems)}
 						disabled={selectedItems.length === 0}
 					>
 						Calculate Box Size

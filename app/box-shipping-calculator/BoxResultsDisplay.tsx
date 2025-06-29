@@ -11,6 +11,7 @@ import React, { useMemo } from "react";
 import type { MultiBoxPackingResult } from "./BoxCalculations";
 import type ShippingBox from "@/types/box-shipping-calculator/ShippingBox";
 import type ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
+import type { SelectedShippingItem } from "@/types/box-shipping-calculator/ShippingItem";
 import { Package2, Scale, Maximize, Ruler, AlertCircle } from "lucide-react";
 
 interface BoxUtilizationMetrics {
@@ -41,7 +42,7 @@ interface BoxResultsDisplayProps {
  */
 export function calculateBoxUtilization(
 	box: ShippingBox,
-	items: ShippingItem[]
+	items: SelectedShippingItem[]
 ): BoxUtilizationMetrics {
 	const boxVolume = box.length * box.width * box.height;
 
@@ -73,7 +74,9 @@ export function calculateBoxUtilization(
  * @param items - Items packed in the box
  * @returns BoxDimensions object with total length, width, height and volume
  */
-export function calculateBoxDimensions(items: ShippingItem[]): BoxDimensions {
+export function calculateBoxDimensions(
+	items: SelectedShippingItem[]
+): BoxDimensions {
 	if (items.length === 0) {
 		return {
 			totalLength: 0,
@@ -295,20 +298,22 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 								</tr>
 							</thead>
 							<tbody>
-								{shipment.packedItems.map((item: ShippingItem, idx: number) => (
-									<tr key={`${String(item._id)}-${idx}`}>
-										<td>
-											<small>{item.name}</small>
-											<div>
-												<small className="text-muted">
-													{item.length}×{item.width}×{item.height}mm
-												</small>
-											</div>
-										</td>
-										<td>{item.quantity || 1}</td>
-										<td>{item.weight * (item.quantity || 1)}g</td>
-									</tr>
-								))}
+								{shipment.packedItems.map(
+									(item: SelectedShippingItem, idx: number) => (
+										<tr key={`${String(item._id)}-${idx}`}>
+											<td>
+												<small>{item.name}</small>
+												<div>
+													<small className="text-muted">
+														{item.length}×{item.width}×{item.height}mm
+													</small>
+												</div>
+											</td>
+											<td>{item.quantity || 1}</td>
+											<td>{item.weight * (item.quantity || 1)}g</td>
+										</tr>
+									)
+								)}
 							</tbody>
 						</table>
 					</div>
@@ -321,7 +326,7 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 /**
  * Card component that displays information about items that couldn't fit in any box
  */
-function UnfitItemsCard({ items }: { items: ShippingItem[] }) {
+function UnfitItemsCard({ items }: { items: SelectedShippingItem[] }) {
 	if (items.length === 0) return null;
 
 	return (

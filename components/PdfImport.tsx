@@ -1,34 +1,33 @@
 /**
  * PdfImport Component
  * Author: Deej Potter
- * Description: Reusable component for importing and extracting text from PDF or text files using pdf-ts.
+ * Description: Reusable component for importing PDF or text files.
  * This component is designed to be used anywhere in the app where PDF/text import is needed.
  */
 
 "use client";
 
 import React, { useRef, useState } from "react";
-import { pdfToText } from "pdf-ts";
 import { Upload, Check } from "lucide-react";
 
 /**
  * Props for the PdfImport component.
- * @property {function} onTextExtracted - Callback function to handle extracted text.
+ * @property {function} onFileSelected - Callback function to handle selected file.
  * @property {function} onError - Callback function to handle errors.
  * @property {string} [label] - Custom label for the import button.
  * @property {string} [accept] - Accepted file types for import.
  * @example
- * <PdfImport onTextExtracted={handleText} onError={handleError} label="Import Invoice" />
+ * <PdfImport onFileSelected={handleFile} onError={handleError} label="Import Invoice" />
  */
 interface PdfImportProps {
-	onTextExtracted: (text: string) => void;
+	onFileSelected: (file: File) => void;
 	onError: (error: string) => void;
 	label?: string;
 	accept?: string;
 }
 
 export default function PdfImport({
-	onTextExtracted,
+	onFileSelected,
 	onError,
 	label = "Import PDF or Text File",
 	accept = ".pdf,.txt,.text",
@@ -43,26 +42,10 @@ export default function PdfImport({
 	const handleFile = async (file: File) => {
 		setLoading(true);
 		try {
-			const fileName = file.name.toLowerCase();
-			const isPDF =
-				file.type === "application/pdf" || fileName.endsWith(".pdf");
-			let textContent = "";
-			if (isPDF) {
-				// Use pdf-ts to extract text from PDF
-				const arrayBuffer = await file.arrayBuffer();
-				const uint8Array = new Uint8Array(arrayBuffer);
-				textContent = await pdfToText(uint8Array);
-			} else {
-				// Plain text file
-				textContent = await file.text();
-			}
-			if (!textContent.trim()) {
-				throw new Error("File appears to be empty or unreadable");
-			}
-			onTextExtracted(textContent);
+			onFileSelected(file);
 		} catch (error) {
 			const msg =
-				error instanceof Error ? error.message : "Failed to extract file text";
+				error instanceof Error ? error.message : "Failed to process file";
 			onError(msg);
 		} finally {
 			setLoading(false);
@@ -175,7 +158,7 @@ export default function PdfImport({
 			{loading && (
 				<div className="mt-3 text-info">
 					<span className="spinner-border spinner-border-sm me-2" />
-					Extracting text...
+					Processing file...
 				</div>
 			)}
 		</form>
