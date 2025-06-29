@@ -206,11 +206,17 @@ All API requests should use this base URL. Example:
 fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/health`)
 ```
 
-## Backend API Integration
+## Backend API Integration (Updated January 2025)
 
 - The Box Shipping Calculator and other tools fetch data from the technical-ai backend service.
 - The backend API URL is set via the `.env` file using the `NEXT_PUBLIC_API_URL` variable (e.g., `NEXT_PUBLIC_API_URL=http://localhost:5000`).
-- All item fetching and box calculation logic uses `/api/shipping/items` and related endpoints.
+- **CRUD Operations**: Full Create, Read, Update, Delete operations are supported:
+  - `GET /api/shipping/items` - Fetch all shipping items
+  - `POST /api/shipping/items` - Create new shipping item
+  - `PUT /api/shipping/items/:id` - Update existing shipping item
+  - `DELETE /api/shipping/items/:id` - Delete shipping item
+- **Optimistic Updates**: The UI updates immediately upon user actions, with backend sync happening in the background.
+- **Error Handling**: Proper error handling and user feedback for failed operations.
 - If you encounter issues with data loading, ensure the backend is running and the API URL is correct.
 
 ## Authentication (Clerk.dev)
@@ -255,3 +261,29 @@ Master admins have access to user management features, while general admins can 
 - See `CodingConventions.md` for a code example and more details.
 
 - If you see a 404 and an HTML response from /api/invoice/process-pdf, the backend route is missing or the server is not running. See PdfImport.backend.tsx for robust error handling and troubleshooting tips.
+
+## Frontend State Management & Optimistic Updates (January 2025)
+
+The application implements modern state management patterns for better user experience:
+
+### Optimistic UI Updates
+
+- **Immediate Feedback**: Changes are reflected in the UI immediately upon user action
+- **Background Sync**: Backend API calls happen asynchronously to persist changes
+- **Error Handling**: Failed operations show appropriate error messages and can revert UI state
+- **Consistency**: Parent components manage shared state and pass update callbacks to children
+
+### SSR/Client Consistency
+
+To avoid Next.js hydration errors, the application follows these patterns:
+
+- **isMounted Pattern**: Use `isMounted` state to ensure consistent server/client rendering
+- **Deterministic IDs**: Use predictable ID generation instead of time-based IDs
+- **Conditional Rendering**: Separate server-side and client-side only functionality
+
+### Implementation Guidelines
+
+- Parent components manage shared state and pass callbacks (`onItemUpdate`, `onItemDelete`)
+- Child components perform optimistic updates and call parent callbacks
+- Always handle both success and failure cases for backend operations
+- Use TypeScript for type safety in callback functions and state management

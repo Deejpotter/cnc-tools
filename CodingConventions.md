@@ -128,6 +128,52 @@ Each mini-app in the `/app` directory should follow this structure:
 2. **Shared state**: Use context providers in `/contexts` folder
 3. **Data fetching**: Use server actions in `/app/actions` for data operations
 
+## State Management & Optimistic Updates (January 2025)
+
+### Optimistic UI Pattern
+
+- **Immediate Updates**: Update UI state immediately upon user action for responsive feedback
+- **Background Sync**: Perform backend API calls asynchronously to persist changes
+- **Error Recovery**: Implement mechanisms to handle and recover from failed backend operations
+- **Parent-Child Communication**: Use callback props for state updates between components
+
+### Callback Convention
+
+Use standardized callback props for component communication:
+
+```typescript
+interface ComponentProps {
+  onItemUpdate?: (updatedItem: ShippingItem) => void;
+  onItemDelete?: (itemId: string) => void;
+  onItemCreate?: (newItem: ShippingItem) => void;
+}
+```
+
+### SSR/Client Consistency
+
+To prevent Next.js hydration errors:
+
+- **isMounted Pattern**: Use `useState` and `useEffect` to track mount status:
+
+  ```typescript
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+  
+  if (!isMounted) {
+    return <div>Loading...</div>; // Or appropriate loading state
+  }
+  ```
+
+- **Deterministic IDs**: Use predictable ID generation (e.g., index-based) instead of time-based IDs
+- **Consistent Initial State**: Ensure server and client render the same initial state
+
+### Best Practices
+
+- Test both optimistic updates and actual backend synchronization
+- Always provide user feedback for long-running operations
+- Use TypeScript for type safety in callback functions
+- Document state flow and callback patterns in component comments
+
 ## Testing
 
 ### Test File Structure
@@ -142,22 +188,30 @@ Each mini-app in the `/app` directory should follow this structure:
 
 3. **E2E Tests**: Store in a top-level `e2e` directory (if implemented later)
 
-### Testing Approaches
+### Testing Optimistic Updates
 
-#### Server Actions & API Testing
+When testing components that use optimistic updates:
 
-- Mock external dependencies (databases, third-party services)
-- Test both success and error cases
-- Verify that returned data matches expected format
+- Mock API calls to test both success and failure scenarios
+- Verify that UI updates immediately upon user action
+- Test that failed operations provide appropriate error feedback
+- Ensure that state remains consistent after successful operations
+- Test callback prop integration between parent and child components
 
-#### Component Testing
+Example test structure:
 
-- Focus on component behavior rather than implementation details
-- Test user interactions (clicks, form submissions)
-- Verify that components render correctly with different props
-- Test accessibility where applicable
-
-#### Utility Functions Testing
+```typescript
+describe('ItemSelectAndCalculate', () => {
+  it('should update UI immediately when item is edited', async () => {
+    const mockOnItemUpdate = jest.fn();
+    render(<ItemSelectAndCalculate onItemUpdate={mockOnItemUpdate} {...props} />);
+    
+    // Trigger edit action
+    // Verify immediate UI update
+    // Verify callback was called with correct data
+  });
+});
+```
 
 - Test edge cases thoroughly
 - Use table-driven tests for functions with many input/output combinations
@@ -259,11 +313,16 @@ Example:
 6. **File Headers**: Include consistent file headers in all files as specified above
 7. **Documentation**: Keep README files and inline documentation up to date
 
-## API Integration Conventions
+## API Integration Conventions (Updated January 2025)
 
 - All frontend API calls for the Box Shipping Calculator use the `NEXT_PUBLIC_API_URL` environment variable.
-- Endpoints for item management and box calculations are under `/api/shipping/` (e.g., `/api/shipping/items`).
-- Always update the API URL in `.env` if the backend service location changes.
+- **CRUD Endpoints**: Follow RESTful conventions for item management:
+  - `GET /api/shipping/items` - Fetch all items
+  - `POST /api/shipping/items` - Create new item
+  - `PUT /api/shipping/items/:id` - Update existing item
+  - `DELETE /api/shipping/items/:id` - Delete item
+- **Error Handling**: Always handle both success and failure cases for API calls.
+- **Optimistic Updates**: Update UI immediately, sync with backend in background.
 - Add detailed comments to API helper functions to clarify endpoint usage and expected responses.
 
 ## Environment Variables
