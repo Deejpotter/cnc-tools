@@ -12,7 +12,7 @@ import type { MultiBoxPackingResult } from "./BoxCalculations";
 import type ShippingBox from "@/types/box-shipping-calculator/ShippingBox";
 import type ShippingItem from "@/types/box-shipping-calculator/ShippingItem";
 import type { SelectedShippingItem } from "@/types/box-shipping-calculator/ShippingItem";
-import { Package2, Scale, Maximize, Ruler, AlertCircle } from "lucide-react";
+import { Package2, Scale, Ruler, AlertCircle } from "lucide-react";
 
 interface BoxUtilizationMetrics {
 	volumePercentage: number;
@@ -20,13 +20,6 @@ interface BoxUtilizationMetrics {
 	totalVolume: number;
 	totalWeight: number;
 	boxVolume: number;
-}
-
-interface BoxDimensions {
-	totalLength: number;
-	totalWidth: number;
-	totalHeight: number;
-	totalVolume: number;
 }
 
 interface BoxResultsDisplayProps {
@@ -65,51 +58,6 @@ export function calculateBoxUtilization(
 		totalVolume: totalItemsVolume,
 		totalWeight: totalItemsWeight,
 		boxVolume,
-	};
-}
-
-/**
- * Calculates the total dimensions of all items in a box
- *
- * @param items - Items packed in the box
- * @returns BoxDimensions object with total length, width, height and volume
- */
-export function calculateBoxDimensions(
-	items: SelectedShippingItem[]
-): BoxDimensions {
-	if (items.length === 0) {
-		return {
-			totalLength: 0,
-			totalWidth: 0,
-			totalHeight: 0,
-			totalVolume: 0,
-		};
-	}
-
-	let totalVolume = 0;
-	let maxLength = 0;
-	let maxWidth = 0;
-	let maxHeight = 0; // Calculate total dimensions using a simple packing strategy
-	// For length and width, we take the maximum values
-	// For height, we sum the heights to simulate stacking
-	let totalHeight = 0;
-	items.forEach((item) => {
-		const quantity = item.quantity || 1;
-		const itemVolume = item.length * item.width * item.height * quantity;
-		totalVolume += itemVolume;
-
-		// Update maximum dimensions
-		maxLength = Math.max(maxLength, item.length);
-		maxWidth = Math.max(maxWidth, item.width);
-		totalHeight += item.height * quantity;
-	});
-
-	maxHeight = totalHeight; // Use the sum of heights
-	return {
-		totalLength: maxLength,
-		totalWidth: maxWidth,
-		totalHeight: maxHeight,
-		totalVolume: totalVolume,
 	};
 }
 
@@ -170,11 +118,6 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 		return calculateBoxUtilization(shipment.box, shipment.packedItems);
 	}, [shipment]);
 
-	// useMemo s
-	const dimensions = useMemo(() => {
-		return calculateBoxDimensions(shipment.packedItems);
-	}, [shipment.packedItems]);
-
 	const getVolumeUtilizationColorClass = (percentage: number) => {
 		if (percentage < 40) return "bg-success";
 		if (percentage < 80) return "bg-warning";
@@ -183,13 +126,6 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 	const getWeightUtilizationColorClass = (percentage: number) => {
 		if (percentage < 50) return "bg-success";
 		if (percentage < 85) return "bg-warning";
-		return "bg-danger";
-	};
-
-	const getDimensionUtilizationClass = (percentage: number) => {
-		if (percentage < 40) return "bg-success";
-		if (percentage < 70) return "bg-info";
-		if (percentage < 90) return "bg-warning";
 		return "bg-danger";
 	};
 
@@ -206,42 +142,11 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 			<div className="card-body">
 				{/* Display box dimensions and weight utilization metrics */}
 				<div className="mb-3">
-					{" "}
 					<div className="d-flex align-items-center mb-2">
 						<Ruler size={16} className="me-1" />
 						<span className="fw-bold me-2">Box Dimensions:</span>
 						{shipment.box.length} × {shipment.box.width} × {shipment.box.height}{" "}
 						mm
-					</div>
-					<div className="d-flex align-items-center mb-2">
-						{" "}
-						<Maximize size={16} className="me-1" />
-						<span className="fw-bold me-2">Items Dimensions:</span>
-						{dimensions.totalLength} × {dimensions.totalWidth} ×{" "}
-						{dimensions.totalHeight} mm
-						{/* Calculate dimension utilization percentage for each dimension */}
-						{(() => {
-							const lengthPct = Math.round(
-								(dimensions.totalLength / shipment.box.length) * 100
-							);
-							const widthPct = Math.round(
-								(dimensions.totalWidth / shipment.box.width) * 100
-							);
-							const heightPct = Math.round(
-								(dimensions.totalHeight / shipment.box.height) * 100
-							);
-
-							return (
-								<span
-									className={`ms-2 badge ${getDimensionUtilizationClass(
-										Math.max(lengthPct, widthPct, heightPct)
-									)}`}
-									title="Percentage of box dimensions used by items"
-								>
-									({lengthPct}% × {widthPct}% × {heightPct}%)
-								</span>
-							);
-						})()}
 					</div>
 					<div className="d-flex align-items-center mb-2">
 						<Scale size={16} className="me-1" />

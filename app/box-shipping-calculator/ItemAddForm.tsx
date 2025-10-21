@@ -65,10 +65,10 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 	const applyDimensionPreset = (preset: string) => {
 		switch (preset) {
 			case "small":
-				setLength("100");
-				setWidth("80");
-				setHeight("30");
-				setWeight("250");
+				setLength("50");
+				setWidth("50");
+				setHeight("10");
+				setWeight("5");
 				break;
 			case "medium":
 				setLength("200");
@@ -80,7 +80,7 @@ export default function ItemAddForm({ onAddItem }: ItemAddFormProps) {
 				setLength("300");
 				setWidth("200");
 				setHeight("100");
-				setWeight("1000");
+				setWeight("3000");
 				break;
 			default:
 				break;
