@@ -2,11 +2,11 @@
 
 A comprehensive collection of mini-applications designed to assist with CNC machining, 3D printing, and related tasks. This Next.js-powered application serves as a central hub for various specialized tools used in professional and hobby settings.
 
-**Last Updated:** May 13, 2025  
-**Author:** Deej Potter
+> 📚 **Complete Documentation**: For comprehensive project documentation, architecture details, mini-apps guides, and admin panel documentation, visit our [BookStack Documentation](http://bookstack.deejpotter.com/books/cnc-tools-application).
+Private link. Access permission required.
 
-Last Updated: May 13, 2025  
-Author: Deej Potter
+**Last Updated:** November 4, 2025  
+**Author:** Deej Potter
 
 ## Features
 
