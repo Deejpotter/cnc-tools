@@ -12,6 +12,7 @@ import "./globals.scss";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { ItemProvider } from "../contexts/ItemContext";
+import AuthProvider from "../contexts/AuthProvider";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -53,18 +54,20 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<ClerkProvider>
-				<ItemProvider>
-					<body className={nunito.className}>
-						{/* Render the Navbar component then render the children components. */}
-						<Navbar
-							brand={"CNC Tools"}
-							navItems={navItems} // Pass the navigation array to the Navbar
-						/>
-						<main>{children}</main>
-						{/* Add Footer component at the bottom of the page */}
-						<Footer />
-					</body>
-				</ItemProvider>
+				<AuthProvider>
+					<ItemProvider>
+						<body className={nunito.className}>
+							{/* Render the Navbar component then render the children components. */}
+							<Navbar
+								brand={"CNC Tools"}
+								navItems={navItems} // Pass the navigation array to the Navbar
+							/>
+							<main>{children}</main>
+							{/* Add Footer component at the bottom of the page */}
+							<Footer />
+						</body>
+					</ItemProvider>
+				</AuthProvider>
 			</ClerkProvider>
 		</html>
 	);

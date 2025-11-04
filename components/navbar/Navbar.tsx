@@ -4,15 +4,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-// Import Clerk UI components directly
-import {
-	SignedIn,
-	SignedOut,
-	SignInButton,
-	SignUpButton,
-	UserButton,
-	useUser,
-} from "@clerk/nextjs";
+import { AuthButton, useAuth } from "@deejpotter/ui-components";
 
 /**
  * Generic navigation item type for portability.
@@ -56,7 +48,7 @@ const Navbar = ({
 	const [isScrolled, setIsScrolled] = useState(false);
 	// Get current pathname to highlight active links (Next.js only)
 	const pathname = usePathname();
-	const { user } = useUser(); // Get user from Clerk
+	const { user } = useAuth(); // Get user from component library
 
 	// Dynamically build navItems based on user role
 	const [navItems, setNavItems] = useState<NavItem[]>(initialNavItems);
@@ -194,27 +186,8 @@ const Navbar = ({
 				>
 					<ul className="navbar-nav">{navItems.map(renderNavItem)}</ul>
 				</div>
-				{/* Auth section (optional, customizable) */}
-				{/* To customize Auth, pass props here if your Auth component supports them. Replace or remove as needed for your project. */}
-				<SignedIn>
-					<div className="nav-item d-flex align-items-center">
-						<UserButton afterSignOutUrl="/" />
-					</div>
-				</SignedIn>
-				<SignedOut>
-					<div className="nav-item">
-						<SignInButton mode="modal">
-							<button className="btn btn-sm btn-outline-secondary shadow mx-1">
-								Login
-							</button>
-						</SignInButton>
-						<SignUpButton mode="modal">
-							<button className="btn btn-sm btn-outline-secondary shadow">
-								Sign up
-							</button>
-						</SignUpButton>
-					</div>
-				</SignedOut>
+				{/* Auth section using shared component library */}
+				<AuthButton showGravatar={true} buttonSize="sm" />
 			</div>
 		</nav>
 	);
