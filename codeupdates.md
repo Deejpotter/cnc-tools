@@ -1,11 +1,37 @@
 <!--
  * codeupdates.md
- * Updated: 25/06/2025
+ * Updated: 04/11/2025
  * Author: Deej Potter
  * Description: Log of all major codebase changes, especially authentication and API integration migrations. Used by AI agents and developers to track progress and ensure all changes are tested and documented.
  Delete completed entries to keep the log current. Keep the last 5 entries for reference.
 -->
 # Code Updates Log
+
+## (completed) - November 4, 2025 (Documentation: Created BookStack TODO & Roadmap)
+
+- Created comprehensive TODO & Roadmap page in BookStack (Page ID: 69)
+- Documented recent achievements: UI components migration, box calculator refactor, codebase cleanup
+- Identified 28 security vulnerabilities requiring attention (2 critical, 8 high, 9 moderate, 9 low)
+- Documented paused tasks: PDF invoice processing and box shipping calculator enhancements
+- Created Q4 2025 roadmap with priorities: Security audit, dependency updates, testing coverage
+- Added Q1 2026 goals: Performance optimization, mobile responsiveness, enhanced features
+- Long-term vision: Collaborative features, CAD integration, inventory management, mobile app
+- Documented environment variables, git workflow, and known issues
+- BookStack: http://bookstack.deejpotter.com/books/cnc-tools-application/page/todo-roadmap
+
+---
+
+## (completed) - November 4, 2025 (UI Components Migration)
+
+- Integrated `@deejpotter/ui-components@0.1.0-alpha.0` (Commit: 3ec09a5)
+- Replaced Clerk UI components with `AuthButton` from shared library
+- Created `AuthProvider` wrapper in `contexts/AuthProvider.tsx`
+- Updated `app/layout.tsx` with proper provider hierarchy (ClerkProvider → AuthProvider → ItemProvider)
+- Migrated from `useUser()` to `useAuth()` hook throughout application
+- Benefits: Consistent UI with deejpotter.com, simplified code (25+ lines reduced to 1 line)
+- Added BookStack documentation link to README (Commit: 584bada)
+
+---
 
 ## (completed) - June 25, 2025 (Codebase Cleanup: Remove Deprecated Auth Files)
 
