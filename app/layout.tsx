@@ -29,6 +29,7 @@ export const metadata: Metadata = {
 // Define the navigation structure for the Navbar. This array can be moved to a config or utils file for reuse.
 // Each item should have a 'name' and optional 'path' and 'items' (for dropdowns).
 const navItems = [
+	{ name: "20-Series Cut Calculator", path: "/20-series-cut-calculator" },
 	{ name: "Box Shipping Calculator", path: "/box-shipping-calculator" },
 	{ name: "CNC AI", path: "/cnc-technical-ai" },
 	{ name: "Table Enclosure Calculator", path: "/table-enclosure-calculator" },

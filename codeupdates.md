@@ -17,7 +17,7 @@
 - Added Q1 2026 goals: Performance optimization, mobile responsiveness, enhanced features
 - Long-term vision: Collaborative features, CAD integration, inventory management, mobile app
 - Documented environment variables, git workflow, and known issues
-- BookStack: http://bookstack.deejpotter.com/books/cnc-tools-application/page/todo-roadmap
+- BookStack: <http://bookstack.deejpotter.com/books/cnc-tools-application/page/todo-roadmap>
 
 ---
 
