@@ -18,6 +18,8 @@ export type WarehouseInstruction = {
   cuts: number[]; // cuts assigned to this stock piece, in order
 };
 
+export type AggregatedCut = { length: number; quantity: number };
+
 export type CostByLength = {
   stockLength: number;
   quantity: number;
@@ -36,6 +38,7 @@ export type InvoiceResult = {
   totalSetupFees?: number;
   totalCuttingCosts?: number;
   totalCost?: number;
+  aggregatedCuts?: AggregatedCut[];
 };
 
 /**
@@ -112,6 +115,11 @@ export function calculateStockUsage(
     totalCuts: allCuts.length,
     totalStockPieces: bins.length,
   };
+
+  // aggregated cuts across all requirements (helpful for warehouse/offcut usage)
+  const aggMap = new Map<number, number>();
+  for (const cut of allCuts) aggMap.set(cut, (aggMap.get(cut) || 0) + 1);
+  result.aggregatedCuts = Array.from(aggMap.entries()).map(([length, quantity]) => ({ length, quantity })).sort((a, b) => b.length - a.length);
 
   // If options provided, calculate costs
   if (options) {

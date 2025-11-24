@@ -84,11 +84,22 @@ export default function Page() {
               )}
 
               <h3>Warehouse Instructions</h3>
-              <ol>
-                {result.patterns.map((p: any, i: number) => (
-                  <li key={i}>{p.stockLength}mm x1: {p.cuts.join('mm, ')}mm</li>
-                ))}
-              </ol>
+              <div>
+                <p>Provide the following cuts so the warehouse can consolidate and use offcuts where possible:</p>
+                {result.aggregatedCuts ? (
+                  <ul>
+                    {result.aggregatedCuts.map((c: any) => (
+                      <li key={c.length}><strong>{c.length}mm</strong> × {c.quantity}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ol>
+                    {result.patterns.map((p: any, i: number) => (
+                      <li key={i}>{p.stockLength}mm x1: {p.cuts.join('mm, ')}mm</li>
+                    ))}
+                  </ol>
+                )}
+              </div>
             </>
           )}
         </div>
