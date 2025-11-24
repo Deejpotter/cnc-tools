@@ -83,12 +83,34 @@ describe("calculateStockUsage", () => {
 			{ length: 500, quantity: 1 },
 		];
 		const standards = [500, 1000, 1500];
-		const res = calculateStockUsage(requirements, standards, 3, { setupFeePerLength: 5, perCutFee: 4 });
+		const res = calculateStockUsage(requirements, standards, 3, {
+			setupFeePerLength: 5,
+			perCutFee: 4,
+		});
 		// total cuts = 3
 		expect(res.totalCuts).toBe(3);
 		// cutting cost is perCutFee * totalCuts
 		expect(res.totalCuttingCosts).toBe(4 * 3);
 		// totalCost should equal totalSetupFees + totalCuttingCosts
 		expect(res.totalCost).toBe(res.totalSetupFees! + res.totalCuttingCosts!);
+	});
+
+	it("respects available stock quantities when provided", () => {
+		const requirements = [{ length: 1000, quantity: 2 }];
+		const standards = [1000, 1500];
+		// only one 1000mm and one 1500mm available
+		const res = calculateStockUsage(requirements, standards, 3, {
+			availableStock: [
+				{ stockLength: 1000, quantity: 1 },
+				{ stockLength: 1500, quantity: 1 },
+			],
+		});
+
+		expect(res.totalCuts).toBe(2);
+		expect(res.totalStockPieces).toBe(2);
+		// one 1000 and one 1500 used
+		const usage = Object.fromEntries(res.stockUsage.map((s) => [s.stockLength, s.quantity]));
+		expect(usage[1000]).toBe(1);
+		expect(usage[1500]).toBe(1);
 	});
 });

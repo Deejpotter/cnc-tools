@@ -46,6 +46,7 @@ export default function Page() {
 			const res = calculateStockUsage(reqs, standardLengths, kerf, {
 				setupFeePerLength: 3,
 				perCutFee: 2,
+				availableStock: stockItems.map((s) => ({ stockLength: s.length, quantity: s.quantity })),
 			});
 
 			// adapt InvoiceResult -> CalculationResult for ResultsDisplay
