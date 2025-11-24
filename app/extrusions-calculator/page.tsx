@@ -2,13 +2,15 @@
 
 import React, { useState } from "react";
 import calculateStockUsage, { CutRequirement } from "./cutOptimizer";
-import ResultsDisplay from '../20-series-extrusions/ResultsDisplay';
-import StockItemsTable from '../20-series-extrusions/StockItemsTable';
+import ResultsDisplay from "../20-series-extrusions/ResultsDisplay";
+import StockItemsTable from "../20-series-extrusions/StockItemsTable";
 import type {
-  CalculationResult,
-  CutPattern,
-  StockItem,
-} from '@/types/20-series-cut-calculator/cutCalculator';
+	CalculationResult,
+	CutPattern,
+	StockItem,
+} from "@/types/20-series-cut-calculator/cutCalculator";
+// Default prices stored in repo at `data/extrusion-prices.json` (editable by hand)
+import priceDefaults from "../../data/extrusion-prices.json";
 
 export default function Page() {
 	const [kerf, setKerf] = useState<number>(3);
@@ -20,16 +22,23 @@ export default function Page() {
 
 	// minimal stock items state for StockItemsTable integration
 	const [stockItems, setStockItems] = useState<StockItem[]>([
-		{ id: '1', length: 3050, quantity: 10 },
+		{ id: "1", length: 3050, quantity: 10 },
 	]);
 
 	// price list state for quick quotes (price per stock piece)
-	const [priceList, setPriceList] = useState<{ stockLength: number; price: number }[]>(
-		standardLengths.map((s) => ({ stockLength: s, price: 0 }))
+	const [priceList, setPriceList] = useState<
+		{ stockLength: number; price: number }[]
+	>(
+		// prefer values from the repo JSON file, but fall back to zeroed defaults
+		(Array.isArray(priceDefaults) && priceDefaults.length > 0
+			? priceDefaults
+			: standardLengths.map((s) => ({ stockLength: s, price: 0 }))) as { stockLength: number; price: number }[]
 	);
 
 	function updatePrice(stockLength: number, price: number) {
-		setPriceList((prev) => prev.map((p) => (p.stockLength === stockLength ? { ...p, price } : p)));
+		setPriceList((prev) =>
+			prev.map((p) => (p.stockLength === stockLength ? { ...p, price } : p))
+		);
 	}
 
 	function parseRequirements(text: string): CutRequirement[] {
@@ -55,7 +64,10 @@ export default function Page() {
 			const res = calculateStockUsage(reqs, standardLengths, kerf, {
 				setupFeePerLength: 3,
 				perCutFee: 2,
-				availableStock: stockItems.map((s) => ({ stockLength: s.length, quantity: s.quantity })),
+				availableStock: stockItems.map((s) => ({
+					stockLength: s.length,
+					quantity: s.quantity,
+				})),
 				priceList,
 			});
 
@@ -65,7 +77,8 @@ export default function Page() {
 				const kerfTotal = p.cuts.length > 1 ? (p.cuts.length - 1) * kerf : 0;
 				const used = sumCuts + kerfTotal;
 				const waste = Math.max(0, p.stockLength - used);
-				const utilization = p.stockLength > 0 ? (used / p.stockLength) * 100 : 0;
+				const utilization =
+					p.stockLength > 0 ? (used / p.stockLength) * 100 : 0;
 
 				const pattern: CutPattern = {
 					stockIndex: idx + 1,
@@ -136,12 +149,32 @@ export default function Page() {
 
 			<div style={{ marginTop: 12 }}>
 				<h4>Quick Price Quote</h4>
-				<p className="small text-muted">Enter price per stock piece for each standard length.</p>
-				<div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+				<p className="small text-muted">
+					Enter price per stock piece for each standard length.
+				</p>
+				<div
+					style={{
+						display: "flex",
+						gap: 8,
+						alignItems: "center",
+						flexWrap: "wrap",
+					}}
+				>
 					{priceList.map((p) => (
-						<label key={p.stockLength} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+						<label
+							key={p.stockLength}
+							style={{ display: "flex", gap: 6, alignItems: "center" }}
+						>
 							<span style={{ minWidth: 60 }}>{p.stockLength}mm</span>
-							<input type="number" step="0.01" value={p.price} onChange={(e) => updatePrice(p.stockLength, Number(e.target.value))} style={{ width: 100 }} />
+							<input
+								type="number"
+								step="0.01"
+								value={p.price}
+								onChange={(e) =>
+									updatePrice(p.stockLength, Number(e.target.value))
+								}
+								style={{ width: 100 }}
+							/>
 						</label>
 					))}
 				</div>
@@ -176,7 +209,11 @@ export default function Page() {
 							</table>
 
 							<div style={{ marginTop: 18 }}>
-								<StockItemsTable stockItems={stockItems} onStockItemsChange={setStockItems} maxStockLength={3050} />
+								<StockItemsTable
+									stockItems={stockItems}
+									onStockItemsChange={setStockItems}
+									maxStockLength={3050}
+								/>
 							</div>
 
 							{result.adapted && (

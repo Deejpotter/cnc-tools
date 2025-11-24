@@ -1,0 +1,6 @@
+[
+  { "stockLength": 500, "price": 4.0 },
+  { "stockLength": 1000, "price": 10.0 },
+  { "stockLength": 1500, "price": 14.0 },
+  { "stockLength": 3050, "price": 28.0 }
+]
