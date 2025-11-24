@@ -26,6 +26,7 @@ export type CostByLength = {
 	setupFee: number;
 	totalCuts: number;
 	cuttingCost: number;
+	materialCost?: number;
 	totalCost: number;
 };
 
@@ -37,6 +38,7 @@ export type InvoiceResult = {
 	costByLength?: CostByLength[];
 	totalSetupFees?: number;
 	totalCuttingCosts?: number;
+	totalMaterialCosts?: number;
 	totalCost?: number;
 	aggregatedCuts?: AggregatedCut[];
 };
@@ -168,9 +170,16 @@ export function calculateStockUsage(
 		const setupFeePerLength = options.setupFeePerLength ?? 0;
 		const perCutFee = options.perCutFee ?? 0;
 
+		// build price map if provided (price per stock piece)
+		const priceMap = new Map<number, number>();
+		// allow options to include priceList as array: { stockLength, price }
+		const priceList: { stockLength: number; price: number }[] = (options as any).priceList || [];
+		for (const p of priceList) priceMap.set(p.stockLength, p.price);
+
 		const costByLength: CostByLength[] = [];
 		let totalSetupFees = 0;
 		let totalCuttingCosts = 0;
+		let totalMaterialCosts = 0;
 
 		for (const [stockLength, quantity] of usageMap.entries()) {
 			// count total cuts assigned to this stock length
@@ -179,7 +188,8 @@ export function calculateStockUsage(
 				.reduce((s, p) => s + p.cuts.length, 0);
 			const setupFee = setupFeePerLength * 1; // per unique length used
 			const cuttingCost = perCutFee * totalCutsForLength;
-			const totalCost = setupFee + cuttingCost;
+			const materialCost = (priceMap.get(stockLength) || 0) * quantity;
+			const totalCost = setupFee + cuttingCost + materialCost;
 
 			costByLength.push({
 				stockLength,
@@ -187,19 +197,20 @@ export function calculateStockUsage(
 				setupFee,
 				totalCuts: totalCutsForLength,
 				cuttingCost,
+				materialCost,
 				totalCost,
 			});
 
 			totalSetupFees += setupFee;
 			totalCuttingCosts += cuttingCost;
+			totalMaterialCosts += materialCost;
 		}
 
-		result.costByLength = costByLength.sort(
-			(a, b) => a.stockLength - b.stockLength
-		);
+		result.costByLength = costByLength.sort((a, b) => a.stockLength - b.stockLength);
 		result.totalSetupFees = totalSetupFees;
 		result.totalCuttingCosts = totalCuttingCosts;
-		result.totalCost = totalSetupFees + totalCuttingCosts;
+		result.totalMaterialCosts = totalMaterialCosts;
+		result.totalCost = totalSetupFees + totalCuttingCosts + totalMaterialCosts;
 	}
 
 	return result;

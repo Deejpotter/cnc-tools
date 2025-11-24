@@ -23,6 +23,15 @@ export default function Page() {
 		{ id: '1', length: 3050, quantity: 10 },
 	]);
 
+	// price list state for quick quotes (price per stock piece)
+	const [priceList, setPriceList] = useState<{ stockLength: number; price: number }[]>(
+		standardLengths.map((s) => ({ stockLength: s, price: 0 }))
+	);
+
+	function updatePrice(stockLength: number, price: number) {
+		setPriceList((prev) => prev.map((p) => (p.stockLength === stockLength ? { ...p, price } : p)));
+	}
+
 	function parseRequirements(text: string): CutRequirement[] {
 		// simple format: `length:qty,length:qty`
 		const parts = text
@@ -47,6 +56,7 @@ export default function Page() {
 				setupFeePerLength: 3,
 				perCutFee: 2,
 				availableStock: stockItems.map((s) => ({ stockLength: s.length, quantity: s.quantity })),
+				priceList,
 			});
 
 			// adapt InvoiceResult -> CalculationResult for ResultsDisplay
@@ -122,6 +132,19 @@ export default function Page() {
 				<button style={{ marginLeft: 8 }} onClick={onCalculate}>
 					Calculate
 				</button>
+			</div>
+
+			<div style={{ marginTop: 12 }}>
+				<h4>Quick Price Quote</h4>
+				<p className="small text-muted">Enter price per stock piece for each standard length.</p>
+				<div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+					{priceList.map((p) => (
+						<label key={p.stockLength} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+							<span style={{ minWidth: 60 }}>{p.stockLength}mm</span>
+							<input type="number" step="0.01" value={p.price} onChange={(e) => updatePrice(p.stockLength, Number(e.target.value))} style={{ width: 100 }} />
+						</label>
+					))}
+				</div>
 			</div>
 
 			{result && (

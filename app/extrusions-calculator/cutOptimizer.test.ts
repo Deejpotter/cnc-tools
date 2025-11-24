@@ -113,4 +113,25 @@ describe("calculateStockUsage", () => {
 		expect(usage[1000]).toBe(1);
 		expect(usage[1500]).toBe(1);
 	});
+
+	it("includes material costs when priceList provided", () => {
+		const requirements = [
+			{ length: 1000, quantity: 2 },
+			{ length: 500, quantity: 1 },
+		];
+		const standards = [500, 1000, 1500];
+		const res = calculateStockUsage(requirements, standards, 3, {
+			priceList: [
+				{ stockLength: 1000, price: 10 }, // $10 per 1000mm piece
+				{ stockLength: 500, price: 4 },
+			],
+		});
+
+		// expect material costs aggregated
+		expect(res.totalMaterialCosts).toBeDefined();
+		// 2 x 1000 at $10 = $20; 1 x 500 at $4 = $4 => 24
+		expect(res.totalMaterialCosts).toBeCloseTo(24);
+		// totalCost includes materialCosts
+		expect(res.totalCost).toBeCloseTo((res.totalSetupFees || 0) + (res.totalCuttingCosts || 0) + (res.totalMaterialCosts || 0));
+	});
 });
