@@ -109,7 +109,9 @@ describe("calculateStockUsage", () => {
 		expect(res.totalCuts).toBe(2);
 		expect(res.totalStockPieces).toBe(2);
 		// one 1000 and one 1500 used
-		const usage = Object.fromEntries(res.stockUsage.map((s) => [s.stockLength, s.quantity]));
+		const usage = Object.fromEntries(
+			res.stockUsage.map((s) => [s.stockLength, s.quantity])
+		);
 		expect(usage[1000]).toBe(1);
 		expect(usage[1500]).toBe(1);
 	});
@@ -132,6 +134,10 @@ describe("calculateStockUsage", () => {
 		// 2 x 1000 at $10 = $20; 1 x 500 at $4 = $4 => 24
 		expect(res.totalMaterialCosts).toBeCloseTo(24);
 		// totalCost includes materialCosts
-		expect(res.totalCost).toBeCloseTo((res.totalSetupFees || 0) + (res.totalCuttingCosts || 0) + (res.totalMaterialCosts || 0));
+		expect(res.totalCost).toBeCloseTo(
+			(res.totalSetupFees || 0) +
+				(res.totalCuttingCosts || 0) +
+				(res.totalMaterialCosts || 0)
+		);
 	});
 });

@@ -35,10 +35,7 @@ const navItems = [
 	{ name: "Table Enclosure Calculator", path: "/table-enclosure-calculator" },
 	{
 		name: "Extrusion Resources",
-		items: [
-			{ name: "20-Series Extrusions", path: "/20-series-extrusions" },
-			{ name: "40-Series Extrusions", path: "/40-series-extrusions" },
-		],
+		items: [{ name: "Extrusions Calculator", path: "/extrusions-calculator" }],
 	},
 	{ name: "CNC Calibration", path: "/cnc-calibration-tool" },
 	{ name: "Price Difference", path: "/price-difference-tool" },

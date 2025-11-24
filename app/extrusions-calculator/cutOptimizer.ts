@@ -6,6 +6,8 @@
  * counts, simple warehouse instructions, and basic statistics.
  */
 
+"use client";
+
 export type CutRequirement = { length: number; quantity: number };
 
 export type StockUsage = {
@@ -72,7 +74,8 @@ export function calculateStockUsage(
 	// build availability map if provided (otherwise unlimited)
 	const availability = new Map<number, number>();
 	if (options?.availableStock) {
-		for (const s of options.availableStock) availability.set(s.stockLength, s.quantity);
+		for (const s of options.availableStock)
+			availability.set(s.stockLength, s.quantity);
 	}
 
 	// expand requirements
@@ -134,7 +137,12 @@ export function calculateStockUsage(
 		// record opening one more piece of this candidate length
 		openedCounts.set(candidate, (openedCounts.get(candidate) || 0) + 1);
 
-		bins.push({ stockLength: candidate, cuts: [cut], usedLength: cut, remaining: candidate - cut });
+		bins.push({
+			stockLength: candidate,
+			cuts: [cut],
+			usedLength: cut,
+			remaining: candidate - cut,
+		});
 	}
 
 	const patterns: WarehouseInstruction[] = bins.map((b) => ({
@@ -173,7 +181,8 @@ export function calculateStockUsage(
 		// build price map if provided (price per stock piece)
 		const priceMap = new Map<number, number>();
 		// allow options to include priceList as array: { stockLength, price }
-		const priceList: { stockLength: number; price: number }[] = (options as any).priceList || [];
+		const priceList: { stockLength: number; price: number }[] =
+			(options as any).priceList || [];
 		for (const p of priceList) priceMap.set(p.stockLength, p.price);
 
 		const costByLength: CostByLength[] = [];
@@ -206,7 +215,9 @@ export function calculateStockUsage(
 			totalMaterialCosts += materialCost;
 		}
 
-		result.costByLength = costByLength.sort((a, b) => a.stockLength - b.stockLength);
+		result.costByLength = costByLength.sort(
+			(a, b) => a.stockLength - b.stockLength
+		);
 		result.totalSetupFees = totalSetupFees;
 		result.totalCuttingCosts = totalCuttingCosts;
 		result.totalMaterialCosts = totalMaterialCosts;

@@ -18,8 +18,7 @@ This document outlines the coding conventions and best practices for the project
 │   ├── box-shipping-calculator/  # Box Shipping Calculator tool
 │   ├── cnc-calibration-tool/     # CNC Calibration tool
 │   ├── cnc-technical-ai/         # AI chatbot for CNC technical questions
-│   ├── 20-series-extrusions/     # 20-Series Extrusions calculator
-│   ├── 40-series-extrusions/     # 40-Series Extrusions calculator
+│   ├── extrusions-calculator/     # Unified Extrusions Calculator (merged 20 & 40 series)
 │   ├── enclosure-calculator/     # Enclosure calculator
 │   └── price-difference-tool/    # Price comparison tool
 ├── components/               # Reusable UI components

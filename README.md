@@ -24,8 +24,7 @@ This application contains several mini-apps:
   - Conversation history tracking
 
 - **Extrusion Resources**
-  - 20-Series Extrusions guide and calculator - Pricing and specifications for 20-series aluminum extrusions
-  - 40-Series Extrusions guide and calculator - Pricing and specifications for 40-series aluminum extrusions
+  - Extrusions Calculator - Unified calculator and pricing for common extrusion profiles (20-series and 40-series). Includes pricing defaults, inventory-aware cut optimization, and warehouse-style cut/stock summaries.
 
 - **Enclosure Calculator** - Calculate dimensions and specifications for enclosures made from 20-Series and 40-Series extrusions:
   - **Box Dimensions** - Calculate box dimensions based on volume and weight
@@ -162,8 +161,7 @@ The project follows a Next.js App Router structure:
 - `app/` - Main application pages and mini-apps
   - `box-shipping-calculator/` - Box Shipping Calculator tool
   - `cnc-technical-ai/` - AI chatbot for CNC technical questions
-  - `20-series-extrusions/` - 20-Series Extrusions calculator
-  - `40-series-extrusions/` - 40-Series Extrusions calculator
+  - `extrusions-calculator/` - Unified Extrusions Calculator (merged 20 & 40 series tools)
   - `enclosure-calculator/` - Enclosure calculator
   - `cnc-calibration-tool/` - CNC Calibration tool
   - `price-difference-tool/` - Price comparison tool

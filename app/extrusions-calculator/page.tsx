@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import calculateStockUsage, { CutRequirement } from "./cutOptimizer";
-import ResultsDisplay from "../20-series-extrusions/ResultsDisplay";
-import StockItemsTable from "../20-series-extrusions/StockItemsTable";
+import ResultsDisplay from "./ResultsDisplay";
+import StockItemsTable from "./StockItemsTable";
 import type {
 	CalculationResult,
 	CutPattern,
@@ -32,7 +32,10 @@ export default function Page() {
 		// prefer values from the repo JSON file, but fall back to zeroed defaults
 		(Array.isArray(priceDefaults) && priceDefaults.length > 0
 			? priceDefaults
-			: standardLengths.map((s) => ({ stockLength: s, price: 0 }))) as { stockLength: number; price: number }[]
+			: standardLengths.map((s) => ({ stockLength: s, price: 0 }))) as {
+			stockLength: number;
+			price: number;
+		}[]
 	);
 
 	function updatePrice(stockLength: number, price: number) {
