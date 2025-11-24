@@ -18,11 +18,24 @@ export type WarehouseInstruction = {
   cuts: number[]; // cuts assigned to this stock piece, in order
 };
 
+export type CostByLength = {
+  stockLength: number;
+  quantity: number;
+  setupFee: number;
+  totalCuts: number;
+  cuttingCost: number;
+  totalCost: number;
+};
+
 export type InvoiceResult = {
   patterns: WarehouseInstruction[];
   stockUsage: StockUsage[];
   totalCuts: number;
   totalStockPieces: number;
+  costByLength?: CostByLength[];
+  totalSetupFees?: number;
+  totalCuttingCosts?: number;
+  totalCost?: number;
 };
 
 /**
@@ -36,7 +49,8 @@ export type InvoiceResult = {
 export function calculateStockUsage(
   requirements: CutRequirement[],
   standardLengths: number[],
-  kerfWidth = 0
+  kerfWidth = 0,
+  options?: { setupFeePerLength?: number; perCutFee?: number }
 ): InvoiceResult {
   if (!standardLengths || standardLengths.length === 0) {
     throw new Error('At least one standard length must be provided');
@@ -92,12 +106,42 @@ export function calculateStockUsage(
 
   const stockUsage: StockUsage[] = Array.from(usageMap.entries()).map(([stockLength, quantity]) => ({ stockLength, quantity })).sort((a, b) => a.stockLength - b.stockLength);
 
-  return {
+  const result: InvoiceResult = {
     patterns,
     stockUsage,
     totalCuts: allCuts.length,
     totalStockPieces: bins.length,
   };
+
+  // If options provided, calculate costs
+  if (options) {
+    const setupFeePerLength = options.setupFeePerLength ?? 0;
+    const perCutFee = options.perCutFee ?? 0;
+
+    const costByLength: CostByLength[] = [];
+    let totalSetupFees = 0;
+    let totalCuttingCosts = 0;
+
+    for (const [stockLength, quantity] of usageMap.entries()) {
+      // count total cuts assigned to this stock length
+      const totalCutsForLength = patterns.filter((p) => p.stockLength === stockLength).reduce((s, p) => s + p.cuts.length, 0);
+      const setupFee = setupFeePerLength * 1; // per unique length used
+      const cuttingCost = perCutFee * totalCutsForLength;
+      const totalCost = setupFee + cuttingCost;
+
+      costByLength.push({ stockLength, quantity, setupFee, totalCuts: totalCutsForLength, cuttingCost, totalCost });
+
+      totalSetupFees += setupFee;
+      totalCuttingCosts += cuttingCost;
+    }
+
+    result.costByLength = costByLength.sort((a, b) => a.stockLength - b.stockLength);
+    result.totalSetupFees = totalSetupFees;
+    result.totalCuttingCosts = totalCuttingCosts;
+    result.totalCost = totalSetupFees + totalCuttingCosts;
+  }
+
+  return result;
 }
 
 export default calculateStockUsage;
