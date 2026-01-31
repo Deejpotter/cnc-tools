@@ -161,5 +161,64 @@ describe("BoxResultsDisplay", () => {
 				screen.getByText(/Some items could not fit in any available box/i)
 			).toBeInTheDocument();
 		});
+
+		it("should render complex results with multiple boxes and unfit items", () => {
+			const complexResult: MultiBoxPackingResult = {
+				success: true,
+				shipments: [
+					{
+						box: mockBox,
+						packedItems: [mockItems[0]], // Only first item fits
+					},
+					{
+						box: { ...mockBox, name: "Second Box" },
+						packedItems: [mockItems[1]], // Second item in different box
+					},
+				],
+				unfitItems: [
+					{
+						_id: "unfit1",
+						name: "Oversized Item",
+						sku: "OVERSIZED",
+						length: 300, // Too big for box
+						width: 200,
+						height: 150,
+						weight: 1000,
+						quantity: 1,
+					},
+				],
+			};
+
+			render(<BoxResultsDisplay packingResult={complexResult} />);
+
+			// Should show multiple boxes
+			expect(screen.getByText(/Box 1: Test Box/)).toBeInTheDocument();
+			expect(screen.getByText(/Box 2: Second Box/)).toBeInTheDocument();
+
+			// Should show unfit items card title
+			expect(screen.getByText(/Items That Don't Fit/)).toBeInTheDocument();
+
+			// Should show the unfit item
+			expect(screen.getByText(/Oversized Item/)).toBeInTheDocument();
+		});
+
+		it("should match snapshot for basic packing result", () => {
+			const { container } = render(
+				<BoxResultsDisplay packingResult={mockPackingResult} />
+			);
+			expect(container.firstChild).toMatchSnapshot();
+		});
+
+		it("should match snapshot for no fit result", () => {
+			const noFitResult: MultiBoxPackingResult = {
+				success: false,
+				shipments: [],
+				unfitItems: mockItems,
+			};
+			const { container } = render(
+				<BoxResultsDisplay packingResult={noFitResult} />
+			);
+			expect(container.firstChild).toMatchSnapshot();
+		});
 	});
 });

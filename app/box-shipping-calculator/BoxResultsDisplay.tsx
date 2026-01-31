@@ -62,6 +62,42 @@ export function calculateBoxUtilization(
 }
 
 /**
+ * Calculates aggregate dimensions and volume for a set of items.
+ * - totalLength: max item length
+ * - totalWidth: max item width
+ * - totalHeight: sum of (item.height * quantity)
+ * - totalVolume: sum of item volume * quantity
+ */
+export function calculateBoxDimensions(items: SelectedShippingItem[]) {
+	if (!items || items.length === 0) {
+		return {
+			totalLength: 0,
+			totalWidth: 0,
+			totalHeight: 0,
+			totalVolume: 0,
+		};
+	}
+
+	const lengths = items.map((i) => i.length || 0);
+	const widths = items.map((i) => i.width || 0);
+
+	const totalLength = Math.max(...lengths);
+	const totalWidth = Math.max(...widths);
+	const totalHeight = items.reduce(
+		(acc, i) => acc + (i.height || 0) * (i.quantity || 1),
+		0
+	);
+	const totalVolume = items.reduce(
+		(acc, i) =>
+			acc +
+			(i.length || 0) * (i.width || 0) * (i.height || 0) * (i.quantity || 1),
+		0
+	);
+
+	return { totalLength, totalWidth, totalHeight, totalVolume };
+}
+
+/**
  * Displays visual box packing details including dimensions, weight, and utilization metrics
  */
 export function BoxResultsDisplay({ packingResult }: BoxResultsDisplayProps) {
@@ -118,6 +154,11 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 		return calculateBoxUtilization(shipment.box, shipment.packedItems);
 	}, [shipment]);
 
+	// Aggregate items dimensions for display
+	const itemDims = useMemo(() => {
+		return calculateBoxDimensions(shipment.packedItems || []);
+	}, [shipment]);
+
 	const getVolumeUtilizationColorClass = (percentage: number) => {
 		if (percentage < 40) return "bg-success";
 		if (percentage < 80) return "bg-warning";
@@ -149,6 +190,14 @@ function ShipmentCard({ shipment, index }: { shipment: any; index: number }) {
 						mm
 					</div>
 					<div className="d-flex align-items-center mb-2">
+						{" "}
+						<Ruler size={16} className="me-1" />
+						<span className="fw-bold me-2">Items Dimensions:</span>
+						{itemDims.totalLength} × {itemDims.totalWidth} ×{" "}
+						{itemDims.totalHeight} mm
+					</div>
+					<div className="d-flex align-items-center mb-2">
+						{" "}
 						<Scale size={16} className="me-1" />
 						<span className="fw-bold me-2">Total Weight:</span>
 						{metrics.totalWeight}g / {shipment.box.maxWeight}g

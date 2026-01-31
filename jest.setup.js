@@ -17,6 +17,12 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
+// JSDOM does not implement scrollIntoView in some environments; add a noop to avoid test errors
+if (typeof global.HTMLElement !== 'undefined' && !global.HTMLElement.prototype.scrollIntoView) {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  global.HTMLElement.prototype.scrollIntoView = function () { };
+}
+
 // Additional global Jest setup can be placed below.
 // For example, you might add:
 // - Custom Jest matchers for more specific assertions.

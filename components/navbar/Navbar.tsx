@@ -2,7 +2,7 @@
 // NOTE: All internal navigation uses Next.js's Link component for optimal routing and prefetching.
 // Replace with a relevant link for other react projects.
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { AuthButton, useAuth } from "@deejpotter/ui-components";
 
@@ -51,9 +51,7 @@ const Navbar = ({
 	const { user } = useAuth(); // Get user from component library
 
 	// Dynamically build navItems based on user role
-	const [navItems, setNavItems] = useState<NavItem[]>(initialNavItems);
-
-	useEffect(() => {
+	const navItems = useMemo(() => {
 		const newNavItems = [...initialNavItems];
 		if (user && (user.publicMetadata.isAdmin || user.publicMetadata.isMaster)) {
 			// Check if Admin link already exists to avoid duplicates during HMR or re-renders
@@ -61,7 +59,7 @@ const Navbar = ({
 				newNavItems.push({ name: "Admin", path: "/admin" });
 			}
 		}
-		setNavItems(newNavItems);
+		return newNavItems;
 	}, [user, initialNavItems]);
 
 	// Toggle the collapsed state of the navbar (for mobile)

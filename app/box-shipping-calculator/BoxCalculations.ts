@@ -432,7 +432,10 @@ export function findBestBox(itemsToPack: SelectedShippingItem[]): {
 	// Expand items by quantity
 	const expandedItems: ShippingItem[] = [];
 	for (const item of itemsToPack) {
-		const quantity = item.quantity || 1;
+		const quantity =
+			item.quantity !== undefined && item.quantity !== null
+				? Math.max(0, Math.floor(item.quantity))
+				: 1; // Treat undefined as 1, but respect 0 and negatives (clamped to 0)
 		for (let i = 0; i < quantity; i++) {
 			// Remove quantity when expanding to individual ShippingItem instances
 			const { quantity: _, ...shippingItem } = item;
@@ -674,7 +677,10 @@ export function packItemsIntoMultipleBoxes(
 	// Expand items by quantity for individual packing
 	const expandedItems: SelectedShippingItem[] = [];
 	for (const item of itemsToPack) {
-		const quantity = item.quantity || 1;
+		const quantity =
+			item.quantity !== undefined && item.quantity !== null
+				? Math.max(0, Math.floor(item.quantity))
+				: 1; // Treat undefined as 1, respect 0 and negatives
 		for (let i = 0; i < quantity; i++) {
 			expandedItems.push({ ...item, quantity: 1 });
 		}

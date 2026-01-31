@@ -199,6 +199,21 @@ describe("BoxCalculations", () => {
 			expect(resultHeavy.box?.name).toBe("Small Box"); // Padded Satchel fails on weight
 		});
 
+		it("should ignore items with quantity 0", () => {
+			const items = [createMockShippingItem("zeroQty", 50, 50, 50, 100, 0)];
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			// No items to pack effectively, should return default box and empty packed list
+			expect(result.packedItems).toEqual([]);
+		});
+
+		it("should treat negative quantity as 0", () => {
+			const items = [createMockShippingItem("negQty", 50, 50, 50, 100, -2)];
+			const result = findBestBox(items);
+			expect(result.success).toBe(true);
+			expect(result.packedItems).toEqual([]);
+		});
+
 		it("should choose the box with smaller volume if multiple boxes fit", () => {
 			// All items will fit in Small Box, Medium Box, Large Box etc.
 			// Small Box: 210*170*120 = 4,284,000

@@ -66,4 +66,26 @@ This file briefly orients an AI coding assistant to be immediately productive in
 - Auth & routing: `clerkMiddleware`, `middleware.ts`.
 - Data layer: `DataProvider`, `DEFAULT_OPTIONS`, `types/mongodb`.
 
-If anything in this guide is unclear or misses an important workflow you rely on, tell me which parts to expand and I will iterate.
+---
+
+## Agent workflow & engineering rules (follow exactly)
+
+1. Read the repository docs first (`README.md`, `CodingConventions.md`, this file).
+2. Use Context7 (MCP Context7 tool) to retrieve authoritative docs for libraries when possible.
+3. When you need web references, use the workspace MCP web search tools (DuckDuckGo/Google helpers) rather than raw scraping.
+4. Preserve existing code and comments where possible; add clarifying comments from the maintainer POV.
+5. Prefer updating existing files to adding new ones; make small, focused edits.
+6. Always consider backward compatibility; run tests and manual checks before submitting changes.
+7. Maintain a `.github/todos.md` with a concise TODO list (format below) and update it for larger tasks.
+
+### `.github/todos.md` format (required)
+
+- Use status markers: `[Todo]`, `[In Progress]`, `[Completed]`.
+- Example:
+  - [Todo] Add unit tests for `enclosure-calculator` deterministic ID bug
+  - [In Progress] Convert legacy auth helpers to Clerk `getToken()` in `app/actions`
+  - [Completed] Migrate Netlify build config to `netlify.toml`
+
+---
+
+If any part of these instructions is unclear or incomplete, point to the section you want expanded and I will iterate. Please include the file or feature you plan to modify when asking for more detail.

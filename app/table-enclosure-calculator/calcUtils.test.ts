@@ -446,4 +446,31 @@ describe("Standard Configuration Test", () => {
 		expect(mountingResult.hardware.IOCNR_40).toBe(4);
 		expect(mountingResult.hardware.T_NUT_SLIDING).toBe(16);
 	});
+
+	it("produces deterministic results for the same input", () => {
+		const dimensions: Omit<Dimensions, "isOutsideDimension"> = {
+			length: 1000,
+			width: 800,
+			height: 750,
+		};
+		const isOutsideDimension = true;
+
+		// Call the function multiple times
+		const result1 = calculateTableMaterials(dimensions, isOutsideDimension);
+		const result2 = calculateTableMaterials(dimensions, isOutsideDimension);
+		const result3 = calculateTableMaterials(dimensions, isOutsideDimension);
+
+		// All results should be identical
+		expect(result1).toEqual(result2);
+		expect(result2).toEqual(result3);
+		expect(result1.extrusions.rail2060Length).toBe(
+			result2.extrusions.rail2060Length
+		);
+		expect(result1.extrusions.rail2060Width).toBe(
+			result2.extrusions.rail2060Width
+		);
+		expect(result1.extrusions.rail4040Legs).toBe(
+			result2.extrusions.rail4040Legs
+		);
+	});
 });
