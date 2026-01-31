@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AuthButton, useAuth } from "@deejpotter/ui-components";
+import { useUser, SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 
 /**
  * Generic navigation item type for portability.
@@ -21,8 +21,8 @@ export interface NavItem {
  * - brand: Branding text or element for the navbar.
  * - navItems: Array of navigation items (links, dropdowns, etc.).
  *
- * NOTE (2025-06-09): The authentication UI is now handled directly by Clerk components (SignedIn, SignedOut, SignInButton, SignUpButton, UserButton).
- * The previous 'Auth' component and 'authProps' prop have been removed for clarity and maintainability.
+ * NOTE (2025-06-09): Authentication UI is now handled directly by Clerk components (SignInButton, SignUpButton, UserButton, SignedIn, SignedOut).
+ * The previous custom AuthButton component has been replaced with Clerk's official components.
  */
 export interface NavbarProps {
 	brand: React.ReactNode;
@@ -48,7 +48,7 @@ const Navbar = ({
 	const [isScrolled, setIsScrolled] = useState(false);
 	// Get current pathname to highlight active links (Next.js only)
 	const pathname = usePathname();
-	const { user } = useAuth(); // Get user from component library
+	const { user } = useUser(); // Get user from Clerk
 
 	// Dynamically build navItems based on user role
 	const navItems = useMemo(() => {
@@ -184,8 +184,24 @@ const Navbar = ({
 				>
 					<ul className="navbar-nav">{navItems.map(renderNavItem)}</ul>
 				</div>
-				{/* Auth section using shared component library */}
-				<AuthButton showGravatar={true} buttonSize="sm" />
+				{/* Auth section using Clerk components */}
+				<SignedOut>
+					<SignInButton mode="modal">
+						<button className="btn btn-outline-primary btn-sm">Sign In</button>
+					</SignInButton>
+					<SignUpButton mode="modal">
+						<button className="btn btn-primary btn-sm ms-2">Sign Up</button>
+					</SignUpButton>
+				</SignedOut>
+				<SignedIn>
+					<UserButton
+						appearance={{
+							elements: {
+								avatarBox: "w-8 h-8"
+							}
+						}}
+					/>
+				</SignedIn>
 			</div>
 		</nav>
 	);

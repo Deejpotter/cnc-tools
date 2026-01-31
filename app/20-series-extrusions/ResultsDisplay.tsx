@@ -2,7 +2,7 @@
 
 import { ReactElement } from "react";
 import { Card, Row, Col, Badge, ListGroup } from "react-bootstrap";
-import { CalculationResult } from "@/types/cutCalculator";
+import { CalculationResult } from "@/types/20-series-cut-calculator/cutCalculator";
 import CutPatternVisualization from "./CutPatternVisualization";
 
 type ResultsDisplayProps = {

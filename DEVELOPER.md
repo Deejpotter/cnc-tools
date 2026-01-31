@@ -17,6 +17,8 @@ cd cnc-tools
 npm install
 ```
 
+**Note:** This project no longer requires `NODE_AUTH_TOKEN` or GitHub package registry authentication. The `.npmrc` file has been removed as the `@deejpotter/ui-components` dependency was replaced with local Clerk implementations.
+
 ### 2. Environment Variables
 
 Create a `.env.local` file in the project root with the following variables:

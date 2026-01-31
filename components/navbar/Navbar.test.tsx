@@ -4,17 +4,21 @@ import "@testing-library/jest-dom";
 
 jest.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
-jest.mock("@deejpotter/ui-components", () => ({
-	AuthButton: () => <div data-testid="auth-button" />,
-	useAuth: jest.fn(),
+jest.mock("@clerk/nextjs", () => ({
+	SignInButton: ({ children }: { children: React.ReactNode }) => <div data-testid="sign-in-button">{children}</div>,
+	SignUpButton: ({ children }: { children: React.ReactNode }) => <div data-testid="sign-up-button">{children}</div>,
+	UserButton: () => <div data-testid="user-button" />,
+	SignedIn: ({ children }: { children: React.ReactNode }) => <div data-testid="signed-in">{children}</div>,
+	SignedOut: ({ children }: { children: React.ReactNode }) => <div data-testid="signed-out">{children}</div>,
+	useUser: jest.fn(),
 }));
 
 import Navbar from "./Navbar";
-import { useAuth } from "@deejpotter/ui-components";
+import { useUser } from "@clerk/nextjs";
 
 describe("Navbar", () => {
 	it("shows Admin link when user is admin", () => {
-		(useAuth as jest.Mock).mockReturnValue({
+		(useUser as jest.Mock).mockReturnValue({
 			user: { publicMetadata: { isAdmin: true } },
 		});
 
@@ -24,7 +28,7 @@ describe("Navbar", () => {
 	});
 
 	it("does not show Admin link when user is not admin", () => {
-		(useAuth as jest.Mock).mockReturnValue({ user: { publicMetadata: {} } });
+		(useUser as jest.Mock).mockReturnValue({ user: { publicMetadata: {} } });
 
 		render(<Navbar brand={"Brand"} navItems={[]} />);
 

@@ -169,7 +169,7 @@ The project follows a Next.js App Router structure:
   - `price-difference-tool/` - Price comparison tool
 - `app/actions/` - Server actions for backend functionality. Safe server actions are used for database operations and API calls.
 - `components/` - Reusable UI components. Should be abstracted because I use them in multiple apps.
-- `contexts/` - React context providers. Mostly used for authentication and other global state management.
+- `contexts/` - React context providers. Mostly used for item management and other global state (authentication is handled directly by Clerk).
 - `utils/` - Utility functions
 - `styles/` - CSS and SCSS files
 - `public/` - Static assets
@@ -239,8 +239,8 @@ CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
 ### Usage
 
 - Use Clerk's built-in UI components (`<SignInButton>`, `<SignUpButton>`, `<UserButton>`, `<SignedIn>`, `<SignedOut>`) directly in your navigation or anywhere you need authentication UI.
-- The custom `Auth` component is now deprecated and has been removed from the navigation. All authentication UI is handled by Clerk's official components.
-- For protected API calls, use Clerk's `getToken()` or `useAuth()` to get the JWT and include it in the `Authorization` header.
+- The custom `Auth` component and `@deejpotter/ui-components` package have been removed. All authentication UI is handled by Clerk's official components.
+- For user data access, use Clerk's `useUser()` hook instead of custom auth hooks.
 - The Express backend must validate Clerk JWTs for protected endpoints.
 - See CodingConventions.md for usage details and Clerk docs for backend validation examples.
 

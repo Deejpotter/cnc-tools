@@ -19,7 +19,7 @@ import type {
   CutPattern,
   CutCalculatorInput,
   StockLengthCost,
-} from "@/types/cutCalculator";
+} from "@/types/20-series-cut-calculator/cutCalculator";
 
 /**
  * Best Fit Decreasing Algorithm for 1D Cutting Stock Problem with Multiple Stock Lengths

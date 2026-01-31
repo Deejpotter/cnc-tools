@@ -147,3 +147,90 @@ Five Whys — template to run when failing test is identified:
 - Why hasn't a cleanup been added? (e.g., missing afterAll/afterEach in tests)
 
 Follow-up: Mark this investigation [In Progress] while isolating tests.
+
+---
+
+## Remove @deejpotter/ui-components Dependency
+
+Goal: Remove the external @deejpotter/ui-components dependency and implement authentication components locally using Clerk directly.
+
+Status legend: [Todo] [In Progress] [Blocked] [Completed]
+
+1) [Completed] Remove Package Dependency
+
+- Logic: The @deejpotter/ui-components package is no longer needed as Clerk provides all necessary authentication components and hooks directly.
+- Sub-steps:
+  - Run `npm uninstall @deejpotter/ui-components` to remove from package.json and node_modules
+  - Verify no other files import from this package (already confirmed via grep search)
+  - Run `npm install` to update lockfile
+
+2) [Completed] Remove Mock Files
+
+- Logic: With the package removed, the manual mock is no longer needed.
+- Sub-steps:
+  - Delete __mocks__/@deejpotter/ui-components.js
+  - Update test files to mock Clerk directly instead
+
+3) [Completed] Clean Up Import Statements
+
+- Logic: Remove all import statements referencing the removed package.
+- Sub-steps:
+  - Remove import from contexts/AuthProvider.tsx
+  - Remove imports from components/navbar/Navbar.tsx
+  - Remove imports from components/navbar/Navbar.test.tsx
+
+4) [Completed] Replace AuthProvider Context
+
+- Logic: Since ClerkProvider is already wrapping the app, the custom AuthProvider is redundant and can be removed entirely.
+- Sub-steps:
+  - Delete contexts/AuthProvider.tsx
+  - Update app/layout.tsx to remove the AuthProvider wrapper
+  - Ensure ClerkProvider remains as the authentication provider
+
+5) [Completed] Replace AuthButton with Clerk Components
+
+- Logic: Clerk provides built-in components (SignInButton, SignUpButton, UserButton, SignedIn, SignedOut) that offer the same functionality as the custom AuthButton.
+- Sub-steps:
+  - Import Clerk components in components/navbar/Navbar.tsx: SignInButton, SignUpButton, UserButton, SignedIn, SignedOut
+  - Replace AuthButton with Clerk's component structure using SignedOut/SignedIn wrappers
+  - Style the buttons to match Bootstrap classes and maintain responsive design
+
+6) [Completed] Update useAuth Hook Usage
+
+- Logic: Replace the package's useAuth with Clerk's native useAuth hook, which provides the same user data.
+- Sub-steps:
+  - Change import in components/navbar/Navbar.tsx from @deejpotter/ui-components to @clerk/nextjs
+  - Verify that the user object structure remains compatible (Clerk's useAuth returns user with publicMetadata)
+
+7) [Completed] Update Jest Mocks
+
+- Logic: Replace mocks of the removed package with direct Clerk mocks.
+- Sub-steps:
+  - Update components/navbar/Navbar.test.tsx to mock @clerk/nextjs instead of @deejpotter/ui-components
+  - Ensure mock returns the same user structure for role-based tests
+  - Update mock to include getToken, isSignedIn and other Clerk-specific properties
+
+8) [Completed] Update Test Cases
+
+- Logic: Ensure tests still validate authentication behavior after switching to Clerk components.
+- Sub-steps:
+  - Update test that checks for "auth-button" to check for Clerk component elements
+  - Verify admin link visibility tests still work with Clerk's user structure
+  - Add tests for signed-in/signed-out states using Clerk components
+
+9) [Completed] Run Test Suite
+
+- Logic: Validate that all changes work correctly and no functionality is broken.
+- Sub-steps:
+  - Run `npm test` to execute all tests
+  - Run `npm run test:coverage` to ensure coverage remains adequate
+  - Manually test authentication flow in development (`npm run dev`)
+
+10) [Completed] Update Documentation
+
+- Logic: Remove references to the deprecated package and clarify Clerk-only authentication.
+- Sub-steps:
+  - Update README.md authentication section to remove mentions of custom Auth components
+  - Update DEVELOPER.md to remove references to the custom UI components package
+  - Update code comments that reference the removed package or deprecated patterns
+  - Update .github/copilot-instructions.md if it mentions the removed dependency
