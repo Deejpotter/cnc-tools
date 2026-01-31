@@ -44,6 +44,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 The app integrates with a Python backend for AI features. For development:
 
 **Option A: Run the real backend**
+
 ```bash
 # Clone and setup the technical-ai backend
 git clone <backend-repo-url>
@@ -53,6 +54,7 @@ python app.py  # Runs on localhost:5000
 ```
 
 **Option B: Use mocks (recommended for frontend-only development)**
+
 - Tests already use mocks for the backend
 - The app gracefully handles missing backend by falling back to local calculations
 
@@ -165,6 +167,7 @@ jest.mock('./ChildComponent', () => () => <div data-testid="mocked-component">Mo
 ### Test Hangs
 
 If tests hang with `--detectOpenHandles`:
+
 1. Check for unclosed timers: `setTimeout`, `setInterval`
 2. Ensure mocks are properly cleaned up in `afterEach`
 3. Look for open streams or connections
@@ -194,6 +197,7 @@ If tests hang with `--detectOpenHandles`:
 ## Deployment
 
 The app deploys to Netlify with the following build settings:
+
 - Build command: `npm run netlify:build`
 - Publish directory: `out`
 - Environment variables: Same as `.env.local`

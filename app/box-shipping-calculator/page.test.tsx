@@ -13,25 +13,44 @@ import { mockFetchOnce } from "../../test/testUtils";
 jest.mock("next/navigation", () => ({ usePathname: () => "/" }));
 
 // Mock LayoutContainer
-jest.mock("@/components/LayoutContainer", () => ({ children }) => (
-	<div>{children}</div>
-));
+jest.mock("@/components/LayoutContainer", () => {
+	const MockLayoutContainer = ({ children }) => <div>{children}</div>;
+	MockLayoutContainer.displayName = "LayoutContainer";
+	return MockLayoutContainer;
+});
 
 // Mock child components
-jest.mock("./ItemAddForm", () => () => (
-	<div data-testid="item-add-form">ItemAddForm</div>
-));
-jest.mock("./ItemSelectAndCalculate", () => ({ onCalculateBox }) => (
-	<button data-testid="calculate-button" onClick={() => onCalculateBox([])}>
-		Calculate
-	</button>
-));
-jest.mock("./BoxResultsDisplay", () => () => (
-	<div data-testid="box-results">BoxResultsDisplay</div>
-));
-jest.mock("@/components/PdfImport", () => () => (
-	<div data-testid="pdf-import">PdfImport</div>
-));
+jest.mock("./ItemAddForm", () => {
+	const MockItemAddForm = () => (
+		<div data-testid="item-add-form">ItemAddForm</div>
+	);
+	MockItemAddForm.displayName = "ItemAddForm";
+	return MockItemAddForm;
+});
+
+jest.mock("./ItemSelectAndCalculate", () => {
+	const MockItemSelectAndCalculate = ({ onCalculateBox }) => (
+		<button data-testid="calculate-button" onClick={() => onCalculateBox([])}>
+			Calculate
+		</button>
+	);
+	MockItemSelectAndCalculate.displayName = "ItemSelectAndCalculate";
+	return MockItemSelectAndCalculate;
+});
+
+jest.mock("./BoxResultsDisplay", () => {
+	const MockBoxResultsDisplay = () => (
+		<div data-testid="box-results">BoxResultsDisplay</div>
+	);
+	MockBoxResultsDisplay.displayName = "BoxResultsDisplay";
+	return MockBoxResultsDisplay;
+});
+
+jest.mock("@/components/PdfImport", () => {
+	const MockPdfImport = () => <div data-testid="pdf-import">PdfImport</div>;
+	MockPdfImport.displayName = "PdfImport";
+	return MockPdfImport;
+});
 
 describe("BoxShippingCalculatorPage Integration Tests", () => {
 	beforeEach(() => {

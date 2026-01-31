@@ -1,74 +1,173 @@
-<!-- Auto-generated guidance for AI coding agents working on the CNC Tools repo -->
-
 # CNC Tools — AI Assistant Instructions
 
-This file briefly orients an AI coding assistant to be immediately productive in this repository.
+This file provides essential context for AI coding assistants working on the CNC Tools repository.
 
-**Big Picture**
+## Project Overview
 
-- **Framework:** Next.js app (app/ directory) written in TypeScript. UI uses React 18 and some server/client components.
-- **Deployment targets:** Local `next dev` development, static/SSR Netlify deploys (`netlify.toml` + `npm run netlify:build`).
-- **Purpose:** Collection of small CNC-related utilities (cut optimizers, packing, calculators). Core algorithmic code lives under `app/*` (e.g. `app/20-series-extrusions/cutOptimizer.ts`, `app/box-shipping-calculator/BoxCalculations.ts`).
+CNC Tools is a web application providing specialized calculators and utilities for CNC (Computer Numerical Control) machining and fabrication. It offers tools for box shipping calculations, extrusion cutting optimization, enclosure design, price comparisons, and AI-powered technical assistance for CNC operations. The app serves makers, fabricators, and CNC operators who need precise calculations for material planning, shipping logistics, and technical problem-solving.
 
-**Key files & places to inspect**
+**Key Architecture Insights:**
 
-- `package.json` — scripts: `dev`, `build`, `start`, `test`, `test:watch`, `test:coverage`, `netlify:build`.
-- `next.config.js` — Next configuration; image domains and trailing slash behavior.
-- `middleware.ts` — Authentication middleware using `@clerk/nextjs` (important for routing & API access).
-- `types/` — Central TypeScript types (e.g. `types/box-shipping-calculator/`, `types/mongodb`). Update types when changing data shapes.
-- `contexts/` & `utils/` — app-level providers and helpers (e.g. `contexts/AuthProvider.tsx`, `utils/navigation.tsx`).
-- `app/*` — Feature folders contain both components and algorithmic logic. Look for `.test.tsx` files alongside features.
+- **Hybrid Architecture**: Next.js 14 App Router with server/client components + external API backend (localhost:5000)
+- **Authentication**: Clerk-based with role metadata (isAdmin/isMaster) for admin panel access
+- **Data Layer**: MongoDB for persistent storage (items, conversations) + in-memory operations for calculations
+- **Complex Algorithms**: 3D bin packing, PDF invoice processing, AI streaming responses
+- **UI Patterns**: Optimistic updates with background API sync, chunked processing to avoid timeouts
 
-**Architecture notes / conventions**
+## Tech Stack
 
-- Uses path alias `@/` (see `tsconfig.json` paths). Always import project files as `@/...` to stay consistent.
-- Data access is abstracted via a `DataProvider` interface (`types/mongodb/DataProvider.ts`). Implementations may swap local vs remote storage — when changing the data layer, adjust or respect `DataProviderOptions`.
-- Authentication is provided by Clerk and enforced in `middleware.ts`. Many pages/components assume an authenticated user from the provider/UI components package `@deejpotter/ui-components`.
-- Algorithmic code is placed in plain TypeScript modules (not React components) for easy unit testing (examples: `cutOptimizer.ts`, `BoxCalculations.ts`). Tests use Jest + Testing Library.
+### Frontend
 
-**Developer workflows**
+- **Next.js 14** (App Router) - React framework with server/client components
+- **React 18** - UI library with hooks and modern patterns
+- **TypeScript** - Type-safe JavaScript with strict configuration
+- **Bootstrap 5** - CSS framework for responsive design
+- **SCSS** - Custom styling with CSS modules
 
-- Run dev server: `npm run dev` (Next.js dev). Use `npm run build` then `npm run start` to test production build locally.
-- Run tests: `npm run test` (or `npm run test:watch`). Tests are Jest + jsdom; run coverage with `npm run test:coverage`.
-- Lint: `npm run lint` (Next.js ESLint config).
-- Netlify: repository includes `netlify.toml`; use `npm run netlify:build` or the Netlify CLI for deploy previews.
+### Backend & APIs
 
-**Patterns to follow when changing code**
+- **Next.js API Routes** - Server-side API endpoints
+- **External API Backend** - Technical AI service (localhost:5000) for chat/streaming
+- **MongoDB** - Document database with Mongoose ODM
+- **Clerk** - Authentication and user management
+- **OpenAI API** - AI chat completions and embeddings
 
-- Prefer small, focused edits. Many components are used across pages; search for a component before renaming.
-- When editing algorithms (e.g. packing/cutting), keep logic in `app/...` TS modules and add unit tests under the same folder (e.g. `BoxCalculations.test.tsx`).
-- Keep UI changes in React components under `app/*` or `components/` and preserve default exports for pages.
-- If adding server-side code or API routes, be mindful of `middleware.ts` matcher rules that run Clerk middleware for `/api` and most app routes.
+### Testing & Quality
 
-**Integrations & external deps**
+- **Jest** - Test runner with jsdom environment
+- **React Testing Library** - Component testing utilities
+- **Custom Test Utils** - Mocking utilities for fetch/streaming responses
+- **ESLint** - Code linting with Next.js rules
 
-- Authentication: `@clerk/nextjs` (see `middleware.ts`).
-- Database: `mongodb` referenced; a `DataProvider` abstraction defines interactions. Look in `types/mongodb` and `utils/` for concrete usage.
-- UI primitives: `@deejpotter/ui-components` — many wrappers/Providers rely on it.
-- AI/chat: `ai` and `openai` in `package.json` — if modifying chat features check `app/cnc-technical-ai/*`.
+### Deployment & DevOps
 
-**MCP server & tools**
+- **Netlify** - Static site deployment with SSR support
+- **npm scripts** - Build, test, and deployment automation
+- **Environment variables** - Configuration management
 
-- This workspace is backed by an MCP server that exposes helper tools useful to AI agents:
+## Coding Guidelines
 
-  - **Search tools**: web and repo search helpers (for quick web lookups or citation gathering).
-  - **Context7 documentation tool**: fetches library documentation (Context7) for focused API docs.
+Follow the comprehensive guidelines in `.github/CodingConventions.md` which covers:
 
-- When you need external references or up-to-date docs, prefer the MCP tools rather than raw web scraping.
-  - Example uses: request Context7 docs for a library ID (to get authoritative API docs), or run a Google/DuckDuckGo search to gather structured results.
-  - These tools appear as the agent's `mcp_*` toolset and return structured results (titles, URLs, short snippets) or full documentation blocks.
+- **File structure** and naming conventions
+- **React component patterns** and best practices
+- **TypeScript usage** and type safety
+- **Testing requirements** and patterns
+- **Security practices** and code quality standards
 
-**Search tokens / entry points for common tasks**
+Key principles:
 
-**Search tokens / entry points for common tasks**
+- Use TypeScript strictly with proper type annotations
+- Write unit tests for all business logic and components
+- Follow React best practices with hooks and functional components
+- Maintain consistent code formatting and structure
+- Prioritize accessibility and responsive design
 
-- Algorithms: search for `Best Fit Decreasing`, `Extreme Point`, `cutOptimizer`, `BoxCalculations`.
-- Auth & routing: `clerkMiddleware`, `middleware.ts`.
-- Data layer: `DataProvider`, `DEFAULT_OPTIONS`, `types/mongodb`.
+**Project-Specific Patterns:**
+
+- **Optimistic UI**: Update UI immediately, sync with backend asynchronously
+- **Chunked Processing**: Break large operations (PDF parsing) into sequential steps
+- **Role-Based UI**: Check `user.publicMetadata.isAdmin/isMaster` for admin features
+- **API Integration**: Use `process.env.NEXT_PUBLIC_API_URL` for external backend calls
+- **Error Handling**: Graceful degradation with user feedback for failed operations
+
+## Project Structure
+
+```
+cnc-tools/
+├── .github/                 # GitHub configuration and docs
+│   ├── copilot-instructions.md    # This file
+│   ├── CodingConventions.md       # Detailed coding standards
+│   ├── PULL_REQUEST_TEMPLATE.md   # PR guidelines
+│   └── todos.md                   # Project task tracking
+├── app/                     # Next.js App Router pages
+│   ├── page.tsx             # Home page with tool tiles
+│   ├── layout.tsx           # Root layout with navigation
+│   ├── globals.scss         # Global styles
+│   ├── box-shipping-calculator/   # Shipping optimization tool
+│   │   ├── page.tsx         # Main calculator UI
+│   │   ├── BoxCalculations.ts # 3D bin packing algorithms
+│   │   └── ItemAddForm.tsx  # Item management components
+│   ├── cnc-technical-ai/          # AI chat interface
+│   │   ├── page.tsx         # Chat UI with streaming
+│   │   └── ChatInterface.tsx # Real-time conversation handling
+│   ├── table-enclosure-calculator/# Enclosure design tool
+│   └── [other-tools]/             # Additional calculators
+├── components/              # Reusable React components
+│   ├── navbar/              # Navigation with role-based links
+│   ├── tiles/               # Home page tool tiles
+│   └── LayoutContainer.tsx  # Layout wrapper
+├── types/                   # TypeScript definitions
+│   ├── box-shipping-calculator/   # Domain-specific types
+│   │   ├── ShippingItem.ts  # Item data models
+│   │   └── ShippingBox.ts   # Box specifications
+│   └── mongodb/             # Database interfaces
+├── utils/                   # Utility functions
+│   ├── api.ts              # API wrapper functions
+│   └── navigation.tsx       # Route helpers
+├── contexts/                # React context providers
+├── public/                  # Static assets
+├── styles/                  # Component styles
+├── test/                    # Test utilities and helpers
+│   └── testUtils.ts         # Custom mocking utilities
+└── docs/                    # Documentation files
+```
+
+### Key Directories to Know
+
+- `app/*/page.tsx` - Page components for each tool
+- `app/*/BoxCalculations.ts` - Core algorithms (keep logic here for testing)
+- `components/` - Shared UI components
+- `types/` - All TypeScript interfaces and types
+- `test/testUtils.ts` - Testing helpers and mocks
+
+**Critical Workflows:**
+
+- **Invoice Processing**: PDF upload → chunked server actions → item extraction → MongoDB storage
+- **Box Shipping**: Item selection → 3D packing algorithm → multi-box optimization → visual results
+- **AI Chat**: Streaming OpenAI responses, file uploads, conversation persistence
+- **Admin Panel**: Role-based access via Clerk metadata, user management UI
+
+## Resources
+
+### Development Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Production build
+- `npm run start` - Start production server
+- `npm run test` - Run all tests
+- `npm run test:watch` - Watch mode testing
+- `npm run test:coverage` - Generate coverage report
+- `npm run lint` - Code linting
+- `npm run netlify:build` - Netlify deployment build
+
+### MCP Server Tools
+
+- **Context7 Documentation** - Fetch authoritative library docs
+- **Web Search Tools** - DuckDuckGo/Google for external references
+- **Git Tools** - Repository operations and history
+- **GitHub Tools** - Issue and PR management
+
+### External Resources
+
+- **Clerk Dashboard** - User management and auth configuration
+- **MongoDB Atlas** - Database administration
+- **Netlify Dashboard** - Deployment monitoring
+- **Technical AI Backend** - External service (localhost:5000) for AI/chat features
+- **DEVELOPER.md** - Setup and development guide
+
+### File References
+
+- `package.json` - Dependencies and scripts
+- `next.config.js` - Next.js configuration
+- `middleware.ts` - Authentication routing
+- `jest.config.js` - Testing configuration
+- `tsconfig.json` - TypeScript configuration
+- `netlify.toml` - Deployment configuration
 
 ---
 
-## Agent workflow & engineering rules (follow exactly)
+## Agent Workflow Guidelines
 
 1. Read the repository docs first (`README.md`, `CodingConventions.md`, this file).
 2. Use Context7 (MCP Context7 tool) to retrieve authoritative docs for libraries when possible.

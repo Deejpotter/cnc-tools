@@ -1,19 +1,52 @@
 # Project TODOs — CNC Tools
 
-Goal: Make current app functionality reliable and well-tested before expanding CI or feature scope. Prioritize unit and integration tests for existing features, fix small UI/logic bugs, and clean up partially-implemented files.
+Goal: Improve .github files and add .instructions.md files for common workflows based on Copilot best practices.
 
 Status legend: [Todo] [In Progress] [Blocked] [Completed]
 
-**ALL TASKS COMPLETED** ✅
+1) [Completed] Implement comprehensive GitHub Copilot custom instructions
 
-Summary of completed work:
-- Test coverage established (26.84% baseline)
-- All critical bugs fixed (Navbar hang, deterministic IDs confirmed)
-- Comprehensive test suite (73 tests passing)
-- Documentation and developer experience improved
-- Clean codebase with proper PR processes
+- Logic: Create repository-wide and path-specific instruction files to guide AI agents in CNC Tools development.
+- Sub-steps:
+  - Update main copilot-instructions.md with architecture insights, project-specific patterns, and critical workflows - Done
+  - Create app.instructions.md with Next.js App Router patterns, authentication, API integration, and complex workflows - Done
+  - Update components.instructions.md with frontmatter for path-specific targeting - Done
+  - Create types.instructions.md with TypeScript type definition patterns and domain-specific types - Done
+  - Create utils.instructions.md with utility function patterns, API wrappers, and data validation guidance - Done
+  - Update testing.instructions.md with frontmatter for test file targeting - Done
+  - Add frontmatter to debugging.instructions.md for broad application - Done
+  - Add frontmatter to deployment.instructions.md for build/deployment files - Done
+  - Add frontmatter to api.instructions.md for API-related files - Done
+  - Validate all tests pass after changes - Done
 
-The app is now ready for feature development with a solid testing foundation.
+2) [Completed] Restructure copilot-instructions.md
+
+- Logic: Reorganize the existing copilot-instructions.md to follow the 5 essential sections from the article: project overview, tech stack, coding guidelines, project structure, and resources.
+- Sub-steps:
+  - Extract and improve the project overview (elevator pitch) - Done
+  - Consolidate tech stack information into a clear section - Done
+  - Reference CodingConventions.md for guidelines instead of duplicating - Done
+  - Enhance project structure documentation - Done
+  - Add resources section with scripts and tools - Done
+
+2) [Completed] Create .instructions.md files for common workflows
+
+- Logic: Create specific .instructions.md files for the most common development workflows in this CNC tools project.
+- Sub-steps:
+  - Create testing.instructions.md for test writing and debugging patterns - Done
+  - Create components.instructions.md for React component creation and patterns - Done
+  - Create api.instructions.md for API integration and backend communication - Done
+  - Create deployment.instructions.md for build and deployment processes - Done
+  - Create debugging.instructions.md for bug fixing and troubleshooting - Done
+
+3) [Completed] Update and validate all .github files
+
+- Logic: Ensure all .github files work together cohesively and provide comprehensive guidance.
+- Sub-steps:
+  - Update PULL_REQUEST_TEMPLATE.md to reference the new instructions - Done
+  - Validate that copilot-instructions.md covers all essential areas - Done
+  - Test that .instructions.md files provide actionable guidance - Done
+  - Ensure no duplication between files - Done
 
 1) [Completed] Test pass & baseline verification
 
