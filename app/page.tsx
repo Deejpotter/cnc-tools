@@ -63,6 +63,15 @@ export default function Home() {
 			bgColorClass: "bg-light",
 			textColorClass: "text-dark",
 		},
+		{
+			title: "Cut Optimizer",
+			description:
+				"Calculate optimal cutting layouts for linear and panel materials.",
+			link: "/cut-optimizer",
+			linkText: "Cut Optimizer",
+			bgColorClass: "bg-light",
+			textColorClass: "text-dark",
+		},
 		// More tiles can be added here
 	];
 
